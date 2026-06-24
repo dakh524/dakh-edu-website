@@ -482,14 +482,19 @@ const About = () => {
         </section>
 
         {/* PRODUCTS & SERVICES SECTION */}
-        {products.length > 0 && (
-          <section className="py-20 px-6 lg:px-8 max-w-7xl mx-auto border-t border-gray-100">
-            <div className="text-center mb-16">
-              <ScrollReveal>
-                <h2 className="font-black text-5xl md:text-6xl text-gray-900 mb-4">Our <span className="text-gradient">Products & Services</span></h2>
-                <p className="text-xl text-[var(--color-brand-text-secondary)] font-medium">Explore the innovative solutions we offer.</p>
-              </ScrollReveal>
+        <section className="py-20 px-6 lg:px-8 max-w-7xl mx-auto border-t border-gray-100">
+          <div className="text-center mb-16">
+            <ScrollReveal>
+              <h2 className="font-black text-5xl md:text-6xl text-gray-900 mb-4">Our <span className="text-gradient">Products & Services</span></h2>
+              <p className="text-xl text-[var(--color-brand-text-secondary)] font-medium">Explore the innovative solutions we offer.</p>
+            </ScrollReveal>
+          </div>
+          
+          {products.length === 0 ? (
+            <div className="text-center p-12 bg-gray-50 rounded-3xl border border-gray-100">
+              <p className="text-gray-500 font-medium">No products or services published yet.</p>
             </div>
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {products.map((product, i) => (
                 <ScrollReveal key={product.id} delay={i * 0.1}>
@@ -511,8 +516,8 @@ const About = () => {
                 </ScrollReveal>
               ))}
             </div>
-          </section>
-        )}
+          )}
+        </section>
 
         {/* COMMUNITY BLOGS SECTION */}
         <section className="py-20 px-6 lg:px-8 max-w-7xl mx-auto bg-purple-50/50 rounded-[3rem] my-10">
