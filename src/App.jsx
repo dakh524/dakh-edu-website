@@ -13,6 +13,7 @@ import Services from './pages/Services';
 import Collaborations from './pages/Collaborations';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import ApplyFreelancer from './pages/ApplyFreelancer';
 
 // Admin Pages
 import AdminLogin from './pages/AdminLogin';
@@ -62,6 +63,7 @@ function App() {
             <Route path="/collaborations" element={<Collaborations />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/apply" element={<ApplyFreelancer />} />
             
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />

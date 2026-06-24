@@ -17,21 +17,53 @@ const Contact = () => {
     setFormState('submitting');
     setFormError('');
     try {
-      const { error } = await supabase
-        .from('contact_messages')
-        .insert([{
-          name: form.name.trim(),
-          email: form.email.trim().toLowerCase(),
-          subject: form.subject,
-          message: form.message.trim(),
-          sent_at: new Date().toISOString(),
-          status: 'unread',
-        }]);
-      if (error) throw error;
+      // Optional backup: Try to save to Supabase (fails silently if table is missing)
+      supabase.from('contact_messages').insert([{
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        subject: form.subject,
+        message: form.message.trim(),
+        sent_at: new Date().toISOString(),
+        status: 'unread',
+      }]).then(() => {}).catch(() => {});
+
+      const accessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
+      
+      // If Web3Forms is set up, send email
+      if (accessKey && accessKey !== 'your_access_key_here') {
+        const response = await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            access_key: accessKey,
+            name: form.name,
+            email: form.email,
+            subject: form.subject,
+            message: form.message,
+            to: "dakhedusolution@gmail.com",
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.message || "Failed to send message");
+        }
+      } else {
+        // Fallback: Send directly to WhatsApp
+        const phoneNumber = "918667399640";
+        const whatsappMessage = `*New Contact Form Submission*%0A%0A*Name:* ${form.name}%0A*Email:* ${form.email}%0A*Subject:* ${form.subject}%0A*Message:* ${form.message}`;
+        window.open(`https://wa.me/${phoneNumber}?text=${whatsappMessage}`, '_blank');
+      }
+
       setFormState('success');
+      setForm({ name: '', email: '', subject: 'Internship Inquiry', message: '' });
     } catch (err) {
       console.error(err);
-      setFormError('Something went wrong. Please try again or email us directly.');
+      setFormError(err.message || 'Something went wrong. Please try again or email us directly.');
       setFormState('error');
     }
   };

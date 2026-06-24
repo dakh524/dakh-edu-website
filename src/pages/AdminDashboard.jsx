@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall } from 'lucide-react';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
@@ -12,9 +12,33 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('registrations');
   const [registrations, setRegistrations] = useState([]);
+  const [freelancers, setFreelancers] = useState([]);
+  const [blogs, setBlogs] = useState([]);
+  const [events, setEvents] = useState([]);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  
+  const [eventTitle, setEventTitle] = useState('');
+  const [eventImageUrl, setEventImageUrl] = useState('');
+  const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+
   const navigate = useNavigate();
+
+  const handleAddEvent = async (e) => {
+    e.preventDefault();
+    if (!eventImageUrl) return;
+    setIsSubmittingEvent(true);
+    const { error } = await supabase.from('events').insert([{ title: eventTitle, image_url: eventImageUrl }]);
+    setIsSubmittingEvent(false);
+    if (error) {
+      alert("Error adding event: " + error.message);
+    } else {
+      alert("Event added successfully!");
+      setEventTitle('');
+      setEventImageUrl('');
+      fetchEvents();
+    }
+  };
 
   const generatePDF = async (student, type) => {
     let finalStudent = { ...student };
@@ -105,6 +129,9 @@ const AdminDashboard = () => {
       } else {
         setSession(session);
         fetchRegistrations();
+        fetchFreelancers();
+        fetchBlogs();
+        fetchEvents();
       }
       setLoading(false);
     });
@@ -128,6 +155,52 @@ const AdminDashboard = () => {
     
     if (!error && data) {
       setRegistrations(data);
+    }
+  };
+
+  const fetchFreelancers = async () => {
+    const { data, error } = await supabase
+      .from('freelancer_applications')
+      .select('*')
+      .order('applied_at', { ascending: false });
+    if (!error && data) setFreelancers(data);
+  };
+
+  const fetchBlogs = async () => {
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setBlogs(data);
+  };
+
+  const fetchEvents = async () => {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setEvents(data);
+  };
+
+  const handleDeleteEvent = async (id) => {
+    if (window.confirm('Are you sure you want to delete this event?')) {
+      const { error } = await supabase.from('events').delete().eq('id', id);
+      if (!error) {
+        setEvents(events.filter((e) => e.id !== id));
+      } else {
+        alert("Failed to delete event: " + error.message);
+      }
+    }
+  };
+
+  const handleDeleteBlog = async (id) => {
+    if (window.confirm('Are you sure you want to delete this blog?')) {
+      const { error } = await supabase.from('blogs').delete().eq('id', id);
+      if (!error) {
+        setBlogs(blogs.filter((b) => b.id !== id));
+      } else {
+        alert("Failed to delete blog: " + error.message);
+      }
     }
   };
 
@@ -186,11 +259,218 @@ const AdminDashboard = () => {
             <MapIcon className="w-5 h-5" />
             Manage Roadmap
           </button>
+          <button 
+            onClick={() => setActiveTab('events')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'events' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <Calendar className="w-5 h-5" />
+            Manage Events
+          </button>
+          <button 
+            onClick={() => setActiveTab('blogs')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'blogs' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <FileText className="w-5 h-5" />
+            Manage Blogs
+            {blogs.length > 0 && (
+              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{blogs.length}</span>
+            )}
+          </button>
+          <button 
+            onClick={() => setActiveTab('freelancers')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'freelancers' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <Briefcase className="w-5 h-5" />
+            Freelancers
+            {freelancers.length > 0 && (
+              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{freelancers.length}</span>
+            )}
+          </button>
         </aside>
 
         {/* Content Area */}
         <main className="flex-grow bg-white rounded-3xl shadow-sm border border-gray-100 p-6 lg:p-8 overflow-hidden">
           
+          {activeTab === 'events' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
+              <div className="mb-8">
+                <h2 className="text-2xl font-black text-gray-900">Add New Event</h2>
+                <p className="text-gray-500 font-medium mt-1">Publish an event image to the About Us page gallery.</p>
+              </div>
+
+              <form onSubmit={handleAddEvent} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Event Title (Optional)</label>
+                  <input 
+                    type="text" 
+                    value={eventTitle}
+                    onChange={(e) => setEventTitle(e.target.value)}
+                    placeholder="e.g. DAKH Hackathon 2026"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Image URL (Required)</label>
+                  <input 
+                    type="url" 
+                    required
+                    value={eventImageUrl}
+                    onChange={(e) => setEventImageUrl(e.target.value)}
+                    placeholder="https://example.com/image.png"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Paste a direct link to the image (e.g., from Imgur, Google Drive, or Canva).</p>
+                </div>
+                {eventImageUrl && (
+                  <div className="mt-4 rounded-xl overflow-hidden border border-gray-200">
+                    <img src={eventImageUrl} alt="Preview" className="w-full h-auto object-cover max-h-64" onError={(e) => e.target.style.display = 'none'} />
+                  </div>
+                )}
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingEvent}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
+                >
+                  {isSubmittingEvent ? 'Publishing Event...' : 'Publish Event'}
+                </button>
+              </form>
+
+              <div className="mt-12">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">Manage Uploaded Events</h3>
+                  <button onClick={fetchEvents} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
+                    <Loader2 className="w-4 h-4" /> Refresh
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {events.length === 0 ? (
+                    <div className="col-span-2 p-8 text-center bg-gray-50 rounded-xl text-gray-500 font-medium border border-gray-100">
+                      No events added yet.
+                    </div>
+                  ) : (
+                    events.map(event => (
+                      <div key={event.id} className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <img src={event.image_url} alt={event.title || 'Event'} className="w-full h-48 object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
+                          <p className="text-white font-bold">{event.title || 'Untitled Event'}</p>
+                          <p className="text-white/80 text-xs mt-1">{new Date(event.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteEvent(event.id)}
+                          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'blogs' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900">Community Blogs</h2>
+                  <p className="text-gray-500 font-medium mt-1">Manage all submitted blogs.</p>
+                </div>
+                <button onClick={fetchBlogs} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
+                  <Loader2 className="w-4 h-4" /> Refresh
+                </button>
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 text-sm uppercase tracking-wider">
+                      <th className="p-4 font-black">Date</th>
+                      <th className="p-4 font-black">Author</th>
+                      <th className="p-4 font-black">Title</th>
+                      <th className="p-4 font-black text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {blogs.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" className="p-8 text-center text-gray-500 font-medium">No blogs found.</td>
+                      </tr>
+                    ) : (
+                      blogs.map(blog => (
+                        <tr key={blog.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="p-4 text-sm text-gray-500 font-medium">{new Date(blog.created_at).toLocaleDateString()}</td>
+                          <td className="p-4 font-bold text-gray-900">{blog.author_name}</td>
+                          <td className="p-4 text-gray-600">{blog.title}</td>
+                          <td className="p-4 text-right">
+                            <button onClick={() => handleDeleteBlog(blog.id)} className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'freelancers' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900">Freelancer Applications</h2>
+                  <p className="text-gray-500 font-medium mt-1">View incoming freelancer applications.</p>
+                </div>
+                <button onClick={fetchFreelancers} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
+                  <Loader2 className="w-4 h-4" /> Refresh
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {freelancers.length === 0 ? (
+                  <div className="p-8 text-center bg-gray-50 border border-gray-100 rounded-xl text-gray-500 font-medium">
+                    No applications yet.
+                  </div>
+                ) : (
+                  freelancers.map(freelancer => (
+                    <div key={freelancer.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">{freelancer.full_name}</h3>
+                          <p className="text-purple-600 font-semibold text-sm">{freelancer.college_name} ({freelancer.year_of_study})</p>
+                        </div>
+                        <span className="bg-green-100 text-green-700 font-bold text-xs px-3 py-1 rounded-full uppercase tracking-wider">{freelancer.status}</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-2"><Mail size={16} /> {freelancer.email}</div>
+                        <div className="flex items-center gap-2"><Phone size={16} /> {freelancer.phone}</div>
+                        <div className="flex items-center gap-2"><Briefcase size={16} /> {freelancer.experience_level}</div>
+                        <div className="flex items-center gap-2"><Clock size={16} /> {freelancer.availability}</div>
+                      </div>
+                      <div className="mb-4">
+                        <h4 className="font-bold text-gray-900 mb-2">Skills:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {freelancer.skills.map(s => <span key={s} className="bg-gray-100 px-3 py-1 rounded-full text-xs font-semibold">{s}</span>)}
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <h4 className="font-bold text-gray-900 mb-1">Bio:</h4>
+                        <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">{freelancer.bio}</p>
+                      </div>
+                      <div className="flex gap-4 pt-4 border-t border-gray-100">
+                        {freelancer.portfolio_url && <a href={freelancer.portfolio_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-semibold text-sm">Portfolio</a>}
+                        {freelancer.linkedin_url && <a href={freelancer.linkedin_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-semibold text-sm">LinkedIn</a>}
+                        {freelancer.github_url && <a href={freelancer.github_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-semibold text-sm">GitHub</a>}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {activeTab === 'registrations' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="flex justify-between items-center mb-6">

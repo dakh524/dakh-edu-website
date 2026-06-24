@@ -69,17 +69,18 @@ const Footer = () => {
           <div>
             <h4 className="font-black text-gray-900 mb-6 text-lg uppercase tracking-wider">Contact</h4>
             <ul className="flex flex-col gap-4 text-sm text-gray-500 font-medium">
-              <li><a href="mailto:dakhsolutions@gmail.com" className="hover:text-purple-600 transition-colors">dakhsolutions@gmail.com</a></li>
+              <li><a href="mailto:dakhedusolution@gmail.com" className="hover:text-purple-600 transition-colors flex items-center gap-2">dakhedusolution@gmail.com</a></li>
+              <li><a href="tel:+918778317180" className="hover:text-purple-600 transition-colors flex items-center gap-2">+91 877 831 7180</a></li>
               <li>Chennai, Tamil Nadu</li>
               <li>India</li>
             </ul>
             
             {/* Social Icons */}
             <div className="flex gap-4 mt-8">
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-50 hover:bg-gradient-to-r hover:from-pink-500 hover:to-orange-400 text-gray-400 hover:text-white border border-gray-200 hover:border-transparent flex items-center justify-center transition-all duration-300 hover:scale-110 hover:-translate-y-1 shadow-sm">
+              <a href="https://www.instagram.com/dakh_edu/" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-gray-50 hover:bg-gradient-to-r hover:from-pink-500 hover:to-orange-400 text-gray-400 hover:text-white border border-gray-200 hover:border-transparent flex items-center justify-center transition-all duration-300 hover:scale-110 hover:-translate-y-1 shadow-sm">
                 <InstagramIcon />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-50 hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-700 text-gray-400 hover:text-white border border-gray-200 hover:border-transparent flex items-center justify-center transition-all duration-300 hover:scale-110 hover:-translate-y-1 shadow-sm">
+              <a href="https://www.linkedin.com/company/dakh-edu-solutions/" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-gray-50 hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-700 text-gray-400 hover:text-white border border-gray-200 hover:border-transparent flex items-center justify-center transition-all duration-300 hover:scale-110 hover:-translate-y-1 shadow-sm">
                 <LinkedinIcon />
               </a>
               <a href="#" className="w-10 h-10 rounded-full bg-gray-50 hover:bg-gradient-to-r hover:from-blue-400 hover:to-blue-500 text-gray-400 hover:text-white border border-gray-200 hover:border-transparent flex items-center justify-center transition-all duration-300 hover:scale-110 hover:-translate-y-1 shadow-sm">
