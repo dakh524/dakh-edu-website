@@ -1,0 +1,215 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #ffffff;
+  --color-brand-surface: #f9fafb;
+  --color-brand-border: rgba(0, 0, 0, 0.1);
+  --color-brand-primary: #9333ea; /* Purple 600 */
+  --color-brand-secondary: #facc15; /* Yellow 400 */
+  --color-brand-energy: #c084fc; /* Purple 400 */
+  --color-brand-success: #22c55e;
+  --color-brand-text-primary: #0f172a;
+  --color-brand-text-secondary: #4b5563; /* Gray 600 */
+
+  --font-gabarito: 'Gabarito', sans-serif;
+  --font-syne: 'Gabarito', sans-serif; /* Mapping old to new */
+  --font-space-grotesk: 'Gabarito', sans-serif;
+  --font-inter: 'Gabarito', sans-serif;
+  --font-space-mono: 'Gabarito', sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--color-brand-bg);
+    color: var(--color-brand-text-primary);
+    font-family: var(--font-gabarito);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-brand-text-primary);
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(to right, #9333ea, #facc15);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+  }
+  
+  .bg-gradient-primary {
+    background: linear-gradient(to right, #9333ea, #a855f7);
+  }
+
+  .glow-hover:hover {
+    box-shadow: 0 10px 40px rgba(147, 51, 234, 0.2);
+    border-color: rgba(147, 51, 234, 0.5);
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* 5. Card Hover Lift */
+  .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--color-brand-border);
+  }
+  
+  .card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(147, 51, 234, 0.15);
+  }
+
+  /* 6. Badge Pills */
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: rgba(147, 51, 234, 0.15);
+    color: var(--color-brand-primary);
+    border: 1px solid rgba(147, 51, 234, 0.3);
+  }
+
+  /* 15. Active Nav Underline */
+  .nav-link {
+    position: relative;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-brand-primary), var(--color-brand-secondary));
+    transition: width 0.3s ease;
+  }
+  .nav-link.active::after,
+  .nav-link:hover::after {
+    width: 100%;
+  }
+}
+
+/* Wyntrix Custom Animations */
+@keyframes cursor-glow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.8)); }
+  50% { filter: drop-shadow(0 0 16px rgba(168, 85, 247, 1)); }
+}
+
+@keyframes floatA {
+  0%, 100% { transform: translateY(0px) translateX(0px) scale(1); }
+  33% { transform: translateY(-18px) translateX(8px) scale(1.05); }
+  66% { transform: translateY(10px) translateX(-6px) scale(0.97); }
+}
+@keyframes floatB {
+  0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+  50% { transform: translateY(-24px) translateX(12px) rotate(15deg); }
+}
+@keyframes floatC {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  40% { transform: translateY(20px) scale(1.08); }
+  80% { transform: translateY(-12px) scale(0.95); }
+}
+@keyframes orbitCW {
+  from { transform: rotate(0deg) translateX(38px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(38px) rotate(-360deg); }
+}
+@keyframes orbitCCW {
+  from { transform: rotate(0deg) translateX(55px) rotate(0deg); }
+  to   { transform: rotate(-360deg) translateX(55px) rotate(360deg); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); opacity: 0.5; }
+  50% { transform: translateY(-12px); opacity: 1; }
+}
+@keyframes meshPulse {
+  0%, 100% { opacity: 0.18; transform: scale(1); }
+  50% { opacity: 0.32; transform: scale(1.12); }
+}
+@keyframes meshPulse2 {
+  0%, 100% { opacity: 0.12; transform: scale(1.05) translateY(0px); }
+  50% { opacity: 0.25; transform: scale(0.95) translateY(-20px); }
+}
+@keyframes ringPulse {
+  0% { transform: scale(0.8); opacity: 0.6; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes driftLeft {
+  0%, 100% { transform: translateX(0px) translateY(0px); }
+  50% { transform: translateX(-16px) translateY(8px); }
+}
+@keyframes driftRight {
+  0%, 100% { transform: translateX(0px) translateY(0px); }
+  50% { transform: translateX(14px) translateY(-10px); }
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.hero-float-a { animation: floatA 6s ease-in-out infinite; }
+.hero-float-b { animation: floatB 8s ease-in-out infinite; }
+.hero-float-c { animation: floatC 7s ease-in-out infinite; }
+.hero-orbit-cw { animation: orbitCW 5s linear infinite; }
+.hero-orbit-ccw { animation: orbitCCW 8s linear infinite; }
+.hero-mesh-1 { animation: meshPulse 5s ease-in-out infinite; }
+.hero-mesh-2 { animation: meshPulse2 7s ease-in-out infinite; }
+.hero-mesh-3 { animation: meshPulse 9s ease-in-out infinite 1s; }
+.hero-drift-l { animation: driftLeft 6s ease-in-out infinite; }
+.hero-drift-r { animation: driftRight 5s ease-in-out infinite 0.5s; }
+.sparkle-1 { animation: float 3s ease-in-out infinite; }
+.sparkle-2 { animation: float 4s ease-in-out infinite 0.5s; }
+.sparkle-3 { animation: float 3.5s ease-in-out infinite 1s; }
+.sparkle-4 { animation: float 5s ease-in-out infinite 1.5s; }
+.sparkle-5 { animation: float 4s ease-in-out infinite 0.8s; }
+.sparkle-6 { animation: float 3s ease-in-out infinite 2s; }
+.ring-pulse { animation: ringPulse 2.5s ease-out infinite; }
+.ring-pulse-delay { animation: ringPulse 2.5s ease-out infinite 1.25s; }
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes cursor-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.animate-cursor-blink {
+  animation: cursor-blink 1s ease-in-out infinite;
+}
+
+/* 9. Orbit Map */
+@keyframes orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.orbit-ring {
+  animation: orbit 20s linear infinite;
+  transform-origin: center center;
+}
+
+.orbit-node {
+  animation: orbit 20s linear infinite reverse;
+}

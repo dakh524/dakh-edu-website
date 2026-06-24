@@ -1,0 +1,719 @@
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useNavigate } from 'react-router-dom';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { flushSync } from 'react-dom';
+import { toJpeg } from 'html-to-image';
+import { jsPDF } from 'jspdf';
+
+const AdminDashboard = () => {
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('registrations');
+  const [registrations, setRegistrations] = useState([]);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const navigate = useNavigate();
+
+  const generatePDF = async (student, type) => {
+    let finalStudent = { ...student };
+
+    // 1. Check for Intern Number
+    if (!finalStudent.intern_number) {
+      const manualNum = window.prompt(`Please enter the manual Intern Number for ${student.full_name}:`, "DES/INT/2026/001");
+      if (!manualNum) {
+        return; // User cancelled
+      }
+      
+      // Save to Supabase
+      const { error } = await supabase
+        .from('registrations')
+        .update({ intern_number: manualNum })
+        .eq('id', student.id);
+        
+      if (error) {
+        alert(`Failed to save Intern Number to database! Error: ${error.message}`);
+        console.error("Supabase update error:", error);
+        return;
+      }
+      
+      finalStudent.intern_number = manualNum;
+      
+      // Update local state so it shows in the table immediately
+      setRegistrations(prev => prev.map(r => r.id === student.id ? { ...r, intern_number: manualNum } : r));
+    }
+
+    // Force sync update of selected student so the template is ready in the DOM
+    flushSync(() => {
+      setSelectedStudent({ ...finalStudent, type });
+      setGeneratingPdf(true);
+    });
+
+    try {
+      // Small delay to ensure images/fonts are fully rendered in the DOM before snapshot
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      let pdfBase64 = null;
+      let fileName = `${student.full_name}_${type === 'offer' ? 'Offer_Letter' : 'Certificate'}.pdf`;
+
+      if (type === 'offer') {
+        const page1 = document.getElementById('offer-page-1');
+        const page2 = document.getElementById('offer-page-2');
+        
+        if (!page1 || !page2) throw new Error("Template not found");
+
+        const imgData1 = await toJpeg(page1, { quality: 0.95, pixelRatio: 2 });
+        const imgData2 = await toJpeg(page2, { quality: 0.95, pixelRatio: 2 });
+        
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        pdf.addPage();
+        pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        
+        pdf.save(fileName);
+      } else {
+        const element = document.getElementById('certificate-template');
+        if (!element) throw new Error("Template not found");
+
+        const imgData = await toJpeg(element, { quality: 0.95, pixelRatio: 3 });
+        
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(fileName);
+      }
+
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to process request: " + (error.message || error));
+    } finally {
+      setSelectedStudent(null);
+      setGeneratingPdf(false);
+    }
+  };
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate('/admin/login');
+      } else {
+        setSession(session);
+        fetchRegistrations();
+      }
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        navigate('/admin/login');
+      } else {
+        setSession(session);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const fetchRegistrations = async () => {
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (!error && data) {
+      setRegistrations(data);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/admin/login');
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><Loader2 className="w-10 h-10 animate-spin text-purple-600" /></div>;
+  }
+
+  if (!session) return null;
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Admin Navbar */}
+      <nav className="bg-[#0f172a] text-white p-4 shadow-xl">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center font-black text-xl">D</div>
+            <div>
+              <h1 className="font-black text-xl tracking-wide">Admin Dashboard</h1>
+              <p className="text-xs text-gray-400 font-medium">DAKH Edu Solutions</p>
+            </div>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg font-bold transition-colors text-sm"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <div className="flex-grow max-w-7xl mx-auto w-full p-6 lg:p-8 flex flex-col md:flex-row gap-8">
+        
+        {/* Sidebar */}
+        <aside className="w-full md:w-64 shrink-0 space-y-2">
+          <button 
+            onClick={() => setActiveTab('registrations')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'registrations' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <Users className="w-5 h-5" />
+            Registrations
+            {registrations.length > 0 && (
+              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{registrations.length}</span>
+            )}
+          </button>
+          <button 
+            onClick={() => setActiveTab('roadmap')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'roadmap' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <MapIcon className="w-5 h-5" />
+            Manage Roadmap
+          </button>
+        </aside>
+
+        {/* Content Area */}
+        <main className="flex-grow bg-white rounded-3xl shadow-sm border border-gray-100 p-6 lg:p-8 overflow-hidden">
+          
+          {activeTab === 'registrations' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900">Internship Registrations</h2>
+                  <p className="text-gray-500 font-medium mt-1">View and manage all student applications.</p>
+                </div>
+                <button onClick={fetchRegistrations} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
+                  <Loader2 className="w-4 h-4" /> Refresh
+                </button>
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 text-sm uppercase tracking-wider">
+                      <th className="p-4 font-black">Date</th>
+                      <th className="p-4 font-black">Student Name</th>
+                      <th className="p-4 font-black">College</th>
+                      <th className="p-4 font-black">Plan & Domain</th>
+                      <th className="p-4 font-black">Contact</th>
+                      <th className="p-4 font-black">UTR</th>
+                      <th className="p-4 font-black text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {registrations.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="p-8 text-center text-gray-500 font-medium">No registrations found.</td>
+                      </tr>
+                    ) : (
+                      registrations.map(reg => (
+                        <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="p-4 text-sm text-gray-500 font-medium">{new Date(reg.created_at).toLocaleDateString()}</td>
+                          <td className="p-4 font-bold text-gray-900">{reg.full_name}</td>
+                          <td className="p-4 text-sm text-gray-600">{reg.college}</td>
+                          <td className="p-4">
+                            <div className="text-sm font-bold text-purple-600">{reg.plan_name}</div>
+                            <div className="text-xs text-gray-500 font-medium">{reg.domain}</div>
+                          </td>
+                          <td className="p-4">
+                            <div className="text-sm text-gray-900">{reg.phone}</div>
+                            <div className="text-xs text-gray-500">{reg.email}</div>
+                          </td>
+                          <td className="p-4 text-sm font-mono text-gray-600 bg-gray-50 rounded px-2">{reg.utr_number}</td>
+                          <td className="p-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <button 
+                                onClick={() => generatePDF(reg, 'offer')}
+                                disabled={generatingPdf}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-md transition-colors disabled:opacity-50"
+                                title="Download Offer Letter"
+                              >
+                                <FileText className="w-3.5 h-3.5" /> Download
+                              </button>
+                              <button 
+                                onClick={() => generatePDF(reg, 'certificate')}
+                                disabled={generatingPdf}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-bold rounded-md transition-colors disabled:opacity-50"
+                                title="Download Certificate"
+                              >
+                                <FileBadge className="w-3.5 h-3.5" /> Cert
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'roadmap' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <h2 className="text-2xl font-black text-gray-900 mb-2">Manage Roadmap</h2>
+              <p className="text-gray-500 font-medium mb-6">Edit the steps displayed on the Internship page. (Coming soon)</p>
+              
+              <div className="p-8 bg-purple-50 rounded-2xl border-2 border-dashed border-purple-200 text-center">
+                <MapIcon className="w-12 h-12 text-purple-300 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-purple-900">Roadmap Editor Placeholder</h3>
+                <p className="text-purple-700 mt-2">The frontend logic for editing the Roadmap steps via Supabase can be implemented here.</p>
+              </div>
+            </motion.div>
+          )}
+
+        </main>
+      </div>
+
+      {/* HIDDEN PDF TEMPLATES (Rendered off-screen) */}
+      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', zIndex: -1000 }}>
+        
+        {/* OFFER LETTER TEMPLATE (A4 Portrait) */}
+        {/* SINGLE PAGE OFFER LETTER TEMPLATE (A4 Portrait) */}
+        {selectedStudent?.type === 'offer' && (() => {
+          /* ── shared values ─────────────────────────────────────── */
+          const PW = 794, PH = 1123;          // A4 pixel dimensions
+          const SAFE = 30;                     // safe-margin (px)
+          const PURPLE = '#461248';
+          const GOLD   = '#f5b800';
+          const BORDER = '#5a1a5e';
+
+          /* ── Page wrapper ───────────────────────────────────────── */
+          const pageStyle = {
+            width: `${PW}px`, height: `${PH}px`,
+            background: '#ffffff',
+            position: 'relative',
+            overflow: 'hidden',
+            boxSizing: 'border-box',
+            fontFamily: 'Arial, Helvetica, sans-serif',
+          };
+
+          /* ── Content column (sits ABOVE all decorative layers) ─── */
+          const contentStyle = {
+            position: 'absolute',
+            top: 0, left: 0,
+            width: `${PW}px`, height: `${PH}px`,
+            boxSizing: 'border-box',
+            padding: `${SAFE}px`,
+            display: 'flex', flexDirection: 'column',
+            zIndex: 10,
+          };
+
+          /* ── Decorative layer (absolutely fills the page, z=2) ── */
+          /* Full-page SVG ensures nothing ever overflows              */
+          const DecorationPage1 = () => (
+            <svg
+              style={{ position:'absolute', top:0, left:0, zIndex:2, pointerEvents:'none', overflow:'hidden' }}
+              width={PW} height={PH}
+              viewBox={`0 0 ${PW} ${PH}`}
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* outer thin border */}
+              <rect x="12" y="12" width={PW-24} height={PH-24} rx="2" fill="none" stroke="#8b3a8e" strokeWidth="0.5" />
+              {/* inner border */}
+              <rect x="18" y="18" width={PW-36} height={PH-36} rx="2" fill="none" stroke={PURPLE} strokeWidth="1.5" />
+              {/* top-right yellow triangle */}
+              <polygon points={`${PW-220},0 ${PW},0 ${PW},260`} fill={GOLD} />
+              {/* top-right purple triangle (sits on top of yellow) */}
+              <polygon points={`${PW-180},0 ${PW},0 ${PW},220`} fill={PURPLE} />
+              {/* bottom-left yellow wave */}
+              <path d={`M0,${PH-100} C120,${PH-10} 300,${PH} 440,${PH} L0,${PH} Z`} fill={GOLD} />
+              {/* bottom-left purple wave */}
+              <path d={`M0,${PH-60} C90,${PH-5} 240,${PH} 380,${PH} L0,${PH} Z`} fill={PURPLE} />
+            </svg>
+          );
+
+          const DecorationPage2 = DecorationPage1;
+
+          /* ── Contact info row ───────────────────────────────────── */
+          const ContactRow = () => (
+            <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
+              <div style={{ width:'1.5px', height:'58px', background:PURPLE, flexShrink:0 }} />
+              <div style={{ display:'flex', flexDirection:'column', gap:'7px' }}>
+                {[
+                  { sym:'✉', text:'dakhedusolution@gmail.com' },
+                  { sym:'✆', text:'+91 8667399640' },
+                  { sym:'⊕', text:'www.dakhedusolutions.in' },
+                ].map(({ sym, text }) => (
+                  <div key={text} style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'10px', color:'#111111', fontWeight:700, whiteSpace:'nowrap' }}>
+                    <span style={{ color:PURPLE, fontSize:'12px', fontWeight:900, lineHeight:1 }}>{sym}</span>
+                    {text}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+
+          /* ── Divider with diamond ───────────────────────────────── */
+          const DiamondDivider = () => (
+            <div style={{ position:'relative', height:'16px', width:'100%', marginBottom:'12px' }}>
+              <div style={{ position:'absolute', top:'7px', left:0, right:0, height:'1px', background:PURPLE, opacity:0.25 }} />
+              <div style={{
+                position:'absolute', top:'4px', left:'50%',
+                width:'9px', height:'9px',
+                background:PURPLE,
+                transform:'translateX(-50%) rotate(45deg)',
+              }} />
+            </div>
+          );
+
+          /* ── Sub-divider (gold ornament) ────────────────────────── */
+          const GoldDivider = () => (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'0', width:'280px', margin:'0 auto 14px auto', position:'relative', height:'10px' }}>
+              <div style={{ flex:1, height:'1px', background:GOLD }} />
+              <div style={{ width:'6px', height:'6px', borderRadius:'50%', border:`1.5px solid ${GOLD}`, background:'#fff', flexShrink:0, margin:'0 2px' }} />
+              <div style={{ width:'8px', height:'8px', background:GOLD, transform:'rotate(45deg)', flexShrink:0, margin:'0 4px' }} />
+              <div style={{ width:'6px', height:'6px', borderRadius:'50%', border:`1.5px solid ${GOLD}`, background:'#fff', flexShrink:0, margin:'0 2px' }} />
+              <div style={{ flex:1, height:'1px', background:GOLD }} />
+            </div>
+          );
+
+          return (
+            <div id="offer-letter-template">
+
+              {/* ═══════ PAGE 1 ═══════════════════════════════════════ */}
+              <div id="offer-page-1" style={pageStyle}>
+                <DecorationPage1 />
+
+                <div style={contentStyle}>
+                  {/* HEADER: logo left | contact right (max-right clipped away from triangle) */}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'14px', width:'100%' }}>
+                    {/* Logo — fixed 170×64 box */}
+                    <div style={{ width:'170px', height:'64px', flexShrink:0 }}>
+                      <img
+                        src="/companylogo.jpg"
+                        alt="DAKH Edu Solutions"
+                        style={{ width:'100%', height:'100%', objectFit:'contain', objectPosition:'left center', display:'block' }}
+                      />
+                    </div>
+                    {/* Contact block: pushed left enough to clear the 220px purple triangle */}
+                    <div style={{ marginRight:'240px' }}>
+                      <ContactRow />
+                    </div>
+                  </div>
+
+                  <DiamondDivider />
+
+                  {/* Title */}
+                  <h2 style={{ textAlign:'center', fontSize:'21px', fontWeight:'900', color:PURPLE, letterSpacing:'0.16em', textTransform:'uppercase', margin:'0 0 6px 0' }}>
+                    INTERNSHIP OFFER LETTER
+                  </h2>
+                  <GoldDivider />
+
+                  {/* Ref / Date row */}
+                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:'10px', color:'#333333', marginBottom:'12px' }}>
+                    <div><span style={{ color:'#888888', fontWeight:600 }}>Ref No: </span><span style={{ color:PURPLE, fontWeight:700 }}>{selectedStudent.intern_number}</span></div>
+                    <div><span style={{ color:'#888888', fontWeight:600 }}>Date: </span><span style={{ color:PURPLE, fontWeight:700 }}>{new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}).toUpperCase()}</span></div>
+                  </div>
+
+                  {/* Address */}
+                  <div style={{ fontSize:'11px', color:'#444444', marginBottom:'10px', lineHeight:'1.55' }}>
+                    <div style={{ color:'#888888' }}>To,</div>
+                    <div style={{ fontWeight:'800', fontSize:'13px', color:'#111111' }}>{selectedStudent.full_name},</div>
+                    <div style={{ color:PURPLE, fontStyle:'italic', fontWeight:600 }}>{selectedStudent.college || 'Engineering College'}.</div>
+                  </div>
+
+                  {/* Subject */}
+                  <div style={{ fontSize:'11px', fontWeight:600, color:'#333333', marginBottom:'8px' }}>
+                    Subject: <span style={{ color:PURPLE, fontWeight:700, borderBottom:`1.5px solid ${GOLD}`, paddingBottom:'1px' }}>Offer of Internship</span>
+                  </div>
+
+                  <div style={{ fontSize:'11px', fontWeight:700, color:PURPLE, marginBottom:'7px' }}>Dear Student,</div>
+
+                  <p style={{ fontSize:'10px', color:'#555555', lineHeight:'1.65', marginBottom:'12px', textAlign:'justify', margin:'0 0 12px 0' }}>
+                    We are pleased to offer you an internship opportunity with <strong>DAKH Edu Solutions</strong> as a{' '}
+                    <strong style={{ color:PURPLE }}>{selectedStudent.domain} Intern</strong>. This internship is designed to provide practical exposure, hands-on learning, and real-world experience in {selectedStudent.domain}.
+                  </p>
+
+                  {/* Details Table */}
+                  <div style={{ fontSize:'10px', fontWeight:700, color:PURPLE, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:'6px' }}>INTERNSHIP DETAILS</div>
+                  <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'10px', border:`1.5px solid ${BORDER}`, borderRadius:'6px', marginBottom:'12px', overflow:'hidden' }}>
+                    <thead>
+                      <tr style={{ background:'#f0e8f0' }}>
+                        <th style={{ padding:'7px 14px', textAlign:'left', color:PURPLE, fontWeight:700, borderBottom:`1px solid ${BORDER}`, borderRight:`1px solid ${BORDER}`, width:'44%' }}>Particulars</th>
+                        <th style={{ padding:'7px 14px', textAlign:'left', color:PURPLE, fontWeight:700, borderBottom:`1px solid ${BORDER}` }}>Details</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        ['Position', 'Full Stack Intern'],
+                        ['Domain', selectedStudent.domain],
+                        ['Duration', '1 Month'],
+                        ['Start Date', new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long'})],
+                        ['End Date', new Date(Date.now()+30*24*60*60*1000).toLocaleDateString('en-GB',{day:'numeric',month:'long'})],
+                        ['Mode', 'Online'],
+                        ['Organization', 'DAKH Edu Solutions'],
+                      ].map(([label, value], i) => (
+                        <tr key={i} style={{ borderBottom:`1px solid #e8d5c8` }}>
+                          <td style={{ padding:'5px 14px', fontWeight:600, color:'#333333', borderRight:`1px solid #d9c4d9` }}>{label}</td>
+                          <td style={{ padding:'5px 14px', color:PURPLE, fontWeight:600, fontStyle:'italic' }}>{value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* Roles */}
+                  <div style={{ fontSize:'10px', fontWeight:700, color:PURPLE, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:'5px' }}>ROLES AND RESPONSIBILITIES</div>
+                  <p style={{ fontSize:'10px', color:'#555555', marginBottom:'5px' }}>During the internship period, you will:</p>
+                  <ul style={{ fontSize:'10px', color:'#555555', paddingLeft:'26px', marginBottom:'9px', lineHeight:'1.65', margin:'0 0 9px 0' }}>
+                    {[
+                      `Learn advanced ${selectedStudent.domain} concepts.`,
+                      'Work on practical assignments and projects.',
+                      'Participate in training sessions and assessments.',
+                      'Submit tasks within the given timelines.',
+                      'Follow organizational guidelines and professional conduct.',
+                    ].map((item, i) => <li key={i} style={{ marginBottom:'2px' }}>{item}</li>)}
+                  </ul>
+
+                  <p style={{ fontSize:'10px', color:'#555555', lineHeight:'1.6', margin:'0 0 5px 0' }}>We are confident that this internship will help you enhance your technical skills and professional development.</p>
+                  <p style={{ fontSize:'10px', color:'#555555', lineHeight:'1.6', margin:'0 0 0 0' }}>We welcome you to <strong style={{ color:PURPLE }}>DAKH Edu Solutions</strong> and wish you a successful learning experience.</p>
+
+                  {/* Signature — fixed bottom clearance of 100px to stay above bottom wave */}
+                  <div style={{ marginTop:'auto', display:'flex', justifyContent:'flex-end', paddingRight:'50px', paddingBottom:'100px' }}>
+                    <div style={{ width:'195px' }}>
+                      <div style={{ fontSize:'10px', fontWeight:700, color:PURPLE, marginBottom:'10px' }}>For DAKH Edu Solutions,</div>
+                      <div style={{ height:'42px', display:'flex', alignItems:'flex-end', marginBottom:'4px' }}>
+                        <span style={{ fontFamily:'cursive, Georgia, serif', fontSize:'30px', color:'#1a4fbc', display:'inline-block' }}>Dhivakar</span>
+                      </div>
+                      <div style={{ borderTop:`1.5px solid ${GOLD}`, paddingTop:'5px' }}>
+                        <div style={{ fontSize:'9px', fontWeight:800, color:PURPLE, textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'2px' }}>Authorized Signature</div>
+                        <div style={{ fontSize:'8px', color:'#666666' }}>Name: <strong style={{ color:'#222222' }}>DAKH Edu Solutions</strong></div>
+                        <div style={{ fontSize:'8px', color:'#666666' }}>Role: <strong style={{ color:'#222222' }}>Internship Coordinator</strong></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ═══════ PAGE 2 ═══════════════════════════════════════ */}
+              <div id="offer-page-2" style={{ ...pageStyle, marginTop:'32px' }}>
+                <DecorationPage2 />
+
+                <div style={contentStyle}>
+                  {/* HEADER */}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'14px', width:'100%' }}>
+                    <div style={{ width:'170px', height:'64px', flexShrink:0 }}>
+                      <img
+                        src="/companylogo.jpg"
+                        alt="DAKH Edu Solutions"
+                        style={{ width:'100%', height:'100%', objectFit:'contain', objectPosition:'left center', display:'block' }}
+                      />
+                    </div>
+                    <div style={{ marginRight:'240px' }}>
+                      <ContactRow />
+                    </div>
+                  </div>
+
+                  <DiamondDivider />
+
+                  <h2 style={{ textAlign:'center', fontSize:'19px', fontWeight:'900', color:PURPLE, letterSpacing:'0.16em', textTransform:'uppercase', margin:'0 0 5px 0' }}>
+                    INTERNSHIP OFFER LETTER
+                  </h2>
+
+                  {/* Gold subtitle line */}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'10px', marginBottom:'12px' }}>
+                    <div style={{ width:'55px', height:'1px', background:GOLD }} />
+                    <span style={{ fontSize:'10px', fontWeight:700, color:'#333333', whiteSpace:'nowrap' }}>(Terms, Rules, Regulations &amp; Guidelines)</span>
+                    <div style={{ width:'55px', height:'1px', background:GOLD }} />
+                  </div>
+
+                  <p style={{ fontSize:'10px', color:'#444444', lineHeight:'1.6', marginBottom:'10px', fontWeight:500, textAlign:'justify', margin:'0 0 10px 0' }}>
+                    Please read the following terms, rules, regulations and guidelines carefully. These are an integral part of your internship with{' '}
+                    <strong style={{ color:PURPLE }}>DAKH Edu Solutions.</strong>
+                  </p>
+
+                  {/* Sections */}
+                  {[
+                    {
+                      label: 'TERMS AND CONDITIONS',
+                      items: [
+                        ['Internship Nature', 'This internship is a learning and skill-development program. It does not constitute a job or employment offer.'],
+                        ['Duration', 'The internship duration and schedule will be as specified in the offer letter. Any changes will be communicated by the organization.'],
+                        ['Mode of Internship', 'The internship will be conducted in Online mode.'],
+                        ['Learning Commitment', 'You must attend all classes, sessions, webinars, meetings or training programs arranged by the organization.'],
+                      ],
+                    },
+                    {
+                      label: 'RESPONSIBILITIES OF THE INTERN',
+                      items: [
+                        [null, 'Attend all scheduled classes, training sessions, webinars and seminars conducted by DAKH Edu Solutions.'],
+                        [null, 'Actively participate in discussions and learning activities.'],
+                        [null, 'Complete all assigned tasks, projects, worksheets or workshops within the given time period.'],
+                        [null, 'Submit your work before the deadline. Late submissions may lead to negative impact on your evaluation.'],
+                        [null, 'Communicate professionally and promptly in case of any doubt or clarification.'],
+                        [null, 'Maintain discipline, professionalism and respect while interacting with mentors and the team.'],
+                      ],
+                    },
+                    {
+                      label: 'WORKSHOP / ASSIGNMENT POLICY',
+                      items: [
+                        [null, 'You will be assigned workshops, tasks or projects from time to time.'],
+                        [null, 'All assignments must be completed within the stipulated time.'],
+                        [null, 'Extensions will not be encouraged and may affect your overall performance.'],
+                        [null, 'Quality of work is as important as timely submission.'],
+                        [null, 'Failure to complete assignments or workshops may result in the intern being ineligible for the completion certificate.'],
+                      ],
+                    },
+                    {
+                      label: 'GENERAL GUIDELINES',
+                      items: [
+                        [null, 'Maintain confidentiality of all materials, data and information shared during the internship.'],
+                        [null, 'Do not copy, share or misuse any content, code or resources provided.'],
+                        [null, 'Any misconduct, inappropriate behavior or breach of guidelines may lead to immediate termination.'],
+                        [null, 'The organization reserves the right to update or modify these terms at any time if required.'],
+                        [null, 'Completion Certificate will be provided only after successful completion of all assigned requirements.'],
+                      ],
+                    },
+                  ].map((section, si) => (
+                    <div key={si} style={{ marginBottom:'9px' }}>
+                      {/* Section heading */}
+                      <div style={{ display:'flex', alignItems:'center', gap:'7px', marginBottom:'4px' }}>
+                        <div style={{ width:'20px', height:'20px', borderRadius:'50%', background:PURPLE, flexShrink:0 }} />
+                        <span style={{ fontSize:'10px', fontWeight:800, color:PURPLE, textTransform:'uppercase', letterSpacing:'0.06em' }}>
+                          {section.label}
+                        </span>
+                      </div>
+                      {/* Section underline */}
+                      <div style={{ height:'1.5px', width:'160px', background:GOLD, marginLeft:'27px', marginBottom:'5px' }} />
+                      {/* Items */}
+                      <div style={{ marginLeft:'27px' }}>
+                        {section.items.map(([bold, text], ii) => (
+                          <div key={ii} style={{ display:'flex', gap:'5px', fontSize:'9px', color:'#444444', marginBottom:'2px', lineHeight:'1.5' }}>
+                            <span style={{ color:PURPLE, fontWeight:700, flexShrink:0 }}>{ii + 1}.</span>
+                            <span>
+                              {bold && <strong style={{ color:PURPLE }}>{bold}: </strong>}
+                              {text}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Contact Information Box */}
+                  <div style={{ border:`1.5px solid ${PURPLE}`, borderRadius:'8px', padding:'9px 13px', marginTop:'10px', marginBottom:'10px' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:'7px', marginBottom:'4px' }}>
+                      <div style={{ width:'20px', height:'20px', borderRadius:'50%', background:PURPLE, flexShrink:0 }} />
+                      <span style={{ fontSize:'10px', fontWeight:800, color:PURPLE, textTransform:'uppercase', letterSpacing:'0.06em' }}>CONTACT INFORMATION</span>
+                    </div>
+                    <p style={{ fontSize:'9px', color:'#555555', marginLeft:'27px', margin:'0 0 5px 27px' }}>For any queries, assistance or support during your internship, feel free to reach out:</p>
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'16px', fontSize:'9px', fontWeight:700, color:PURPLE }}>
+                      <span>✆ 8667399640</span>
+                      <span style={{ color:'#cccccc', fontWeight:400 }}>|</span>
+                      <span>✉ dakhedusolution@gmail.com</span>
+                      <span style={{ color:'#cccccc', fontWeight:400 }}>|</span>
+                      <span>⊕ www.dakhedusolutions.in</span>
+                    </div>
+                  </div>
+
+                  {/* Closing quote — above the bottom wave */}
+                  <div style={{ textAlign:'center', marginTop:'auto', paddingBottom:'90px' }}>
+                    <div style={{ fontSize:'26px', color:GOLD, fontFamily:'Georgia, Times, serif', lineHeight:1 }}>&ldquo;</div>
+                    <p style={{ fontSize:'11px', color:PURPLE, fontStyle:'italic', fontWeight:700, margin:'2px 0' }}>The expert in anything was once a beginner.</p>
+                    <p style={{ fontSize:'11px', color:PURPLE, fontStyle:'italic', fontWeight:700, margin:'2px 0' }}>Keep learning, keep growing, and success will follow.</p>
+                    <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:'10px', marginTop:'5px' }}>
+                      <div style={{ width:'38px', height:'1px', background:GOLD }} />
+                      <span style={{ fontSize:'9px', color:PURPLE, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em' }}>— DAKH Edu Solutions</span>
+                      <div style={{ width:'38px', height:'1px', background:GOLD }} />
+                    </div>
+                    <div style={{ fontSize:'26px', color:GOLD, fontFamily:'Georgia, Times, serif', lineHeight:1 }}>&rdquo;</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          );
+        })()}
+
+
+        {/* CERTIFICATE TEMPLATE (A4 Landscape) */}
+        {selectedStudent?.type === 'certificate' && (
+          <div id="certificate-template" className="bg-white text-gray-900 relative overflow-hidden" style={{ width: '297mm', height: '210mm', padding: '15mm', fontFamily: 'sans-serif' }}>
+            {/* Background design elements */}
+            <div className="absolute top-[-100px] left-[-100px] w-96 h-96 bg-purple-500 rounded-full opacity-10 blur-3xl"></div>
+            <div className="absolute bottom-[-100px] right-[-100px] w-96 h-96 bg-blue-500 rounded-full opacity-10 blur-3xl"></div>
+            
+            <div className="border-[15px] border-double border-purple-900 h-full p-12 relative flex flex-col items-center justify-center text-center bg-white/90 backdrop-blur-sm">
+              
+              {/* Header */}
+              <div className="absolute top-12 left-12 flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-6">
+                  <span className="font-black text-4xl text-white">D</span>
+                </div>
+                <div className="text-left">
+                  <h1 className="font-black text-3xl tracking-tight text-purple-900 m-0 leading-tight">DAKH</h1>
+                  <p className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 text-sm m-0">Learn. Build. Earn.</p>
+                </div>
+              </div>
+
+              <div className="absolute top-12 right-12 text-right text-sm text-gray-500 font-medium">
+                Date: {new Date().toLocaleDateString()}<br/>
+                Cert No: {selectedStudent.intern_number}
+              </div>
+
+              <h2 className="text-6xl font-black text-purple-900 tracking-widest mt-12 mb-4 uppercase" style={{ fontFamily: 'serif' }}>Certificate</h2>
+              <h3 className="text-2xl text-purple-600 tracking-[0.3em] font-medium uppercase mb-12">of Internship Completion</h3>
+              
+              <p className="text-xl text-gray-600 mb-6 italic">This certificate is proudly presented to</p>
+              
+              <h1 className="text-5xl font-black text-gray-900 mb-6 border-b-2 border-purple-200 pb-2 px-12 inline-block">
+                {selectedStudent.full_name}
+              </h1>
+              
+              <p className="text-xl text-gray-700 max-w-3xl leading-relaxed mx-auto">
+                from <span className="font-bold">{selectedStudent.college}</span>, for successfully completing a 4-week internship program at DAKH Edu Solutions in the domain of <span className="font-bold text-purple-900">{selectedStudent.domain}</span>. 
+              </p>
+              <p className="text-lg text-gray-600 mt-4 max-w-2xl mx-auto">
+                During this period, the candidate demonstrated exceptional dedication, skill, and a strong commitment to learning.
+              </p>
+
+              {/* Signatures */}
+              <div className="mt-24 w-full flex justify-between px-20">
+                <div className="text-center">
+                  <div className="border-t-2 border-gray-800 pt-2 w-56 mx-auto">
+                    <h4 className="font-black text-xl text-purple-900 mb-1" style={{ fontFamily: 'cursive' }}>Director</h4>
+                    <p className="font-bold text-gray-800">Program Director</p>
+                  </div>
+                </div>
+                
+                {/* Badge */}
+                <div className="w-24 h-24 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-xl border-4 border-white absolute bottom-16 left-1/2 -translate-x-1/2">
+                  <div className="w-20 h-20 border border-white/50 rounded-full flex items-center justify-center text-white text-xs font-black text-center uppercase leading-tight">
+                    Verified<br/>Intern
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="border-t-2 border-gray-800 pt-2 w-56 mx-auto">
+                    <h4 className="font-black text-xl text-purple-900 mb-1" style={{ fontFamily: 'cursive' }}>Mentor</h4>
+                    <p className="font-bold text-gray-800">Domain Mentor</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+      </div>
+
+    </div>
+  );
+};
+
+export default AdminDashboard;
