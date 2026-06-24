@@ -177,3 +177,26 @@ create table public.products (
 alter table public.products enable row level security;
 create policy "Allow public read access to products" on public.products for select using (true);
 create policy "Allow authenticated insert/update on products" on public.products for all using (auth.role() = 'authenticated');
+ 
+ - -   C r e a t e   a d v e r t i s e m e n t s   t a b l e  
+ c r e a t e   t a b l e   p u b l i c . a d v e r t i s e m e n t s   (  
+     i d   u u i d   d e f a u l t   g e n _ r a n d o m _ u u i d ( )   p r i m a r y   k e y ,  
+     i m a g e _ u r l   t e x t   n o t   n u l l ,  
+     l i n k _ u r l   t e x t ,  
+     c r e a t e d _ a t   t i m e s t a m p   w i t h   t i m e   z o n e   d e f a u l t   t i m e z o n e ( ' u t c ' : : t e x t ,   n o w ( ) )   n o t   n u l l  
+ ) ;  
+ a l t e r   t a b l e   p u b l i c . a d v e r t i s e m e n t s   e n a b l e   r o w   l e v e l   s e c u r i t y ;  
+ c r e a t e   p o l i c y   \  
+ A l l o w  
+ p u b l i c  
+ r e a d  
+ a c c e s s  
+ t o  
+ a d v e r t i s e m e n t s \   o n   p u b l i c . a d v e r t i s e m e n t s   f o r   s e l e c t   u s i n g   ( t r u e ) ;  
+ c r e a t e   p o l i c y   \  
+ A l l o w  
+ a u t h e n t i c a t e d  
+ i n s e r t / u p d a t e  
+ o n  
+ a d v e r t i s e m e n t s \   o n   p u b l i c . a d v e r t i s e m e n t s   f o r   a l l   u s i n g   ( a u t h . r o l e ( )   =   ' a u t h e n t i c a t e d ' ) ;  
+ 

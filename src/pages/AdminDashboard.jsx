@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, ShoppingBag } from 'lucide-react';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, ShoppingBag, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
@@ -27,6 +27,11 @@ const AdminDashboard = () => {
   const [productImageUrl, setProductImageUrl] = useState('');
   const [productUrl, setProductUrl] = useState('');
   const [isSubmittingProduct, setIsSubmittingProduct] = useState(false);
+
+  const [currentAd, setCurrentAd] = useState(null);
+  const [adImageUrl, setAdImageUrl] = useState('');
+  const [adLinkUrl, setAdLinkUrl] = useState('');
+  const [isSubmittingAd, setIsSubmittingAd] = useState(false);
 
   const [seenCounts, setSeenCounts] = useState(() => {
     return {
@@ -172,6 +177,7 @@ const AdminDashboard = () => {
         fetchBlogs();
         fetchEvents();
         fetchProducts();
+        fetchAdvertisement();
       }
       setLoading(false);
     });
@@ -228,6 +234,48 @@ const AdminDashboard = () => {
       .select('*')
       .order('created_at', { ascending: false });
     if (!error && data) setProducts(data);
+  };
+
+  const fetchAdvertisement = async () => {
+    const { data, error } = await supabase
+      .from('advertisements')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (!error && data && data.length > 0) {
+      setCurrentAd(data[0]);
+    } else {
+      setCurrentAd(null);
+    }
+  };
+
+  const handleUpdateAd = async (e) => {
+    e.preventDefault();
+    if (!adImageUrl) return;
+    setIsSubmittingAd(true);
+    const { error } = await supabase.from('advertisements').insert([{ image_url: adImageUrl, link_url: adLinkUrl }]);
+    setIsSubmittingAd(false);
+    if (error) {
+      alert("Error updating advertisement: " + error.message);
+    } else {
+      alert("Advertisement updated successfully!");
+      setAdImageUrl('');
+      setAdLinkUrl('');
+      fetchAdvertisement();
+    }
+  };
+
+  const handleDeleteAd = async () => {
+    if (!currentAd) return;
+    if (window.confirm('Are you sure you want to delete the current advertisement?')) {
+      const { error } = await supabase.from('advertisements').delete().eq('id', currentAd.id);
+      if (!error) {
+        setCurrentAd(null);
+        alert("Advertisement removed!");
+      } else {
+        alert("Error removing advertisement: " + error.message);
+      }
+    }
   };
 
   const handleAddProduct = async (e) => {
@@ -403,6 +451,13 @@ const AdminDashboard = () => {
               <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{newProductsCount}</span>
             )}
           </button>
+          <button 
+            onClick={() => setActiveTab('advertisement')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'advertisement' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <ImageIcon className="w-5 h-5" />
+            Advertisement
+          </button>
         </aside>
 
         {/* Content Area */}
@@ -571,6 +626,71 @@ const AdminDashboard = () => {
                     ))
                   )}
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'advertisement' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
+              <div className="mb-8">
+                <h2 className="text-2xl font-black text-gray-900">Manage Advertisement</h2>
+                <p className="text-gray-500 font-medium mt-1">Upload a 16:9 poster to display prominently on the Home page.</p>
+              </div>
+
+              {currentAd && (
+                <div className="mb-10 p-6 bg-white border border-purple-200 rounded-3xl shadow-sm relative group overflow-hidden">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Award size={20} className="text-purple-600"/> Current Live Advertisement</h3>
+                  <div className="aspect-video w-full rounded-xl overflow-hidden border border-gray-100 bg-gray-50 mb-4 relative">
+                    <img src={currentAd.image_url} alt="Current Ad" className="w-full h-full object-cover" />
+                    {currentAd.link_url && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-3 text-white text-sm font-medium">
+                        Links to: <a href={currentAd.link_url} target="_blank" rel="noreferrer" className="text-purple-300 hover:underline">{currentAd.link_url}</a>
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={handleDeleteAd} className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition-colors flex justify-center items-center gap-2">
+                    <Trash2 size={18} /> Remove Live Advertisement
+                  </button>
+                </div>
+              )}
+
+              <div className="p-8 bg-gray-50 border border-gray-200 rounded-3xl">
+                <h3 className="text-lg font-bold text-gray-900 mb-6">{currentAd ? 'Replace Advertisement' : 'Upload New Advertisement'}</h3>
+                <form onSubmit={handleUpdateAd} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Image URL (Required - 16:9 Aspect Ratio)</label>
+                    <input 
+                      type="url" 
+                      required
+                      value={adImageUrl}
+                      onChange={(e) => setAdImageUrl(e.target.value)}
+                      placeholder="https://example.com/ad-poster.jpg"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Redirect Link (Optional)</label>
+                    <input 
+                      type="url" 
+                      value={adLinkUrl}
+                      onChange={(e) => setAdLinkUrl(e.target.value)}
+                      placeholder="https://example.com/product"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                    />
+                  </div>
+                  {adImageUrl && (
+                    <div className="mt-4 aspect-video w-full rounded-xl overflow-hidden border border-gray-200">
+                      <img src={adImageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+                    </div>
+                  )}
+                  <button 
+                    type="submit" 
+                    disabled={isSubmittingAd}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50"
+                  >
+                    {isSubmittingAd ? 'Publishing...' : (currentAd ? 'Replace Live Advertisement' : 'Publish Advertisement')}
+                  </button>
+                </form>
               </div>
             </motion.div>
           )}

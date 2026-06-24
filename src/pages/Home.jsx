@@ -71,8 +71,22 @@ const CollegeLogo = ({ college }) => {
 
 const Home = () => {
   const [wordIndex, setWordIndex] = useState(0);
+  const [advertisement, setAdvertisement] = useState(null);
 
   useEffect(() => {
+    const fetchAdvertisement = async () => {
+      const { supabase } = await import('../lib/supabase');
+      const { data, error } = await supabase
+        .from('advertisements')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (!error && data && data.length > 0) {
+        setAdvertisement(data[0]);
+      }
+    };
+    fetchAdvertisement();
+    
     const interval = setInterval(() => {
       setWordIndex((prev) => (prev + 1) % WORDS.length);
     }, 2500);
@@ -399,6 +413,29 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* ADVERTISEMENT SECTION */}
+      {advertisement && (
+        <section className="py-16 px-6 lg:px-8 max-w-5xl mx-auto border-t border-gray-100">
+          <div className="text-center mb-8">
+            <ScrollReveal>
+              <h2 className="text-sm font-black tracking-widest text-gray-400 uppercase">Sponsored</h2>
+            </ScrollReveal>
+          </div>
+          <ScrollReveal>
+            {advertisement.link_url ? (
+              <a href={advertisement.link_url} target="_blank" rel="noreferrer" className="block w-full aspect-video rounded-[2rem] overflow-hidden shadow-2xl hover:shadow-[0_20px_50px_rgba(147,51,234,0.15)] transition-shadow duration-300 group relative">
+                <img src={advertisement.image_url} alt="Advertisement" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700" />
+                <div className="absolute inset-0 border-2 border-transparent group-hover:border-purple-500/30 rounded-[2rem] transition-colors duration-300 pointer-events-none"></div>
+              </a>
+            ) : (
+              <div className="block w-full aspect-video rounded-[2rem] overflow-hidden shadow-xl">
+                <img src={advertisement.image_url} alt="Advertisement" className="w-full h-full object-cover" />
+              </div>
+            )}
+          </ScrollReveal>
+        </section>
+      )}
 
     </PageTransition>
   );
