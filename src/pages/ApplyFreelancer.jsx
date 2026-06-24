@@ -9,6 +9,7 @@ const SKILLS = [
   'Graphic Design', 'Content Writing', 'Video Editing',
   'Digital Marketing', 'SEO', 'Data Analysis',
   'Machine Learning / AI', 'Cybersecurity', 'Photography',
+  '3D Animation / Modeling', 'Blockchain / Web3', 'Other'
 ];
 
 const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Final Year', 'Graduate'];
@@ -48,6 +49,7 @@ const ApplyFreelancer = () => {
     year_of_study: '',
     department: '',
     skills: [],
+    other_skills: '',
     experience_level: '',
     portfolio_url: '',
     linkedin_url: '',
@@ -81,8 +83,10 @@ const ApplyFreelancer = () => {
     }
     if (step === 3) {
       if (form.skills.length === 0) return 'Select at least one skill.';
+      if (form.skills.includes('Other') && !form.other_skills.trim()) return 'Please specify your other skills.';
       if (!form.experience_level) return 'Experience level is required.';
       if (!form.availability) return 'Availability is required.';
+      if (!form.linkedin_url.trim()) return 'LinkedIn URL is required.';
     }
     if (step === 4) {
       if (!form.bio.trim()) return 'Tell us a bit about yourself.';
@@ -121,7 +125,9 @@ const ApplyFreelancer = () => {
           college_name: form.college_name.trim(),
           year_of_study: form.year_of_study,
           department: form.department.trim(),
-          skills: form.skills,
+          skills: form.skills.includes('Other') && form.other_skills.trim() 
+                  ? [...form.skills.filter(s => s !== 'Other'), form.other_skills.trim()] 
+                  : form.skills.filter(s => s !== 'Other'),
           experience_level: form.experience_level,
           portfolio_url: form.portfolio_url.trim() || null,
           linkedin_url: form.linkedin_url.trim() || null,
@@ -215,9 +221,9 @@ const ApplyFreelancer = () => {
               <div className="w-32 h-32 bg-green-500/10 rounded-full flex items-center justify-center mb-8 border-4 border-green-500/20">
                 <Check size={64} className="text-green-500" />
               </div>
-              <h3 className="text-5xl font-black text-gray-900 mb-6 tracking-tight">Application Submitted!</h3>
+              <h3 className="text-4xl md:text-5xl font-black text-gray-900 mb-6 tracking-tight">Your data has been saved!</h3>
               <p className="text-gray-600 text-xl font-medium leading-relaxed mb-12">
-                Thank you, <strong className="text-gray-900">{form.full_name.split(' ')[0]}</strong>! We've received your application and will contact you at <strong className="text-gray-900">{form.email}</strong> very soon.
+                We will contact you when a client approaches, so be ready and stay connected.
               </p>
               <Link
                 to="/"
@@ -292,6 +298,16 @@ const ApplyFreelancer = () => {
                           </button>
                         ))}
                       </div>
+                      {form.skills.includes('Other') && (
+                        <div className="mt-4">
+                          <input 
+                            className={inputClass} 
+                            placeholder="Please specify your other skills (e.g. Flutter, Blender, Copywriting)" 
+                            value={form.other_skills} 
+                            onChange={e => set('other_skills', e.target.value)} 
+                          />
+                        </div>
+                      )}
                     </InputField>
                     <div className="grid md:grid-cols-2 gap-8">
                       <InputField label="Experience Level" required>
@@ -311,7 +327,7 @@ const ApplyFreelancer = () => {
                       <InputField label="Portfolio URL">
                         <input className={inputClass} placeholder="behance.net/..." value={form.portfolio_url} onChange={e => set('portfolio_url', e.target.value)} />
                       </InputField>
-                      <InputField label="LinkedIn URL">
+                      <InputField label="LinkedIn URL" required>
                         <input className={inputClass} placeholder="linkedin.com/in/..." value={form.linkedin_url} onChange={e => set('linkedin_url', e.target.value)} />
                       </InputField>
                       <InputField label="GitHub URL">
