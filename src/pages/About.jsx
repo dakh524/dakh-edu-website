@@ -498,21 +498,17 @@ const About = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {products.map((product, i) => (
                 <ScrollReveal key={product.id} delay={i * 0.1}>
-                  <a href={product.product_url} target="_blank" rel="noreferrer" className="block h-full group">
-                    <TiltCard className="h-full">
-                      <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-xl hover:shadow-2xl transition-shadow h-full flex flex-col">
-                        <div className="relative h-64 w-full overflow-hidden bg-gray-50">
-                          <img src={product.image_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                            <span className="text-white font-bold flex items-center gap-2">View Product <ArrowRight size={16} /></span>
-                          </div>
-                        </div>
-                        <div className="p-6 bg-white text-center flex-grow flex items-center justify-center">
-                          <h3 className="text-2xl font-black text-gray-900 group-hover:text-[var(--color-brand-primary)] transition-colors">{product.title}</h3>
-                        </div>
-                      </div>
-                    </TiltCard>
-                  </a>
+                  <div className="bg-white rounded-[2rem] overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col group border border-gray-100 h-full">
+                    <div className="relative aspect-video w-full bg-gray-50 overflow-hidden">
+                      <img src={product.image_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    </div>
+                    <div className="p-8 bg-white flex flex-col flex-grow text-center">
+                      <h3 className="text-2xl font-black text-gray-900 mb-3">{product.title}</h3>
+                      {product.description && (
+                        <p className="text-gray-500 font-medium leading-relaxed text-sm md:text-base line-clamp-3 group-hover:line-clamp-none transition-all duration-300">{product.description}</p>
+                      )}
+                    </div>
+                  </div>
                 </ScrollReveal>
               ))}
             </div>

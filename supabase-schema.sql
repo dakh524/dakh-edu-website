@@ -169,7 +169,7 @@ create table public.products (
   id uuid default gen_random_uuid() primary key,
   title text not null,
   image_url text not null,
-  product_url text not null,
+  description text not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

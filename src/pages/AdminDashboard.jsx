@@ -25,7 +25,7 @@ const AdminDashboard = () => {
 
   const [productTitle, setProductTitle] = useState('');
   const [productImageUrl, setProductImageUrl] = useState('');
-  const [productUrl, setProductUrl] = useState('');
+  const [productDescription, setProductDescription] = useState('');
   const [isSubmittingProduct, setIsSubmittingProduct] = useState(false);
 
   const [currentAd, setCurrentAd] = useState(null);
@@ -280,9 +280,9 @@ const AdminDashboard = () => {
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
-    if (!productTitle || !productImageUrl || !productUrl) return;
+    if (!productTitle || !productImageUrl || !productDescription) return;
     setIsSubmittingProduct(true);
-    const { error } = await supabase.from('products').insert([{ title: productTitle, image_url: productImageUrl, product_url: productUrl }]);
+    const { error } = await supabase.from('products').insert([{ title: productTitle, image_url: productImageUrl, description: productDescription }]);
     setIsSubmittingProduct(false);
     if (error) {
       alert("Error adding product: " + error.message);
@@ -290,7 +290,7 @@ const AdminDashboard = () => {
       alert("Product added successfully!");
       setProductTitle('');
       setProductImageUrl('');
-      setProductUrl('');
+      setProductDescription('');
       fetchProducts();
     }
   };
@@ -572,15 +572,15 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Product Link (Required)</label>
-                  <input 
-                    type="url" 
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Product Description (Required)</label>
+                  <textarea 
                     required
-                    value={productUrl}
-                    onChange={(e) => setProductUrl(e.target.value)}
-                    placeholder="https://example.com/product"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
-                  />
+                    rows={3}
+                    value={productDescription}
+                    onChange={(e) => setProductDescription(e.target.value)}
+                    placeholder="Describe your product or service..."
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 resize-none"
+                  ></textarea>
                 </div>
                 {productImageUrl && (
                   <div className="mt-4 rounded-xl overflow-hidden border border-gray-200">
@@ -610,11 +610,13 @@ const AdminDashboard = () => {
                     </div>
                   ) : (
                     products.map(product => (
-                      <div key={product.id} className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                        <img src={product.image_url} alt={product.title} className="w-full h-48 object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
-                          <p className="text-white font-bold">{product.title}</p>
-                          <a href={product.product_url} target="_blank" rel="noreferrer" className="text-purple-300 text-xs mt-1 hover:underline truncate">{product.product_url}</a>
+                      <div key={product.id} className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white flex flex-col">
+                        <div className="aspect-video w-full relative bg-gray-50">
+                          <img src={product.image_url} alt={product.title} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="p-4 flex-grow">
+                          <h4 className="font-bold text-gray-900 text-lg mb-1">{product.title}</h4>
+                          <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
                         </div>
                         <button 
                           onClick={() => handleDeleteProduct(product.id)}
