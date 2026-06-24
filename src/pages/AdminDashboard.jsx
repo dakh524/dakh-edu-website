@@ -28,6 +28,39 @@ const AdminDashboard = () => {
   const [productUrl, setProductUrl] = useState('');
   const [isSubmittingProduct, setIsSubmittingProduct] = useState(false);
 
+  const [seenCounts, setSeenCounts] = useState(() => {
+    return {
+      registrations: parseInt(localStorage.getItem('seen_registrations') || '0'),
+      blogs: parseInt(localStorage.getItem('seen_blogs') || '0'),
+      freelancers: parseInt(localStorage.getItem('seen_freelancers') || '0'),
+      products: parseInt(localStorage.getItem('seen_products') || '0'),
+    };
+  });
+
+  useEffect(() => {
+    if (activeTab === 'registrations') {
+      localStorage.setItem('seen_registrations', registrations.length.toString());
+      setSeenCounts(prev => ({ ...prev, registrations: registrations.length }));
+    }
+    if (activeTab === 'blogs') {
+      localStorage.setItem('seen_blogs', blogs.length.toString());
+      setSeenCounts(prev => ({ ...prev, blogs: blogs.length }));
+    }
+    if (activeTab === 'freelancers') {
+      localStorage.setItem('seen_freelancers', freelancers.length.toString());
+      setSeenCounts(prev => ({ ...prev, freelancers: freelancers.length }));
+    }
+    if (activeTab === 'products') {
+      localStorage.setItem('seen_products', products.length.toString());
+      setSeenCounts(prev => ({ ...prev, products: products.length }));
+    }
+  }, [activeTab, registrations.length, blogs.length, freelancers.length, products.length]);
+
+  const newRegistrationsCount = Math.max(0, registrations.length - seenCounts.registrations);
+  const newBlogsCount = Math.max(0, blogs.length - seenCounts.blogs);
+  const newFreelancersCount = Math.max(0, freelancers.length - seenCounts.freelancers);
+  const newProductsCount = Math.max(0, products.length - seenCounts.products);
+
   const navigate = useNavigate();
 
   const handleAddEvent = async (e) => {
@@ -247,6 +280,37 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteFreelancer = async (id) => {
+    if (window.confirm('Are you sure you want to delete this freelancer application?')) {
+      const { error } = await supabase.from('freelancer_applications').delete().eq('id', id);
+      if (!error) {
+        setFreelancers(freelancers.filter((f) => f.id !== id));
+      } else {
+        alert("Failed to delete application: " + error.message);
+      }
+    }
+  };
+
+  const handleUpdateFreelancerStatus = async (id, newStatus) => {
+    const { error } = await supabase.from('freelancer_applications').update({ status: newStatus }).eq('id', id);
+    if (!error) {
+      setFreelancers(freelancers.map((f) => f.id === id ? { ...f, status: newStatus } : f));
+    } else {
+      alert("Failed to update status: " + error.message);
+    }
+  };
+
+  const handleDeleteRegistration = async (id) => {
+    if (window.confirm('Are you sure you want to delete this internship registration?')) {
+      const { error } = await supabase.from('registrations').delete().eq('id', id);
+      if (!error) {
+        setRegistrations(registrations.filter((r) => r.id !== id));
+      } else {
+        alert("Failed to delete registration: " + error.message);
+      }
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/admin/login');
@@ -291,8 +355,8 @@ const AdminDashboard = () => {
           >
             <Users className="w-5 h-5" />
             Registrations
-            {registrations.length > 0 && (
-              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{registrations.length}</span>
+            {newRegistrationsCount > 0 && (
+              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{newRegistrationsCount}</span>
             )}
           </button>
           <button 
@@ -315,8 +379,8 @@ const AdminDashboard = () => {
           >
             <FileText className="w-5 h-5" />
             Manage Blogs
-            {blogs.length > 0 && (
-              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{blogs.length}</span>
+            {newBlogsCount > 0 && (
+              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{newBlogsCount}</span>
             )}
           </button>
           <button 
@@ -325,8 +389,8 @@ const AdminDashboard = () => {
           >
             <Briefcase className="w-5 h-5" />
             Freelancers
-            {freelancers.length > 0 && (
-              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{freelancers.length}</span>
+            {newFreelancersCount > 0 && (
+              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{newFreelancersCount}</span>
             )}
           </button>
           <button 
@@ -335,8 +399,8 @@ const AdminDashboard = () => {
           >
             <ShoppingBag className="w-5 h-5" />
             Manage Products
-            {products.length > 0 && (
-              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{products.length}</span>
+            {newProductsCount > 0 && (
+              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{newProductsCount}</span>
             )}
           </button>
         </aside>
@@ -581,15 +645,38 @@ const AdminDashboard = () => {
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h3 className="text-xl font-bold text-gray-900">{freelancer.full_name}</h3>
-                          <p className="text-purple-600 font-semibold text-sm">{freelancer.college_name} ({freelancer.year_of_study})</p>
+                          <p className="text-purple-600 font-semibold text-sm">{freelancer.college_name} ({freelancer.year_of_study}) - {freelancer.department}</p>
                         </div>
-                        <span className="bg-green-100 text-green-700 font-bold text-xs px-3 py-1 rounded-full uppercase tracking-wider">{freelancer.status}</span>
+                        <div className="flex gap-2 items-center">
+                          <select 
+                            value={freelancer.status} 
+                            onChange={(e) => handleUpdateFreelancerStatus(freelancer.id, e.target.value)}
+                            className={`font-bold text-xs px-3 py-1.5 rounded-full uppercase tracking-wider border-none cursor-pointer focus:ring-2 focus:ring-purple-300 transition-colors ${
+                              freelancer.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
+                              freelancer.status === 'reviewed' ? 'bg-blue-100 text-blue-700' :
+                              freelancer.status === 'contacted' ? 'bg-indigo-100 text-indigo-700' :
+                              freelancer.status === 'hired' ? 'bg-green-100 text-green-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="reviewed">Reviewed</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="hired">Hired</option>
+                            <option value="rejected">Rejected</option>
+                          </select>
+                          <button onClick={() => handleDeleteFreelancer(freelancer.id)} className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors" title="Delete Application">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-2"><Mail size={16} /> {freelancer.email}</div>
-                        <div className="flex items-center gap-2"><Phone size={16} /> {freelancer.phone}</div>
+                        <div className="flex items-center gap-2"><Mail size={16} /> <a href={`mailto:${freelancer.email}`} className="hover:underline">{freelancer.email}</a></div>
+                        <div className="flex items-center gap-2"><Phone size={16} /> <a href={`tel:${freelancer.phone}`} className="hover:underline">{freelancer.phone}</a></div>
+                        <div className="flex items-center gap-2"><MapIcon size={16} /> {freelancer.city || 'N/A'}</div>
                         <div className="flex items-center gap-2"><Briefcase size={16} /> {freelancer.experience_level}</div>
                         <div className="flex items-center gap-2"><Clock size={16} /> {freelancer.availability}</div>
+                        <div className="flex items-center gap-2 text-xs text-gray-400"><Calendar size={16} /> Applied: {new Date(freelancer.applied_at).toLocaleString()}</div>
                       </div>
                       <div className="mb-4">
                         <h4 className="font-bold text-gray-900 mb-2">Skills:</h4>
@@ -597,14 +684,20 @@ const AdminDashboard = () => {
                           {freelancer.skills.map(s => <span key={s} className="bg-gray-100 px-3 py-1 rounded-full text-xs font-semibold">{s}</span>)}
                         </div>
                       </div>
-                      <div className="mb-4">
-                        <h4 className="font-bold text-gray-900 mb-1">Bio:</h4>
-                        <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">{freelancer.bio}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                        <div>
+                          <h4 className="font-bold text-gray-900 mb-1">Brief Introduction:</h4>
+                          <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg min-h-[4rem] whitespace-pre-wrap">{freelancer.bio || 'Not provided'}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 mb-1">Why DAKH?</h4>
+                          <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg min-h-[4rem] whitespace-pre-wrap">{freelancer.why_dakh || 'Not provided'}</p>
+                        </div>
                       </div>
-                      <div className="flex gap-4 pt-4 border-t border-gray-100">
-                        {freelancer.portfolio_url && <a href={freelancer.portfolio_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-semibold text-sm">Portfolio</a>}
-                        {freelancer.linkedin_url && <a href={freelancer.linkedin_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-semibold text-sm">LinkedIn</a>}
-                        {freelancer.github_url && <a href={freelancer.github_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-semibold text-sm">GitHub</a>}
+                      <div className="flex flex-wrap gap-4 pt-4 border-t border-gray-100">
+                        {freelancer.portfolio_url && <a href={freelancer.portfolio_url.startsWith('http') ? freelancer.portfolio_url : `https://${freelancer.portfolio_url}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-semibold text-sm"><Globe size={16} /> Portfolio</a>}
+                        {freelancer.linkedin_url && <a href={freelancer.linkedin_url.startsWith('http') ? freelancer.linkedin_url : `https://${freelancer.linkedin_url}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-semibold text-sm"><Globe size={16} /> LinkedIn</a>}
+                        {freelancer.github_url && <a href={freelancer.github_url.startsWith('http') ? freelancer.github_url : `https://${freelancer.github_url}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors font-semibold text-sm"><Globe size={16} /> GitHub</a>}
                       </div>
                     </div>
                   ))
@@ -675,6 +768,13 @@ const AdminDashboard = () => {
                                 title="Download Certificate"
                               >
                                 <FileBadge className="w-3.5 h-3.5" /> Cert
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteRegistration(reg.id)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold rounded-md transition-colors"
+                                title="Delete Registration"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </td>
