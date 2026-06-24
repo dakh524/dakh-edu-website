@@ -434,6 +434,14 @@ const About = () => {
               description="Fostering a culture of fearless building and managing our incredible community of talented students."
               delay={0.5} 
             />
+            <TeamCard 
+              name="Seetha Eswari S" 
+              role="Operations Team" 
+              image="/team/seetha.jpeg" 
+              linkedin="https://www.linkedin.com/in/seetha-eswari-s-846a1037a/"
+              description="Ensuring smooth operational workflows and supporting our mission to empower student builders."
+              delay={0.6} 
+            />
           </div>
         </section>
 

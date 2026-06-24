@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Code, Smartphone, Bot, PenTool, TrendingUp, Briefcase, Database, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 import CtaButton from '../components/CtaButton';
 
@@ -419,10 +420,10 @@ const Services = () => {
                transition={{ duration: 0.7, delay: 0.3 }}
                className="flex flex-col sm:flex-row justify-center gap-6 w-full sm:w-auto relative z-20 mb-8"
              >
-               <button className="px-10 py-5 bg-white text-black font-black rounded-full hover:scale-105 transition-transform text-lg shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+               <Link to="/contact" className="px-10 py-5 bg-white text-black font-black text-center rounded-full hover:scale-105 transition-transform text-lg shadow-[0_0_30px_rgba(255,255,255,0.3)]">
                  Get Free Consultation
-               </button>
-               <button className="px-10 py-5 bg-transparent border border-white/20 text-white font-bold rounded-full hover:bg-white/10 transition-colors text-lg backdrop-blur-sm">
+               </Link>
+               <button onClick={() => document.getElementById('portfolio').scrollIntoView({behavior: 'smooth'})} className="px-10 py-5 bg-transparent border border-white/20 text-white text-center font-bold rounded-full hover:bg-white/10 transition-colors text-lg backdrop-blur-sm">
                  View Portfolio
                </button>
              </motion.div>
@@ -447,7 +448,9 @@ const Services = () => {
         </div>
 
         {/* 3. FEATURED PORTFOLIO */}
-        <PortfolioShowcase />
+        <div id="portfolio">
+          <PortfolioShowcase />
+        </div>
 
         {/* 4. WORK PROCESS */}
         <WorkProcess />
