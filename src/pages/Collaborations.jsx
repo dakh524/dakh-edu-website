@@ -1,14 +1,29 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { ArrowRight, Building2, GraduationCap, Zap, Users, ArrowUpRight, Megaphone, CalendarCheck, Lightbulb, TrendingUp } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { supabase } from '../lib/supabase';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const Collaborations = () => {
   const containerRef = useRef(null);
+  const [partners, setPartners] = useState([]);
+
+  useEffect(() => {
+    const fetchPartners = async () => {
+      const { data, error } = await supabase
+        .from('partnered_companies')
+        .select('*')
+        .order('created_at', { ascending: true });
+      if (!error && data) {
+        setPartners(data);
+      }
+    };
+    fetchPartners();
+  }, []);
   
   useGSAP(() => {
     const tl = gsap.timeline();
@@ -183,69 +198,47 @@ const Collaborations = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                {
-                  name: "Otrumai Foundation",
-                  type: "Non-Profit / Community",
-                  desc: "A Tamil social foundation fostering unity, education and community empowerment across the region.",
-                  logo: "/partners/otrumai.png",
-                  color: "from-teal-50 to-emerald-50",
-                  border: "hover:border-teal-300",
-                  tag: "Community",
-                  tagColor: "text-teal-700 bg-teal-50 border-teal-200"
-                },
-                {
-                  name: "KM UniTech Solutions",
-                  type: "Technology",
-                  desc: "KM Universal Tech Solutions — bridging technology and talent through innovative training and projects.",
-                  logo: "/partners/kmunitech.png",
-                  color: "from-gray-50 to-slate-50",
-                  border: "hover:border-gray-400",
-                  tag: "Tech Partner",
-                  tagColor: "text-gray-700 bg-gray-100 border-gray-200"
-                },
-                {
-                  name: "PK Placement Services",
-                  type: "HR & Placement",
-                  desc: "Connecting graduates with top employers through end-to-end placement support and career guidance.",
-                  logo: "/partners/pkplacement.png",
-                  color: "from-red-50 to-orange-50",
-                  border: "hover:border-red-300",
-                  tag: "Placement",
-                  tagColor: "text-red-700 bg-red-50 border-red-200"
-                },
-                {
-                  name: "Skill Carve",
-                  type: "Skill Development",
-                  desc: "Shaping future-ready professionals through structured skill development programs and industry mentorship.",
-                  logo: "/partners/skillcarve.png",
-                  color: "from-purple-50 to-violet-50",
-                  border: "hover:border-purple-300",
-                  tag: "EdTech",
-                  tagColor: "text-purple-700 bg-purple-50 border-purple-200"
-                },
-              ].map((p) => (
-                <div
-                  key={p.name}
-                  className={`group relative bg-gradient-to-br ${p.color} border-2 border-gray-100 ${p.border} rounded-3xl p-7 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl flex flex-col gap-4 overflow-hidden`}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none rounded-3xl"></div>
-                  <div className="relative w-full h-24 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden group-hover:shadow-md transition-shadow">
-                    <img
-                      src={p.logo}
-                      alt={`${p.name} logo`}
-                      className="max-h-16 max-w-[80%] object-contain"
-                    />
-                  </div>
-                  <div className="relative">
-                    <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border mb-2 ${p.tagColor}`}>
-                      {p.tag}
-                    </span>
-                    <h3 className="font-black text-gray-900 text-lg leading-tight mb-2">{p.name}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed">{p.desc}</p>
-                  </div>
+              {partners.length === 0 ? (
+                <div className="col-span-1 sm:col-span-2 lg:col-span-4 p-8 text-center bg-gray-50 rounded-xl text-gray-500 font-medium border border-gray-100">
+                  Loading partners...
                 </div>
-              ))}
+              ) : (
+                partners.map((p) => {
+                  const getCategoryStyles = (category) => {
+                    switch (category) {
+                      case 'Community': return { color: "from-teal-50 to-emerald-50", border: "hover:border-teal-300", tagColor: "text-teal-700 bg-teal-50 border-teal-200" };
+                      case 'Placement': return { color: "from-red-50 to-orange-50", border: "hover:border-red-300", tagColor: "text-red-700 bg-red-50 border-red-200" };
+                      case 'EdTech': return { color: "from-purple-50 to-violet-50", border: "hover:border-purple-300", tagColor: "text-purple-700 bg-purple-50 border-purple-200" };
+                      case 'Tech Partner':
+                      default: return { color: "from-gray-50 to-slate-50", border: "hover:border-gray-400", tagColor: "text-gray-700 bg-gray-100 border-gray-200" };
+                    }
+                  };
+                  const styles = getCategoryStyles(p.category);
+
+                  return (
+                    <div
+                      key={p.id}
+                      className={`group relative bg-gradient-to-br ${styles.color} border-2 border-gray-100 ${styles.border} rounded-3xl p-7 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl flex flex-col gap-4 overflow-hidden`}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none rounded-3xl"></div>
+                      <div className="relative w-full h-24 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden group-hover:shadow-md transition-shadow">
+                        <img
+                          src={p.logo_url}
+                          alt={`${p.name} logo`}
+                          className="max-h-16 max-w-[80%] object-contain"
+                        />
+                      </div>
+                      <div className="relative">
+                        <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border mb-2 ${styles.tagColor}`}>
+                          {p.category}
+                        </span>
+                        <h3 className="font-black text-gray-900 text-lg leading-tight mb-2">{p.name}</h3>
+                        <p className="text-gray-500 text-sm leading-relaxed">{p.description}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </section>

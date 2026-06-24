@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, ShoppingBag, Image as ImageIcon } from 'lucide-react';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, ShoppingBag, Image as ImageIcon, Handshake } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
@@ -27,6 +27,13 @@ const AdminDashboard = () => {
   const [productImageUrl, setProductImageUrl] = useState('');
   const [productDescription, setProductDescription] = useState('');
   const [isSubmittingProduct, setIsSubmittingProduct] = useState(false);
+
+  const [partners, setPartners] = useState([]);
+  const [partnerName, setPartnerName] = useState('');
+  const [partnerDescription, setPartnerDescription] = useState('');
+  const [partnerLogoUrl, setPartnerLogoUrl] = useState('');
+  const [partnerCategory, setPartnerCategory] = useState('Community');
+  const [isSubmittingPartner, setIsSubmittingPartner] = useState(false);
 
   const [currentAd, setCurrentAd] = useState(null);
   const [adImageUrl, setAdImageUrl] = useState('');
@@ -178,6 +185,7 @@ const AdminDashboard = () => {
         fetchEvents();
         fetchProducts();
         fetchAdvertisement();
+        fetchPartners();
       }
       setLoading(false);
     });
@@ -234,6 +242,14 @@ const AdminDashboard = () => {
       .select('*')
       .order('created_at', { ascending: false });
     if (!error && data) setProducts(data);
+  };
+
+  const fetchPartners = async () => {
+    const { data, error } = await supabase
+      .from('partnered_companies')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setPartners(data);
   };
 
   const fetchAdvertisement = async () => {
@@ -295,6 +311,24 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleAddPartner = async (e) => {
+    e.preventDefault();
+    if (!partnerName || !partnerLogoUrl || !partnerDescription || !partnerCategory) return;
+    setIsSubmittingPartner(true);
+    const { error } = await supabase.from('partnered_companies').insert([{ name: partnerName, logo_url: partnerLogoUrl, description: partnerDescription, category: partnerCategory }]);
+    setIsSubmittingPartner(false);
+    if (error) {
+      alert("Error adding partner: " + error.message);
+    } else {
+      alert("Partner added successfully!");
+      setPartnerName('');
+      setPartnerLogoUrl('');
+      setPartnerDescription('');
+      setPartnerCategory('Community');
+      fetchPartners();
+    }
+  };
+
   const handleDeleteProduct = async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       const { error } = await supabase.from('products').delete().eq('id', id);
@@ -324,6 +358,17 @@ const AdminDashboard = () => {
         setBlogs(blogs.filter((b) => b.id !== id));
       } else {
         alert("Failed to delete blog: " + error.message);
+      }
+    }
+  };
+
+  const handleDeletePartner = async (id) => {
+    if (window.confirm('Are you sure you want to delete this partner?')) {
+      const { error } = await supabase.from('partnered_companies').delete().eq('id', id);
+      if (!error) {
+        setPartners(partners.filter((p) => p.id !== id));
+      } else {
+        alert("Failed to delete partner: " + error.message);
       }
     }
   };
@@ -457,6 +502,13 @@ const AdminDashboard = () => {
           >
             <ImageIcon className="w-5 h-5" />
             Advertisement
+          </button>
+          <button 
+            onClick={() => setActiveTab('partners')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'partners' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <Handshake className="w-5 h-5" />
+            Manage Partners
           </button>
         </aside>
 
@@ -620,6 +672,113 @@ const AdminDashboard = () => {
                         </div>
                         <button 
                           onClick={() => handleDeleteProduct(product.id)}
+                          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'partners' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
+              <div className="mb-8">
+                <h2 className="text-2xl font-black text-gray-900">Add New Partner</h2>
+                <p className="text-gray-500 font-medium mt-1">Add an organization to the "Our Partnered Companies" section.</p>
+              </div>
+
+              <form onSubmit={handleAddPartner} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Company/Organization Name</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={partnerName}
+                    onChange={(e) => setPartnerName(e.target.value)}
+                    placeholder="e.g. Otrumai Foundation"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
+                  <textarea 
+                    required
+                    rows={3}
+                    value={partnerDescription}
+                    onChange={(e) => setPartnerDescription(e.target.value)}
+                    placeholder="A short description about the partnership."
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 resize-none"
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Logo URL</label>
+                  <input 
+                    type="url" 
+                    required
+                    value={partnerLogoUrl}
+                    onChange={(e) => setPartnerLogoUrl(e.target.value)}
+                    placeholder="https://example.com/logo.png"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
+                  <select 
+                    value={partnerCategory}
+                    onChange={(e) => setPartnerCategory(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 font-medium"
+                  >
+                    <option value="Community">Community (Teal)</option>
+                    <option value="Tech Partner">Tech Partner (Gray)</option>
+                    <option value="Placement">Placement (Red)</option>
+                    <option value="EdTech">EdTech (Purple)</option>
+                  </select>
+                </div>
+                {partnerLogoUrl && (
+                  <div className="mt-4 p-4 rounded-xl border border-gray-200 bg-white flex justify-center items-center h-32 w-1/2 mx-auto">
+                    <img src={partnerLogoUrl} alt="Preview" className="max-w-full max-h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
+                  </div>
+                )}
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingPartner}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
+                >
+                  {isSubmittingPartner ? 'Adding Partner...' : 'Add Partner'}
+                </button>
+              </form>
+
+              <div className="mt-12">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">Manage Partners</h3>
+                  <button onClick={fetchPartners} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
+                    <Loader2 className="w-4 h-4" /> Refresh
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {partners.length === 0 ? (
+                    <div className="col-span-2 p-8 text-center bg-gray-50 rounded-xl text-gray-500 font-medium border border-gray-100">
+                      No partners added yet.
+                    </div>
+                  ) : (
+                    partners.map(partner => (
+                      <div key={partner.id} className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white flex flex-col p-4">
+                        <div className="h-20 w-full relative bg-gray-50 rounded-lg flex justify-center items-center border border-gray-100 mb-3">
+                          <img src={partner.logo_url} alt={partner.name} className="max-w-[80%] max-h-[80%] object-contain" />
+                        </div>
+                        <div className="flex-grow">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100/50 mb-2 inline-block">
+                            {partner.category}
+                          </span>
+                          <h4 className="font-bold text-gray-900 text-base mb-1">{partner.name}</h4>
+                          <p className="text-sm text-gray-500 line-clamp-2">{partner.description}</p>
+                        </div>
+                        <button 
+                          onClick={() => handleDeletePartner(partner.id)}
                           className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100"
                         >
                           <Trash2 size={16} />
