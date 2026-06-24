@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2 } from 'lucide-react';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
@@ -15,12 +15,18 @@ const AdminDashboard = () => {
   const [freelancers, setFreelancers] = useState([]);
   const [blogs, setBlogs] = useState([]);
   const [events, setEvents] = useState([]);
+  const [products, setProducts] = useState([]);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   
   const [eventTitle, setEventTitle] = useState('');
   const [eventImageUrl, setEventImageUrl] = useState('');
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+
+  const [productTitle, setProductTitle] = useState('');
+  const [productImageUrl, setProductImageUrl] = useState('');
+  const [productUrl, setProductUrl] = useState('');
+  const [isSubmittingProduct, setIsSubmittingProduct] = useState(false);
 
   const navigate = useNavigate();
 
@@ -132,6 +138,7 @@ const AdminDashboard = () => {
         fetchFreelancers();
         fetchBlogs();
         fetchEvents();
+        fetchProducts();
       }
       setLoading(false);
     });
@@ -180,6 +187,42 @@ const AdminDashboard = () => {
       .select('*')
       .order('created_at', { ascending: false });
     if (!error && data) setEvents(data);
+  };
+
+  const fetchProducts = async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setProducts(data);
+  };
+
+  const handleAddProduct = async (e) => {
+    e.preventDefault();
+    if (!productTitle || !productImageUrl || !productUrl) return;
+    setIsSubmittingProduct(true);
+    const { error } = await supabase.from('products').insert([{ title: productTitle, image_url: productImageUrl, product_url: productUrl }]);
+    setIsSubmittingProduct(false);
+    if (error) {
+      alert("Error adding product: " + error.message);
+    } else {
+      alert("Product added successfully!");
+      setProductTitle('');
+      setProductImageUrl('');
+      setProductUrl('');
+      fetchProducts();
+    }
+  };
+
+  const handleDeleteProduct = async (id) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (!error) {
+        setProducts(products.filter((p) => p.id !== id));
+      } else {
+        alert("Failed to delete product: " + error.message);
+      }
+    }
   };
 
   const handleDeleteEvent = async (id) => {
@@ -286,6 +329,16 @@ const AdminDashboard = () => {
               <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{freelancers.length}</span>
             )}
           </button>
+          <button 
+            onClick={() => setActiveTab('products')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'products' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <ShoppingBag className="w-5 h-5" />
+            Manage Products
+            {products.length > 0 && (
+              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{products.length}</span>
+            )}
+          </button>
         </aside>
 
         {/* Content Area */}
@@ -357,6 +410,95 @@ const AdminDashboard = () => {
                         </div>
                         <button 
                           onClick={() => handleDeleteEvent(event.id)}
+                          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'products' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
+              <div className="mb-8">
+                <h2 className="text-2xl font-black text-gray-900">Add New Product</h2>
+                <p className="text-gray-500 font-medium mt-1">Publish a product to the "Our Products & Services" gallery.</p>
+              </div>
+
+              <form onSubmit={handleAddProduct} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Product Title (Required)</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={productTitle}
+                    onChange={(e) => setProductTitle(e.target.value)}
+                    placeholder="e.g. AI Content Generator"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Image URL (Required)</label>
+                  <input 
+                    type="url" 
+                    required
+                    value={productImageUrl}
+                    onChange={(e) => setProductImageUrl(e.target.value)}
+                    placeholder="https://example.com/product-image.png"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Product Link (Required)</label>
+                  <input 
+                    type="url" 
+                    required
+                    value={productUrl}
+                    onChange={(e) => setProductUrl(e.target.value)}
+                    placeholder="https://example.com/product"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                  />
+                </div>
+                {productImageUrl && (
+                  <div className="mt-4 rounded-xl overflow-hidden border border-gray-200">
+                    <img src={productImageUrl} alt="Preview" className="w-full h-auto object-cover max-h-64" onError={(e) => e.target.style.display = 'none'} />
+                  </div>
+                )}
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingProduct}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
+                >
+                  {isSubmittingProduct ? 'Publishing Product...' : 'Publish Product'}
+                </button>
+              </form>
+
+              <div className="mt-12">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">Manage Uploaded Products</h3>
+                  <button onClick={fetchProducts} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
+                    <Loader2 className="w-4 h-4" /> Refresh
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {products.length === 0 ? (
+                    <div className="col-span-2 p-8 text-center bg-gray-50 rounded-xl text-gray-500 font-medium border border-gray-100">
+                      No products added yet.
+                    </div>
+                  ) : (
+                    products.map(product => (
+                      <div key={product.id} className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <img src={product.image_url} alt={product.title} className="w-full h-48 object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
+                          <p className="text-white font-bold">{product.title}</p>
+                          <a href={product.product_url} target="_blank" rel="noreferrer" className="text-purple-300 text-xs mt-1 hover:underline truncate">{product.product_url}</a>
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteProduct(product.id)}
                           className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100"
                         >
                           <Trash2 size={16} />

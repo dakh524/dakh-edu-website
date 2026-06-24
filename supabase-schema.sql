@@ -163,3 +163,17 @@ create table public.freelancer_applications (
 alter table public.freelancer_applications enable row level security;
 create policy "Allow public insert access to freelancer_applications" on public.freelancer_applications for insert with check (true);
 create policy "Allow authenticated read/write access to freelancer_applications" on public.freelancer_applications for all using (auth.role() = 'authenticated');
+
+-- Create products table
+create table public.products (
+  id uuid default gen_random_uuid() primary key,
+  title text not null,
+  image_url text not null,
+  product_url text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Enable RLS for products
+alter table public.products enable row level security;
+create policy "Allow public read access to products" on public.products for select using (true);
+create policy "Allow authenticated insert/update on products" on public.products for all using (auth.role() = 'authenticated');

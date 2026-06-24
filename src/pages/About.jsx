@@ -189,6 +189,7 @@ const ScrollTimeline = () => {
 const About = () => {
   const [showBlogModal, setShowBlogModal] = useState(false);
   const [events, setEvents] = useState([]);
+  const [products, setProducts] = useState([]);
   const [blogs, setBlogs] = useState([]);
   const [blogForm, setBlogForm] = useState({ author_name: '', title: '', content: '' });
   const [isSubmittingBlog, setIsSubmittingBlog] = useState(false);
@@ -203,8 +204,13 @@ const About = () => {
       const { data } = await supabase.from('blogs').select('*').order('created_at', { ascending: false });
       if (data) setBlogs(data);
     };
+    const fetchProducts = async () => {
+      const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (data) setProducts(data);
+    };
     fetchEvents();
     fetchBlogs();
+    fetchProducts();
   }, []);
 
   const handleSubmitBlog = async (e) => {
@@ -474,6 +480,39 @@ const About = () => {
             </div>
           )}
         </section>
+
+        {/* PRODUCTS & SERVICES SECTION */}
+        {products.length > 0 && (
+          <section className="py-20 px-6 lg:px-8 max-w-7xl mx-auto border-t border-gray-100">
+            <div className="text-center mb-16">
+              <ScrollReveal>
+                <h2 className="font-black text-5xl md:text-6xl text-gray-900 mb-4">Our <span className="text-gradient">Products & Services</span></h2>
+                <p className="text-xl text-[var(--color-brand-text-secondary)] font-medium">Explore the innovative solutions we offer.</p>
+              </ScrollReveal>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {products.map((product, i) => (
+                <ScrollReveal key={product.id} delay={i * 0.1}>
+                  <a href={product.product_url} target="_blank" rel="noreferrer" className="block h-full group">
+                    <TiltCard className="h-full">
+                      <div className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-xl hover:shadow-2xl transition-shadow h-full flex flex-col">
+                        <div className="relative h-64 w-full overflow-hidden bg-gray-50">
+                          <img src={product.image_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                            <span className="text-white font-bold flex items-center gap-2">View Product <ArrowRight size={16} /></span>
+                          </div>
+                        </div>
+                        <div className="p-6 bg-white text-center flex-grow flex items-center justify-center">
+                          <h3 className="text-2xl font-black text-gray-900 group-hover:text-[var(--color-brand-primary)] transition-colors">{product.title}</h3>
+                        </div>
+                      </div>
+                    </TiltCard>
+                  </a>
+                </ScrollReveal>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* COMMUNITY BLOGS SECTION */}
         <section className="py-20 px-6 lg:px-8 max-w-7xl mx-auto bg-purple-50/50 rounded-[3rem] my-10">
