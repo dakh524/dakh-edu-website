@@ -209,6 +209,7 @@ const Collaborations = () => {
                       case 'Community': return { color: "from-teal-50 to-emerald-50", border: "hover:border-teal-300", tagColor: "text-teal-700 bg-teal-50 border-teal-200" };
                       case 'Placement': return { color: "from-red-50 to-orange-50", border: "hover:border-red-300", tagColor: "text-red-700 bg-red-50 border-red-200" };
                       case 'EdTech': return { color: "from-purple-50 to-violet-50", border: "hover:border-purple-300", tagColor: "text-purple-700 bg-purple-50 border-purple-200" };
+                      case 'Internship Partner': return { color: "from-blue-50 to-cyan-50", border: "hover:border-blue-300", tagColor: "text-blue-700 bg-blue-50 border-blue-200" };
                       case 'Tech Partner':
                       default: return { color: "from-gray-50 to-slate-50", border: "hover:border-gray-400", tagColor: "text-gray-700 bg-gray-100 border-gray-200" };
                     }

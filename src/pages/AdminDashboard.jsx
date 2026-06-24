@@ -736,6 +736,7 @@ const AdminDashboard = () => {
                     <option value="Tech Partner">Tech Partner (Gray)</option>
                     <option value="Placement">Placement (Red)</option>
                     <option value="EdTech">EdTech (Purple)</option>
+                    <option value="Internship Partner">Internship Partner (Blue)</option>
                   </select>
                 </div>
                 {partnerLogoUrl && (
