@@ -8,9 +8,16 @@ import { supabase } from '../lib/supabase';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const DEFAULT_PARTNERS = [
+  { id: 'default-1', name: "Otrumai Foundation", description: "A Tamil social foundation fostering unity, education and community empowerment across the region.", logo_url: "/partners/otrumai.png", category: "Community" },
+  { id: 'default-2', name: "KM UniTech Solutions", description: "KM Universal Tech Solutions — bridging technology and talent through innovative training and projects.", logo_url: "/partners/kmunitech.png", category: "Tech Partner" },
+  { id: 'default-3', name: "PK Placement Services", description: "Connecting graduates with top employers through end-to-end placement support and career guidance.", logo_url: "/partners/pkplacement.png", category: "Placement" },
+  { id: 'default-4', name: "Skill Carve", description: "Shaping future-ready professionals through structured skill development programs and industry mentorship.", logo_url: "/partners/skillcarve.png", category: "EdTech" }
+];
+
 const Collaborations = () => {
   const containerRef = useRef(null);
-  const [partners, setPartners] = useState([]);
+  const [partners, setPartners] = useState(DEFAULT_PARTNERS);
 
   useEffect(() => {
     const fetchPartners = async () => {
@@ -19,7 +26,7 @@ const Collaborations = () => {
         .select('*')
         .order('created_at', { ascending: true });
       if (!error && data) {
-        setPartners(data);
+        setPartners([...DEFAULT_PARTNERS, ...data]);
       }
     };
     fetchPartners();
