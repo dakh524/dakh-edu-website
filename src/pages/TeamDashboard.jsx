@@ -139,6 +139,49 @@ const TeamDashboard = () => {
     }
   }, [coldLeads, teamMemberData]);
 
+  // Background activity and working hours tracker
+  useEffect(() => {
+    if (!teamMemberData?.id) return;
+
+    const intervalTime = 30000; // 30 seconds
+
+    const timer = setInterval(async () => {
+      // Only track if document tab is active/focused
+      if (document.hasFocus()) {
+        try {
+          const { data: latest } = await supabase
+            .from('team_members')
+            .select('today_work_seconds, weekly_work_seconds')
+            .eq('id', teamMemberData.id)
+            .maybeSingle();
+
+          const nextToday = (latest?.today_work_seconds || 0) + 30;
+          const nextWeekly = (latest?.weekly_work_seconds || 0) + 30;
+
+          await supabase
+            .from('team_members')
+            .update({
+              today_work_seconds: nextToday,
+              weekly_work_seconds: nextWeekly,
+              last_active_at: new Date().toISOString()
+            })
+            .eq('id', teamMemberData.id);
+
+          setTeamMemberData(prev => prev ? {
+            ...prev,
+            today_work_seconds: nextToday,
+            weekly_work_seconds: nextWeekly,
+            last_active_at: new Date().toISOString()
+          } : null);
+        } catch (err) {
+          console.error("Failed to update active work duration:", err);
+        }
+      }
+    }, intervalTime);
+
+    return () => clearInterval(timer);
+  }, [teamMemberData?.id]);
+
   const handleSaveWeeklyTarget = async (e) => {
     e.preventDefault();
     if (!weeklyTargetInput || isNaN(weeklyTargetInput) || parseInt(weeklyTargetInput) <= 0) {
@@ -753,6 +796,34 @@ const TeamDashboard = () => {
   const pendingLeadsCount = myLeads.filter(l => l.status === 'Pending').length;
   const approachedLeadsCount = myLeads.filter(l => l.status === 'Approached').length;
 
+  const formatSeconds = (totalSeconds) => {
+    if (!totalSeconds || isNaN(totalSeconds)) return '0 mins';
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes} mins`;
+  };
+
+  const getActiveStatus = (lastActiveAt) => {
+    if (!lastActiveAt) return { label: 'Never Active', color: 'bg-gray-50 text-gray-400 border-gray-150', dotColor: 'bg-gray-300' };
+    const lastActive = new Date(lastActiveAt);
+    const diffMs = new Date() - lastActive;
+    if (diffMs < 120000) { // 2 minutes
+      return { label: 'Online Now', color: 'bg-green-50 text-green-700 border-green-200', dotColor: 'bg-green-500', isOnline: true };
+    }
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 60) {
+      return { label: `${diffMins} mins ago`, color: 'bg-slate-50 text-slate-600 border-slate-200', dotColor: 'bg-slate-400' };
+    }
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) {
+      return { label: `${diffHours} hrs ago`, color: 'bg-slate-50 text-slate-600 border-slate-200', dotColor: 'bg-slate-400' };
+    }
+    return { label: 'Offline', color: 'bg-gray-50 text-gray-400 border-gray-100', dotColor: 'bg-gray-300' };
+  };
+
   const leadsToDisplay = coldLeadsFilter === 'History'
     ? coldLeads.filter(l => l.status === 'Approached')
     : myLeads.filter(l => l.status === coldLeadsFilter);
@@ -1204,7 +1275,7 @@ const TeamDashboard = () => {
                     <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-2">
                       <Users className="w-4.5 h-4.5 text-purple-600" /> Team Activity & Productivity Tracker
                     </h4>
-                    <p className="text-xs text-gray-500 font-medium mb-6">Real-time status tracking of which team members are working (active), low-performing, or inactive this week.</p>
+                    <p className="text-xs text-gray-500 font-medium mb-6">Real-time status tracking of which team members are working (active), low-performing, or inactive this week, along with their tracked session working hours.</p>
                   </div>
 
                   <div className="space-y-6">
@@ -1220,52 +1291,44 @@ const TeamDashboard = () => {
 
                       const progressPercent = Math.min(100, Math.round((memberCalls / weeklyTarget) * 100));
 
-                      // Determine working status
-                      let statusText = 'Inactive';
-                      let statusColor = 'bg-rose-500 text-rose-700 border-rose-200';
-                      let bgBadge = 'bg-rose-50';
-                      let dotColor = 'bg-rose-500';
-
-                      if (memberCalls >= 10) {
-                        statusText = 'Active / Working';
-                        statusColor = 'bg-green-500 text-green-700 border-green-200';
-                        bgBadge = 'bg-green-50';
-                        dotColor = 'bg-green-500';
-                      } else if (memberCalls > 0) {
-                        statusText = 'Low Activity';
-                        statusColor = 'bg-amber-500 text-amber-700 border-amber-200';
-                        bgBadge = 'bg-amber-50';
-                        dotColor = 'bg-amber-500';
-                      }
+                      // Determine active status (Online/Offline) based on last_active_at
+                      const activeInfo = getActiveStatus(member.last_active_at);
 
                       return (
-                        <div key={member.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-slate-100 pb-4 last:border-0 last:pb-0">
+                        <div key={member.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-slate-100 pb-5 last:border-0 last:pb-0">
                           {/* Name and Role */}
-                          <div className="space-y-0.5">
+                          <div className="space-y-1">
                             <span className="font-bold text-slate-800 text-sm block">{member.full_name}</span>
                             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{member.role || 'Team Member'}</span>
+                            
+                            {/* Live Status Badge */}
+                            <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full border uppercase tracking-wider mt-1 ${activeInfo.color}`}>
+                              <span className={`w-1 h-1 rounded-full ${activeInfo.dotColor} ${activeInfo.isOnline ? 'animate-ping' : ''}`}></span>
+                              {activeInfo.label}
+                            </span>
                           </div>
 
-                          {/* Working Status Badge */}
-                          <div>
-                            <span className={`inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-full border uppercase tracking-wider ${bgBadge} ${statusColor}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${statusText.startsWith('Active') ? 'animate-ping' : ''}`}></span>
-                              {statusText}
-                            </span>
+                          {/* Tracked Working Hours */}
+                          <div className="space-y-1 text-slate-700">
+                            <span className="block text-[9px] uppercase text-gray-400 font-extrabold tracking-wide">Tracked Work Hours</span>
+                            <div className="text-xs font-bold space-y-0.5">
+                              <div>Today: <span className="text-purple-700 font-black">{formatSeconds(member.today_work_seconds)}</span></div>
+                              <div>Weekly: <span className="text-indigo-700 font-black">{formatSeconds(member.weekly_work_seconds)}</span></div>
+                            </div>
                           </div>
 
                           {/* Progress toward goal */}
                           <div className="space-y-1 md:col-span-2">
                             <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-                              <span>Weekly Progress: {memberCalls} / {weeklyTarget} calls</span>
+                              <span>Weekly Calls: {memberCalls} / {weeklyTarget} approached</span>
                               <span className="text-purple-600 font-black">{progressPercent}%</span>
                             </div>
                             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex">
                               <div 
                                 className={`h-full rounded-full transition-all duration-1000 ${
-                                  statusText.startsWith('Active') 
+                                  memberCalls >= 10 
                                     ? 'bg-gradient-to-r from-green-400 to-emerald-500' 
-                                    : statusText === 'Low Activity' 
+                                    : memberCalls > 0 
                                     ? 'bg-gradient-to-r from-amber-400 to-orange-500' 
                                     : 'bg-gradient-to-r from-rose-400 to-red-500'
                                 }`}

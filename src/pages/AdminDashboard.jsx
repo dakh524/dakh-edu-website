@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, ShoppingBag, Image as ImageIcon, Handshake } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
@@ -21,6 +21,14 @@ const AdminDashboard = () => {
   
   const [certificates, setCertificates] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [coldLeads, setColdLeads] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  
+  // Team dashboard sub-tabs & actions state
+  const [teamSubTab, setTeamSubTab] = useState('tracker'); // 'tracker' or 'directory'
+  const [selectedMemberForLog, setSelectedMemberForLog] = useState(null);
+  const [editingTargetMemberId, setEditingTargetMemberId] = useState(null);
+  const [newWeeklyTargetInput, setNewWeeklyTargetInput] = useState('');
   
   // Certificate management state
   const [certName, setCertName] = useState('');
@@ -205,6 +213,8 @@ const AdminDashboard = () => {
         fetchPartners();
         fetchCertificates();
         fetchTeamMembers();
+        fetchColdLeads();
+        fetchTeamTasks();
       }
       setLoading(false);
     });
@@ -226,6 +236,68 @@ const AdminDashboard = () => {
       .select('*')
       .order('created_at', { ascending: false });
     if (!error && data) setCertificates(data);
+  };
+
+  const fetchColdLeads = async () => {
+    const { data, error } = await supabase
+      .from('cold_leads')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setColdLeads(data);
+  };
+
+  const fetchTeamTasks = async () => {
+    const { data, error } = await supabase
+      .from('team_tasks')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setTasks(data);
+  };
+
+  const formatSeconds = (totalSeconds) => {
+    if (!totalSeconds || isNaN(totalSeconds)) return '0 mins';
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes} mins`;
+  };
+
+  const getActiveStatus = (lastActiveAt) => {
+    if (!lastActiveAt) return { label: 'Never Active', color: 'bg-gray-50 text-gray-400 border-gray-150', dotColor: 'bg-gray-300' };
+    const lastActive = new Date(lastActiveAt);
+    const diffMs = new Date() - lastActive;
+    if (diffMs < 120000) { // 2 minutes
+      return { label: 'Online Now', color: 'bg-green-50 text-green-700 border-green-200', dotColor: 'bg-green-500', isOnline: true };
+    }
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 60) {
+      return { label: `${diffMins} mins ago`, color: 'bg-slate-50 text-slate-600 border-slate-200', dotColor: 'bg-slate-400' };
+    }
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) {
+      return { label: `${diffHours} hrs ago`, color: 'bg-slate-50 text-slate-600 border-slate-200', dotColor: 'bg-slate-400' };
+    }
+    return { label: 'Offline', color: 'bg-gray-50 text-gray-400 border-gray-100', dotColor: 'bg-gray-300' };
+  };
+
+  const handleUpdateWeeklyTarget = async (memberId, newTarget) => {
+    if (!newTarget || isNaN(newTarget) || parseInt(newTarget) <= 0) {
+      alert("Please enter a valid target count.");
+      return;
+    }
+    const { error } = await supabase
+      .from('team_members')
+      .update({ weekly_call_target: parseInt(newTarget) })
+      .eq('id', memberId);
+    if (error) {
+      alert("Error updating weekly target: " + error.message);
+    } else {
+      alert("Weekly target updated successfully!");
+      setEditingTargetMemberId(null);
+      fetchTeamMembers();
+    }
   };
 
   const fetchTeamMembers = async () => {
@@ -1357,104 +1429,465 @@ const AdminDashboard = () => {
 
           {activeTab === 'team' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
                 <div>
                   <h2 className="text-2xl font-black text-gray-900">Manage Team</h2>
-                  <p className="text-gray-500 font-medium mt-1">Manage team members who can log in to the Team Dashboard.</p>
+                  <p className="text-gray-500 font-medium mt-1">Manage team members, monitor tracked working hours, and review cold calling progress.</p>
                 </div>
-                <button onClick={fetchTeamMembers} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
-                  <Loader2 className="w-4 h-4" /> Refresh
+                <button 
+                  onClick={() => {
+                    fetchTeamMembers();
+                    fetchColdLeads();
+                    fetchTeamTasks();
+                  }} 
+                  className="px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-750 font-bold rounded-xl transition-colors text-sm flex items-center gap-2 cursor-pointer border border-purple-200/50"
+                >
+                  <Loader2 className="w-4 h-4" /> Refresh All Tracker Info
                 </button>
               </div>
 
-              {/* Form to add team member */}
-              <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl mb-8">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Add Team Member</h3>
-                <form onSubmit={handleAddTeamMember} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Full Name</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={teamName}
-                      onChange={(e) => setTeamName(e.target.value)}
-                      placeholder="e.g. Alice Smith"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Email Address</label>
-                    <input 
-                      type="email" 
-                      required
-                      value={teamEmail}
-                      onChange={(e) => setTeamEmail(e.target.value)}
-                      placeholder="e.g. alice@dakhedu.com"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Role</label>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        required
-                        value={teamRole}
-                        onChange={(e) => setTeamRole(e.target.value)}
-                        placeholder="e.g. Developer, Mentor"
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                      />
-                      <button 
-                        type="submit" 
-                        disabled={isSubmittingTeam}
-                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer"
-                      >
-                        {isSubmittingTeam ? 'Adding...' : 'Add'}
-                      </button>
-                    </div>
-                  </div>
-                </form>
+              {/* Sub-Navigation Tabs */}
+              <div className="flex border-b border-gray-200 mb-6 gap-2">
+                <button
+                  onClick={() => setTeamSubTab('tracker')}
+                  className={`px-4 py-2.5 font-bold text-sm border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+                    teamSubTab === 'tracker'
+                      ? 'border-purple-600 text-purple-600'
+                      : 'border-transparent text-gray-550 hover:text-gray-900 hover:border-gray-250'
+                  }`}
+                >
+                  <Clock className="w-4.5 h-4.5" />
+                  Live Performance & Work Hours
+                </button>
+                <button
+                  onClick={() => setTeamSubTab('directory')}
+                  className={`px-4 py-2.5 font-bold text-sm border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+                    teamSubTab === 'directory'
+                      ? 'border-purple-600 text-purple-600'
+                      : 'border-transparent text-gray-555 hover:text-gray-900 hover:border-gray-250'
+                  }`}
+                >
+                  <Users className="w-4.5 h-4.5" />
+                  Team Setup & Directory
+                </button>
               </div>
 
-              {/* Table list of team members */}
-              <div className="overflow-x-auto rounded-xl border border-gray-200">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 text-xs uppercase tracking-wider">
-                      <th className="p-4 font-black">Name</th>
-                      <th className="p-4 font-black">Email</th>
-                      <th className="p-4 font-black">Role</th>
-                      <th className="p-4 font-black">Added Date</th>
-                      <th className="p-4 font-black text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 text-sm">
+              {teamSubTab === 'tracker' ? (
+                <div className="space-y-6">
+                  {/* KPI Overview Grid */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-slate-50 border border-slate-200/80 p-5 rounded-2xl shadow-sm">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Total Members</span>
+                      <h3 className="text-xl font-black text-slate-800 mt-2">{teamMembers.length} Registered</h3>
+                    </div>
+                    <div className="bg-green-50/40 border border-green-150 p-5 rounded-2xl shadow-sm">
+                      <span className="text-[10px] font-bold text-green-600/80 uppercase tracking-wider block">Working Now</span>
+                      <h3 className="text-xl font-black text-green-700 mt-2">
+                        {teamMembers.filter(t => getActiveStatus(t.last_active_at).isOnline).length} Active
+                      </h3>
+                    </div>
+                    <div className="bg-purple-50/40 border border-purple-150 p-5 rounded-2xl shadow-sm">
+                      <span className="text-[10px] font-bold text-purple-600/80 uppercase tracking-wider block">Total Hours Today</span>
+                      <h3 className="text-xl font-black text-purple-700 mt-2">
+                        {formatSeconds(teamMembers.reduce((acc, curr) => acc + (curr.today_work_seconds || 0), 0))}
+                      </h3>
+                    </div>
+                    <div className="bg-indigo-50/40 border border-indigo-150 p-5 rounded-2xl shadow-sm">
+                      <span className="text-[10px] font-bold text-indigo-600/80 uppercase tracking-wider block">Logged Calls (Weekly)</span>
+                      <h3 className="text-xl font-black text-indigo-700 mt-2">
+                        {coldLeads.filter(l => l.status === 'Approached').length} Completed
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Team Members Tracker Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {teamMembers.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="p-8 text-center text-gray-500 font-medium">No team members added yet.</td>
-                      </tr>
+                      <div className="col-span-2 p-12 text-center bg-gray-50 rounded-3xl text-gray-500 font-medium border border-gray-150">
+                        No team members registered yet. Set them up in the "Team Setup & Directory" tab.
+                      </div>
                     ) : (
-                      teamMembers.map(t => (
-                        <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="p-4 font-bold text-gray-900">{t.full_name}</td>
-                          <td className="p-4 text-gray-600">{t.email}</td>
-                          <td className="p-4">
-                            <span className="bg-purple-50 text-purple-700 border border-purple-100 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                              {t.role}
-                            </span>
-                          </td>
-                          <td className="p-4 text-gray-500">{new Date(t.created_at).toLocaleDateString()}</td>
-                          <td className="p-4 text-right">
-                            <button onClick={() => handleDeleteTeamMember(t.id)} className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors cursor-pointer">
-                              <Trash2 size={16} />
+                      teamMembers.map(member => {
+                        const weeklyTarget = member.weekly_call_target || 50;
+                        const dailyTarget = Math.ceil(weeklyTarget / 5);
+
+                        // Count total approached leads by this member
+                        const memberCalls = coldLeads.filter(l => 
+                          l.status === 'Approached' && 
+                          (l.approached_by === member.full_name || l.approached_by === member.email)
+                        ).length;
+
+                        const progressPercent = Math.min(100, Math.round((memberCalls / weeklyTarget) * 100));
+                        const activeInfo = getActiveStatus(member.last_active_at);
+
+                        // Count tasks assigned to this member
+                        const memberTasks = tasks.filter(t => 
+                          t.assigned_to && 
+                          (t.assigned_to.toLowerCase() === member.full_name.toLowerCase() || 
+                           t.assigned_to.toLowerCase() === member.email.toLowerCase())
+                        );
+                        const completedTasks = memberTasks.filter(t => t.status === 'Completed').length;
+                        const totalTasks = memberTasks.length;
+                        const taskProgressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+                        return (
+                          <div key={member.id} className="bg-white border border-gray-150 rounded-3xl p-6 hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
+                            <div>
+                              {/* Member Header */}
+                              <div className="flex justify-between items-start gap-3 pb-4 border-b border-gray-100">
+                                <div className="flex items-center gap-3">
+                                  {/* Initials Avatar */}
+                                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-extrabold text-sm uppercase transition-all ${
+                                    activeInfo.isOnline 
+                                      ? 'bg-green-500/10 text-green-700 ring-2 ring-green-500/30' 
+                                      : 'bg-slate-100 text-slate-600 ring-1 ring-slate-200'
+                                  }`}>
+                                    {member.full_name.substring(0, 2)}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-bold text-gray-900 text-sm leading-tight flex items-center gap-1.5">
+                                      {member.full_name}
+                                    </h4>
+                                    <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block mt-0.5">{member.role || 'Member'}</span>
+                                  </div>
+                                </div>
+
+                                {/* Active Badge */}
+                                <span className={`inline-flex items-center gap-1.5 text-[9px] font-black px-2.5 py-1 rounded-full border uppercase tracking-wider ${activeInfo.color}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${activeInfo.dotColor} ${activeInfo.isOnline ? 'animate-ping' : ''}`}></span>
+                                  {activeInfo.label}
+                                </span>
+                              </div>
+
+                              {/* Performance Details Grid */}
+                              <div className="grid grid-cols-2 gap-4 py-4 border-b border-gray-100">
+                                {/* Tracked Working Hours */}
+                                <div className="space-y-1">
+                                  <span className="text-[9px] font-extrabold text-gray-400 uppercase tracking-wider block">Tracked Work Duration</span>
+                                  <div className="text-xs font-bold text-slate-700 space-y-0.5">
+                                    <div>Today: <span className="text-purple-755 font-black">{formatSeconds(member.today_work_seconds)}</span></div>
+                                    <div>Weekly: <span className="text-indigo-755 font-black">{formatSeconds(member.weekly_work_seconds)}</span></div>
+                                  </div>
+                                </div>
+
+                                {/* Last Active Timestamp */}
+                                <div className="space-y-1">
+                                  <span className="text-[9px] font-extrabold text-gray-400 uppercase tracking-wider block">Last Active Session</span>
+                                  <span className="text-xs font-bold text-slate-700 block">
+                                    {member.last_active_at 
+                                      ? new Date(member.last_active_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) 
+                                      : 'Never'
+                                    }
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Cold Calling Goal Progress */}
+                              <div className="py-4 border-b border-gray-100 space-y-2">
+                                <div className="flex justify-between items-center text-xs font-bold text-slate-500">
+                                  <span className="flex items-center gap-1">Weekly Call Target: {memberCalls} / {weeklyTarget} approached</span>
+                                  <span className="text-purple-650 font-black">{progressPercent}%</span>
+                                </div>
+                                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-full rounded-full transition-all duration-1000 ${
+                                      memberCalls >= weeklyTarget 
+                                        ? 'bg-gradient-to-r from-green-400 to-emerald-500' 
+                                        : memberCalls > 0 
+                                        ? 'bg-gradient-to-r from-amber-400 to-orange-500' 
+                                        : 'bg-gradient-to-r from-rose-400 to-red-500'
+                                    }`}
+                                    style={{ width: `${progressPercent}%` }}
+                                  />
+                                </div>
+
+                                {/* Target Adjustment Form */}
+                                <div className="flex justify-between items-center pt-1">
+                                  <span className="text-[10px] text-gray-400 font-semibold">Calculated Daily Target: {dailyTarget} calls/day</span>
+                                  {editingTargetMemberId === member.id ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <input 
+                                        type="number"
+                                        min="1"
+                                        value={newWeeklyTargetInput}
+                                        onChange={(e) => setNewWeeklyTargetInput(e.target.value)}
+                                        className="w-16 px-1.5 py-0.5 border border-slate-350 rounded font-bold text-center text-xs text-gray-950"
+                                      />
+                                      <button 
+                                        onClick={() => handleUpdateWeeklyTarget(member.id, newWeeklyTargetInput)}
+                                        className="px-2.5 py-0.5 bg-purple-600 text-white font-bold rounded text-[10px] hover:bg-purple-700 transition-colors cursor-pointer"
+                                      >
+                                        Save
+                                      </button>
+                                      <button 
+                                        onClick={() => setEditingTargetMemberId(null)}
+                                        className="px-2.5 py-0.5 bg-gray-100 text-gray-650 font-bold rounded text-[10px] hover:bg-gray-200 transition-colors cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button 
+                                      onClick={() => {
+                                        setEditingTargetMemberId(member.id);
+                                        setNewWeeklyTargetInput(weeklyTarget);
+                                      }}
+                                      className="text-[10px] text-purple-600 hover:text-purple-800 font-bold flex items-center gap-0.5 hover:underline cursor-pointer"
+                                    >
+                                      Adjust Goal
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Task Progress Details */}
+                              <div className="py-4 space-y-2">
+                                <div className="flex justify-between items-center text-xs font-bold text-slate-500">
+                                  <span>Task Progress: {completedTasks} / {totalTasks} completed</span>
+                                  <span className="text-indigo-600 font-black">{taskProgressPercent}%</span>
+                                </div>
+                                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-indigo-500 rounded-full transition-all duration-1000"
+                                    style={{ width: `${taskProgressPercent}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* View Calls Log Action Button */}
+                            <button
+                              onClick={() => setSelectedMemberForLog(member)}
+                              className="w-full mt-2 py-2.5 bg-slate-50 hover:bg-purple-50 hover:text-purple-700 border border-slate-200 hover:border-purple-200 text-slate-600 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                              <PhoneCall className="w-4 h-4 text-purple-650" /> View Calls & Activity Log
                             </button>
-                          </td>
-                        </tr>
-                      ))
+                          </div>
+                        );
+                      })
                     )}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  {/* Form to add team member */}
+                  <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl mb-8">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Add Team Member</h3>
+                    <form onSubmit={handleAddTeamMember} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Full Name</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={teamName}
+                          onChange={(e) => setTeamName(e.target.value)}
+                          placeholder="e.g. Alice Smith"
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Email Address</label>
+                        <input 
+                          type="email" 
+                          required
+                          value={teamEmail}
+                          onChange={(e) => setTeamEmail(e.target.value)}
+                          placeholder="e.g. alice@dakhedu.com"
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Role</label>
+                        <div className="flex gap-2">
+                          <input 
+                            type="text" 
+                            required
+                            value={teamRole}
+                            onChange={(e) => setTeamRole(e.target.value)}
+                            placeholder="e.g. Developer, Mentor"
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                          />
+                          <button 
+                            type="submit" 
+                            disabled={isSubmittingTeam}
+                            className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer"
+                          >
+                            {isSubmittingTeam ? 'Adding...' : 'Add'}
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Table list of team members */}
+                  <div className="overflow-x-auto rounded-xl border border-gray-200">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 text-xs uppercase tracking-wider">
+                          <th className="p-4 font-black">Name</th>
+                          <th className="p-4 font-black">Email</th>
+                          <th className="p-4 font-black">Role</th>
+                          <th className="p-4 font-black">Added Date</th>
+                          <th className="p-4 font-black text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 text-sm">
+                        {teamMembers.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="p-8 text-center text-gray-500 font-medium">No team members added yet.</td>
+                          </tr>
+                        ) : (
+                          teamMembers.map(t => (
+                            <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="p-4 font-bold text-gray-900">{t.full_name}</td>
+                              <td className="p-4 text-gray-600">{t.email}</td>
+                              <td className="p-4">
+                                <span className="bg-purple-50 text-purple-700 border border-purple-100 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                                  {t.role}
+                                </span>
+                              </td>
+                              <td className="p-4 text-gray-500">{new Date(t.created_at).toLocaleDateString()}</td>
+                              <td className="p-4 text-right">
+                                <button onClick={() => handleDeleteTeamMember(t.id)} className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors cursor-pointer">
+                                  <Trash2 size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Call History Modal Overlay */}
+              <AnimatePresence>
+                {selectedMemberForLog && (
+                  <>
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 cursor-pointer"
+                      onClick={() => setSelectedMemberForLog(null)}
+                    />
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                      className="fixed top-[10%] bottom-[10%] left-[5%] right-[5%] md:left-[10%] md:right-[10%] lg:left-[15%] lg:right-[15%] bg-white border border-slate-100 shadow-2xl rounded-3xl p-6 z-[110] text-slate-800 flex flex-col justify-between"
+                    >
+                      <div className="flex justify-between items-center border-b border-slate-100 pb-4 shrink-0">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center text-sm font-bold uppercase">
+                            {selectedMemberForLog.full_name.substring(0, 2)}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-black text-slate-900">Activity Log: {selectedMemberForLog.full_name}</h3>
+                            <p className="text-xs text-slate-500 font-semibold">List of cold calling approaches completed by this member.</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setSelectedMemberForLog(null)}
+                          className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <div className="flex-grow overflow-y-auto my-4 pr-1">
+                        {(() => {
+                          const logs = coldLeads.filter(l => 
+                            l.status === 'Approached' && 
+                            (l.approached_by === selectedMemberForLog.full_name || 
+                             l.approached_by === selectedMemberForLog.email)
+                          );
+
+                          if (logs.length === 0) {
+                            return (
+                              <div className="h-full flex flex-col items-center justify-center py-20 text-center text-gray-500 font-medium">
+                                <AlertCircle className="w-10 h-10 text-slate-350 mb-2" />
+                                No logged client approaches found for this member yet.
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="overflow-x-auto rounded-2xl border border-gray-150">
+                              <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                  <tr className="bg-slate-900 text-slate-100 border-b border-gray-200 uppercase tracking-wider">
+                                    <th className="p-3.5 font-black whitespace-nowrap">Date</th>
+                                    <th className="p-3.5 font-black whitespace-nowrap">Client Name</th>
+                                    <th className="p-3.5 font-black whitespace-nowrap">Phone Number</th>
+                                    <th className="p-3.5 font-black whitespace-nowrap">Category</th>
+                                    <th className="p-3.5 font-black whitespace-nowrap">Pain Point / Maps</th>
+                                    <th className="p-3.5 font-black whitespace-nowrap">Feedback Remarks</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 text-sm">
+                                  {logs.map(lead => (
+                                    <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors text-xs">
+                                      <td className="p-3.5 text-slate-500 font-medium whitespace-nowrap">
+                                        {lead.approached_at 
+                                          ? new Date(lead.approached_at).toLocaleDateString() 
+                                          : new Date(lead.created_at).toLocaleDateString()
+                                        }
+                                      </td>
+                                      <td className="p-3.5 font-bold text-slate-900 whitespace-nowrap">{lead.client_name}</td>
+                                      <td className="p-3.5 font-mono font-bold text-slate-800 whitespace-nowrap">
+                                        <div className="flex items-center gap-1">
+                                          {lead.phone_number}
+                                          <a 
+                                            href={`tel:${lead.phone_number}`}
+                                            className="p-1 hover:bg-slate-100 rounded text-indigo-650 transition-colors"
+                                            title="Call Number"
+                                          >
+                                            <Phone size={10} />
+                                          </a>
+                                        </div>
+                                      </td>
+                                      <td className="p-3.5 text-slate-600 whitespace-nowrap">{lead.business_type || 'N/A'}</td>
+                                      <td className="p-3.5 whitespace-nowrap">
+                                        <div className="max-w-[120px] truncate text-slate-700 font-bold" title={lead.key_hook_pain_point || 'N/A'}>
+                                          {lead.key_hook_pain_point || 'N/A'}
+                                        </div>
+                                        {lead.google_maps_link && (
+                                          <a 
+                                            href={lead.google_maps_link}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-[9px] text-indigo-600 hover:underline inline-flex items-center gap-0.5 mt-0.5 font-bold"
+                                          >
+                                            <MapIcon size={8} /> Maps
+                                          </a>
+                                        )}
+                                      </td>
+                                      <td className="p-3.5 text-slate-600 font-medium max-w-[200px] truncate" title={lead.remarks || 'No remarks'}>
+                                        {lead.remarks || '-'}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      <div className="border-t border-slate-100 pt-4 shrink-0 flex justify-end">
+                        <button 
+                          onClick={() => setSelectedMemberForLog(null)}
+                          className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                        >
+                          Close Logs
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
 
