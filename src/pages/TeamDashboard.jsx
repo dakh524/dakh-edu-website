@@ -257,7 +257,7 @@ const TeamDashboard = () => {
     if (!taskTitle) return;
     setIsSubmittingTask(true);
     
-    const isCeo = teamMemberData?.role?.toLowerCase() === 'ceo' || teamMemberData?.email === 'ceo@dakhedusolutions.in';
+    const isCeo = ['ceo', 'managing director', 'admin'].includes(teamMemberData?.role?.toLowerCase()) || teamMemberData?.email === 'ceo@dakhedusolutions.in';
     const initialStatus = isCeo ? 'To Do' : 'Pending Approval';
 
     const { error } = await supabase
@@ -755,7 +755,7 @@ const TeamDashboard = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const isCeo = teamMemberData?.role?.toLowerCase() === 'ceo' || teamMemberData?.email === 'ceo@dakhedusolutions.in';
+  const isCeo = ['ceo', 'managing director', 'admin'].includes(teamMemberData?.role?.toLowerCase()) || teamMemberData?.email === 'ceo@dakhedusolutions.in';
   
   const isColdCallingEligible = isCeo || 
     ['cold caller', 'telecaller', 'sales', 'marketing', 'bd', 'business development', 'developer', 'managing director', 'director', 'manager', 'management'].includes(teamMemberData?.role?.toLowerCase()) ||
@@ -1803,7 +1803,7 @@ const TeamDashboard = () => {
 
               {/* Pending Task Approvals Panel for CEO */}
               {(() => {
-                const isCeo = teamMemberData?.role?.toLowerCase() === 'ceo' || teamMemberData?.email === 'ceo@dakhedusolutions.in';
+                const isCeo = ['ceo', 'managing director', 'admin'].includes(teamMemberData?.role?.toLowerCase()) || teamMemberData?.email === 'ceo@dakhedusolutions.in';
                 const pendingTasks = tasks.filter(t => t.status === 'Pending Approval');
                 if (isCeo && pendingTasks.length > 0) {
                   return (
