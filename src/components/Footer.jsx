@@ -50,7 +50,9 @@ const Footer = () => {
               <li><Link to="/collaborations" className="hover:text-purple-600 hover:translate-x-1 transition-all inline-block">Collaborations</Link></li>
               <li><Link to="/about" className="hover:text-purple-600 hover:translate-x-1 transition-all inline-block">About Us</Link></li>
               <li><Link to="/contact" className="hover:text-purple-600 hover:translate-x-1 transition-all inline-block">Contact Us</Link></li>
+              <li><Link to="/internship#verify-certificate-sec" className="hover:text-purple-600 hover:translate-x-1 transition-all inline-block">Verify Certificate</Link></li>
               <li><Link to="/admin/login" className="hover:text-purple-600 hover:translate-x-1 transition-all inline-block flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span> Admin Login</Link></li>
+              <li><Link to="/team/login" className="hover:text-purple-600 hover:translate-x-1 transition-all inline-block flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block"></span> Team Login</Link></li>
             </ul>
           </div>
 
@@ -100,6 +102,7 @@ const Footer = () => {
           </p>
           <div className="flex gap-6 text-xs text-gray-500 font-bold">
             <Link to="/admin/login" className="hover:text-purple-600 transition-colors flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span> Admin Dashboard</Link>
+            <Link to="/team/login" className="hover:text-purple-600 transition-colors flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block"></span> Team Portal</Link>
             <a href="#" className="hover:text-purple-600 transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-purple-600 transition-colors">Terms of Service</a>
           </div>

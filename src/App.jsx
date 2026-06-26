@@ -19,9 +19,13 @@ import ApplyFreelancer from './pages/ApplyFreelancer';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 
+// Intern & Team Pages
+import TeamLogin from './pages/TeamLogin';
+import TeamDashboard from './pages/TeamDashboard';
+
 function App() {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isNoNavRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/team');
 
   useEffect(() => {
     const lenis = new Lenis({
@@ -51,7 +55,7 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--color-brand-bg)] text-[var(--color-brand-text-primary)]">
       <CustomCursor />
-      {!isAdminRoute && <Navbar />}
+      {!isNoNavRoute && <Navbar />}
       
       {/* Main Content Area */}
       <main className="flex-grow">
@@ -64,15 +68,20 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/apply" element={<ApplyFreelancer />} />
+
             
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            
+            {/* Team Routes */}
+            <Route path="/team/login" element={<TeamLogin />} />
+            <Route path="/team/dashboard" element={<TeamDashboard />} />
           </Routes>
         </AnimatePresence>
       </main>
 
-      {!isAdminRoute && <Footer />}
+      {!isNoNavRoute && <Footer />}
     </div>
   );
 }

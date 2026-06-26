@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { Check, Laptop, Users, Building, Globe, Home as HomeIcon, Zap, Target, Award, Star, ArrowRight, CalendarDays, BookOpen, UserCheck, Lightbulb, Code2, Send, CheckCircle2, AlertTriangle, Briefcase, ChevronRight } from 'lucide-react';
+import { Check, Laptop, Users, Building, Globe, Home as HomeIcon, Zap, Target, Award, Star, ArrowRight, CalendarDays, BookOpen, UserCheck, Lightbulb, Code2, Send, CheckCircle2, AlertTriangle, Briefcase, ChevronRight, Key, Download, Loader2 } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
 import TiltCard from '../components/TiltCard';
@@ -129,6 +129,61 @@ const Internship = () => {
   const [selectedPlan, setSelectedPlan] = useState({ name: '30 Days Mastery', price: '449' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [roadmapSteps, setRoadmapSteps] = useState(DEFAULT_ROADMAP);
+
+  // Certificate Verification states
+  const [certEmail, setCertEmail] = useState('');
+  const [certCode, setCertCode] = useState('');
+  const [certLoading, setCertLoading] = useState(false);
+  const [certError, setCertError] = useState(null);
+  const [certificate, setCertificate] = useState(null);
+  const [regBackup, setRegBackup] = useState(null);
+
+  const handleCertSearch = async (e) => {
+    e.preventDefault();
+    setCertLoading(true);
+    setCertError(null);
+    setCertificate(null);
+    setRegBackup(null);
+
+    const cleanEmail = certEmail.trim().toLowerCase();
+    const cleanCode = certCode.trim();
+
+    try {
+      const { data: certData, error: certErr } = await supabase
+        .from('certificates')
+        .select('*')
+        .eq('email', cleanEmail)
+        .eq('certificate_code', cleanCode)
+        .maybeSingle();
+
+      if (certErr) throw certErr;
+
+      if (certData) {
+        setCertificate(certData);
+      } else {
+        const { data: regData, error: regErr } = await supabase
+          .from('registrations')
+          .select('*')
+          .eq('email', cleanEmail)
+          .eq('intern_number', cleanCode)
+          .maybeSingle();
+
+        if (regErr) throw regErr;
+
+        if (regData) {
+          setRegBackup(regData);
+          setCertError("Your internship record was found, but your certificate link has not been added by the admin yet. Please check back later.");
+        } else {
+          setCertError("No matching certificate record or intern registration found. Please verify your email and code.");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setCertError("An error occurred while fetching your certificate. Please try again.");
+    } finally {
+      setCertLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchRoadmap = async () => {
@@ -570,6 +625,114 @@ const Internship = () => {
                     <li className="flex items-center gap-3 text-sm md:text-base text-gray-700 font-medium"><Check className="w-4 h-4 text-gray-400 shrink-0" /> Standard Internship Completion Certificate</li>
                   </ul>
                 </div>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Certificate Verification Section */}
+          <ScrollReveal delay={0.75}>
+            <div id="verify-certificate-sec" className="bg-white border-2 border-purple-100 rounded-3xl p-8 md:p-12 shadow-xl mb-12 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-yellow-500"></div>
+              <div className="absolute top-[-100px] right-[-100px] w-80 h-80 bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
+              
+              <div className="max-w-3xl mx-auto">
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center gap-2 bg-purple-50 border border-purple-100 text-purple-700 rounded-full px-4 py-1.5 font-bold text-xs mb-3 uppercase tracking-wider">
+                    <Award className="w-3.5 h-3.5 shrink-0" />
+                    <span>Certificates Portal</span>
+                  </div>
+                  <h3 className="font-extrabold text-3xl text-gray-900 mb-2">Get Your Certificate</h3>
+                  <p className="text-gray-500 font-medium text-sm">Verify and download your official DAKH Edu Solutions internship certificate.</p>
+                </div>
+
+                {!certificate ? (
+                  <form onSubmit={handleCertSearch} className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                    <div>
+                      <label className="block text-xs font-black text-gray-700 uppercase tracking-wider mb-2">Registered Email Address</label>
+                      <input 
+                        type="email" 
+                        required
+                        value={certEmail}
+                        onChange={(e) => setCertEmail(e.target.value)}
+                        placeholder="intern@example.com"
+                        className="w-full px-4 py-3 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950 font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-gray-700 uppercase tracking-wider mb-2">Certificate Code / Intern No.</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={certCode}
+                        onChange={(e) => setCertCode(e.target.value)}
+                        placeholder="DES/INT/2026/001"
+                        className="w-full px-4 py-3 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950 font-medium"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      {certError && (
+                        <div className="p-3.5 bg-red-50 border border-red-100 text-red-600 rounded-xl text-xs font-semibold flex items-start gap-2 mb-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0"></span>
+                          <div>{certError}</div>
+                        </div>
+                      )}
+                      <button 
+                        type="submit"
+                        disabled={certLoading}
+                        className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 active:translate-y-0 cursor-pointer disabled:opacity-75"
+                      >
+                        {certLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Verifying...
+                          </>
+                        ) : (
+                          'VERIFY & DOWNLOAD CERTIFICATE'
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-slate-50 border border-purple-100 p-6 rounded-2xl text-center space-y-4"
+                  >
+                    <div className="w-12 h-12 bg-green-50 text-green-600 border border-green-200 rounded-full flex items-center justify-center mx-auto">
+                      <Check className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-gray-900 text-xl">Verification Successful</h4>
+                      <p className="text-gray-500 text-xs font-medium">Valid certificate match found</p>
+                    </div>
+
+                    <div className="max-w-md mx-auto p-4 bg-white border border-slate-200 rounded-xl text-left space-y-2 text-sm text-gray-700">
+                      <div className="flex justify-between"><span className="text-xs text-gray-400 font-bold uppercase">Intern Name:</span> <span className="font-bold">{certificate.full_name}</span></div>
+                      <div className="flex justify-between border-t border-slate-100 pt-2"><span className="text-xs text-gray-400 font-bold uppercase">Domain:</span> <span className="font-bold">{certificate.domain}</span></div>
+                      <div className="flex justify-between border-t border-slate-100 pt-2"><span className="text-xs text-gray-400 font-bold uppercase">Code:</span> <span className="font-mono font-bold text-purple-600">{certificate.certificate_code}</span></div>
+                    </div>
+
+                    <div className="flex justify-center gap-3">
+                      <a 
+                        href={certificate.certificate_link}
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
+                      >
+                        <Download className="w-4 h-4" /> Download Certificate
+                      </a>
+                      <button 
+                        onClick={() => {
+                          setCertificate(null);
+                          setCertEmail('');
+                          setCertCode('');
+                        }}
+                        className="px-5 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition-colors cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
               </div>
             </div>
           </ScrollReveal>

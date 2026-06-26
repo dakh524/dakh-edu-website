@@ -19,6 +19,23 @@ const AdminDashboard = () => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   
+  const [certificates, setCertificates] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  
+  // Certificate management state
+  const [certName, setCertName] = useState('');
+  const [certEmail, setCertEmail] = useState('');
+  const [certCode, setCertCode] = useState('');
+  const [certDomain, setCertDomain] = useState('');
+  const [certLink, setCertLink] = useState('');
+  const [isSubmittingCert, setIsSubmittingCert] = useState(false);
+
+  // Team management state
+  const [teamName, setTeamName] = useState('');
+  const [teamEmail, setTeamEmail] = useState('');
+  const [teamRole, setTeamRole] = useState('Member');
+  const [isSubmittingTeam, setIsSubmittingTeam] = useState(false);
+
   const [eventTitle, setEventTitle] = useState('');
   const [eventImageUrl, setEventImageUrl] = useState('');
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
@@ -186,6 +203,8 @@ const AdminDashboard = () => {
         fetchProducts();
         fetchAdvertisement();
         fetchPartners();
+        fetchCertificates();
+        fetchTeamMembers();
       }
       setLoading(false);
     });
@@ -200,6 +219,100 @@ const AdminDashboard = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const fetchCertificates = async () => {
+    const { data, error } = await supabase
+      .from('certificates')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setCertificates(data);
+  };
+
+  const fetchTeamMembers = async () => {
+    const { data, error } = await supabase
+      .from('team_members')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setTeamMembers(data);
+  };
+
+  const handleAddCertificate = async (e) => {
+    e.preventDefault();
+    if (!certName || !certEmail || !certCode || !certLink || !certDomain) return;
+    setIsSubmittingCert(true);
+    const { error } = await supabase.from('certificates').insert([{
+      full_name: certName.trim(),
+      email: certEmail.trim().toLowerCase(),
+      certificate_code: certCode.trim(),
+      domain: certDomain.trim(),
+      certificate_link: certLink.trim()
+    }]);
+    setIsSubmittingCert(false);
+    if (error) {
+      alert("Error adding certificate: " + error.message);
+    } else {
+      alert("Certificate added successfully!");
+      setCertName('');
+      setCertEmail('');
+      setCertCode('');
+      setCertDomain('');
+      setCertLink('');
+      fetchCertificates();
+    }
+  };
+
+  const handleDeleteCertificate = async (id) => {
+    if (window.confirm('Are you sure you want to delete this certificate?')) {
+      const { error } = await supabase.from('certificates').delete().eq('id', id);
+      if (!error) {
+        alert("Certificate deleted!");
+        fetchCertificates();
+      } else {
+        alert("Error deleting certificate: " + error.message);
+      }
+    }
+  };
+
+  const handleAddTeamMember = async (e) => {
+    e.preventDefault();
+    if (!teamName || !teamEmail) return;
+    setIsSubmittingTeam(true);
+    const { error } = await supabase.from('team_members').insert([{
+      full_name: teamName.trim(),
+      email: teamEmail.trim().toLowerCase(),
+      role: teamRole
+    }]);
+    setIsSubmittingTeam(false);
+    if (error) {
+      alert("Error adding team member: " + error.message);
+    } else {
+      alert("Team member added successfully!");
+      setTeamName('');
+      setTeamEmail('');
+      setTeamRole('Member');
+      fetchTeamMembers();
+    }
+  };
+
+  const handleDeleteTeamMember = async (id) => {
+    if (window.confirm('Are you sure you want to remove this team member?')) {
+      const { error } = await supabase.from('team_members').delete().eq('id', id);
+      if (!error) {
+        alert("Team member removed!");
+        fetchTeamMembers();
+      } else {
+        alert("Error removing team member: " + error.message);
+      }
+    }
+  };
+
+  const handleQuickCertLink = (reg) => {
+    setCertName(reg.full_name);
+    setCertEmail(reg.email);
+    setCertDomain(reg.domain);
+    setCertCode(reg.intern_number || `DES/INT/2026/${Math.floor(1000 + Math.random() * 9000)}`);
+    setActiveTab('certificates');
+  };
 
   const fetchRegistrations = async () => {
     const { data, error } = await supabase
@@ -509,6 +622,20 @@ const AdminDashboard = () => {
           >
             <Handshake className="w-5 h-5" />
             Manage Partners
+          </button>
+          <button 
+            onClick={() => setActiveTab('certificates')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'certificates' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <Award className="w-5 h-5" />
+            Manage Certificates
+          </button>
+          <button 
+            onClick={() => setActiveTab('team')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'team' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <Users className="w-5 h-5" />
+            Manage Team
           </button>
         </aside>
 
@@ -1052,6 +1179,13 @@ const AdminDashboard = () => {
                                 <FileBadge className="w-3.5 h-3.5" /> Cert
                               </button>
                               <button 
+                                onClick={() => handleQuickCertLink(reg)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-md transition-colors"
+                                title="Add/Manage Certificate Link"
+                              >
+                                <Award className="w-3.5 h-3.5" /> Link
+                              </button>
+                              <button 
                                 onClick={() => handleDeleteRegistration(reg.id)}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold rounded-md transition-colors"
                                 title="Delete Registration"
@@ -1078,6 +1212,248 @@ const AdminDashboard = () => {
                 <MapIcon className="w-12 h-12 text-purple-300 mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-purple-900">Roadmap Editor Placeholder</h3>
                 <p className="text-purple-700 mt-2">The frontend logic for editing the Roadmap steps via Supabase can be implemented here.</p>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'certificates' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900">Manage Certificates</h2>
+                  <p className="text-gray-500 font-medium mt-1">Add and manage certificate download links for interns.</p>
+                </div>
+                <button onClick={fetchCertificates} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
+                  <Loader2 className="w-4 h-4" /> Refresh
+                </button>
+              </div>
+
+              {/* Form to add certificate */}
+              <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl mb-8">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Add New Certificate Link</h3>
+                <form onSubmit={handleAddCertificate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Full Name</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={certName}
+                      onChange={(e) => setCertName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Email Address</label>
+                    <input 
+                      type="email" 
+                      required
+                      value={certEmail}
+                      onChange={(e) => setCertEmail(e.target.value)}
+                      placeholder="e.g. john@example.com"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Certificate Code</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        required
+                        value={certCode}
+                        onChange={(e) => setCertCode(e.target.value)}
+                        placeholder="e.g. DES/INT/2026/001"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const rand = Math.floor(1000 + Math.random() * 9000);
+                          setCertCode(`DES/INT/2026/${rand}`);
+                        }}
+                        className="px-2.5 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                      >
+                        Generate
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Domain / Course</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={certDomain}
+                      onChange={(e) => setCertDomain(e.target.value)}
+                      placeholder="e.g. Web Development"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Certificate Link (URL)</label>
+                    <input 
+                      type="url" 
+                      required
+                      value={certLink}
+                      onChange={(e) => setCertLink(e.target.value)}
+                      placeholder="https://drive.google.com/file/... or https://supabase-storage-url.com/..."
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                    />
+                  </div>
+                  <div className="md:col-span-2 pt-2">
+                    <button 
+                      type="submit" 
+                      disabled={isSubmittingCert}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      {isSubmittingCert ? 'Adding...' : 'Add Certificate Link'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Table list of certificates */}
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 text-xs uppercase tracking-wider">
+                      <th className="p-4 font-black">Name</th>
+                      <th className="p-4 font-black">Email</th>
+                      <th className="p-4 font-black">Code</th>
+                      <th className="p-4 font-black">Domain</th>
+                      <th className="p-4 font-black">Certificate Link</th>
+                      <th className="p-4 font-black text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-sm">
+                    {certificates.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="p-8 text-center text-gray-500 font-medium">No certificates found.</td>
+                      </tr>
+                    ) : (
+                      certificates.map(c => (
+                        <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="p-4 font-bold text-gray-900">{c.full_name}</td>
+                          <td className="p-4 text-gray-600">{c.email}</td>
+                          <td className="p-4 font-mono font-semibold text-purple-600">{c.certificate_code}</td>
+                          <td className="p-4 text-gray-600">{c.domain}</td>
+                          <td className="p-4">
+                            <a href={c.certificate_link} target="_blank" rel="noreferrer" className="text-purple-600 hover:underline font-medium break-all max-w-[200px] block truncate">
+                              {c.certificate_link}
+                            </a>
+                          </td>
+                          <td className="p-4 text-right">
+                            <button onClick={() => handleDeleteCertificate(c.id)} className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors cursor-pointer">
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'team' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900">Manage Team</h2>
+                  <p className="text-gray-500 font-medium mt-1">Manage team members who can log in to the Team Dashboard.</p>
+                </div>
+                <button onClick={fetchTeamMembers} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
+                  <Loader2 className="w-4 h-4" /> Refresh
+                </button>
+              </div>
+
+              {/* Form to add team member */}
+              <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl mb-8">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Add Team Member</h3>
+                <form onSubmit={handleAddTeamMember} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Full Name</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={teamName}
+                      onChange={(e) => setTeamName(e.target.value)}
+                      placeholder="e.g. Alice Smith"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Email Address</label>
+                    <input 
+                      type="email" 
+                      required
+                      value={teamEmail}
+                      onChange={(e) => setTeamEmail(e.target.value)}
+                      placeholder="e.g. alice@dakhedu.com"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Role</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        required
+                        value={teamRole}
+                        onChange={(e) => setTeamRole(e.target.value)}
+                        placeholder="e.g. Developer, Mentor"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                      />
+                      <button 
+                        type="submit" 
+                        disabled={isSubmittingTeam}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer"
+                      >
+                        {isSubmittingTeam ? 'Adding...' : 'Add'}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              {/* Table list of team members */}
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 text-xs uppercase tracking-wider">
+                      <th className="p-4 font-black">Name</th>
+                      <th className="p-4 font-black">Email</th>
+                      <th className="p-4 font-black">Role</th>
+                      <th className="p-4 font-black">Added Date</th>
+                      <th className="p-4 font-black text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-sm">
+                    {teamMembers.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="p-8 text-center text-gray-500 font-medium">No team members added yet.</td>
+                      </tr>
+                    ) : (
+                      teamMembers.map(t => (
+                        <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="p-4 font-bold text-gray-900">{t.full_name}</td>
+                          <td className="p-4 text-gray-600">{t.email}</td>
+                          <td className="p-4">
+                            <span className="bg-purple-50 text-purple-700 border border-purple-100 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                              {t.role}
+                            </span>
+                          </td>
+                          <td className="p-4 text-gray-500">{new Date(t.created_at).toLocaleDateString()}</td>
+                          <td className="p-4 text-right">
+                            <button onClick={() => handleDeleteTeamMember(t.id)} className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors cursor-pointer">
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </motion.div>
           )}
