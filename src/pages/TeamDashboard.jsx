@@ -799,6 +799,24 @@ const TeamDashboard = () => {
   const pendingLeadsCount = myLeads.filter(l => l.status === 'Pending').length;
   const approachedLeadsCount = myLeads.filter(l => l.status === 'Approached').length;
 
+  const getActiveStatus = (lastActiveAt) => {
+    if (!lastActiveAt) return { label: 'Never Active', color: 'bg-gray-50 text-gray-400 border-gray-150', dotColor: 'bg-gray-300' };
+    const lastActive = new Date(lastActiveAt);
+    const diffMs = new Date() - lastActive;
+    if (diffMs < 120000) { // 2 minutes
+      return { label: 'Online Now', color: 'bg-green-50 text-green-700 border-green-200', dotColor: 'bg-green-500', isOnline: true };
+    }
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 60) {
+      return { label: `${diffMins} mins ago`, color: 'bg-slate-50 text-slate-600 border-slate-200', dotColor: 'bg-slate-400' };
+    }
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) {
+      return { label: `${diffHours} hrs ago`, color: 'bg-slate-50 text-slate-600 border-slate-200', dotColor: 'bg-slate-400' };
+    }
+    return { label: 'Offline', color: 'bg-gray-50 text-gray-400 border-gray-100', dotColor: 'bg-gray-300' };
+  };
+
   const formatSeconds = (totalSeconds) => {
     if (!totalSeconds || isNaN(totalSeconds)) return '0 mins';
     const h = Math.floor(totalSeconds / 3600);
