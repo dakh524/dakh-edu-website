@@ -53,7 +53,7 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--color-brand-bg)] text-[var(--color-brand-text-primary)]">
+    <div className="min-h-[100dvh] flex flex-col bg-[var(--color-brand-bg)] text-[var(--color-brand-text-primary)]">
       <CustomCursor />
       {!isNoNavRoute && <Navbar />}
       

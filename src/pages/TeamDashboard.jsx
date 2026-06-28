@@ -757,13 +757,6 @@ const TeamDashboard = () => {
 
   const isCeo = ['ceo', 'managing director', 'admin'].includes(teamMemberData?.role?.toLowerCase()) || teamMemberData?.email === 'ceo@dakhedusolutions.in';
   
-  const isColdCallingEligible = isCeo || 
-    ['cold caller', 'telecaller', 'sales', 'marketing', 'bd', 'business development', 'developer', 'managing director', 'director', 'manager', 'management'].includes(teamMemberData?.role?.toLowerCase()) ||
-    (teamMemberData?.role || '').toLowerCase().includes('caller') ||
-    (teamMemberData?.role || '').toLowerCase().includes('sales') ||
-    (teamMemberData?.role || '').toLowerCase().includes('director') ||
-    (teamMemberData?.role || '').toLowerCase().includes('manager');
-
   const myLeads = coldLeads.filter(lead => {
     if (isCeo) {
       if (selectedAssigneeFilter !== 'All') {
@@ -778,6 +771,16 @@ const TeamDashboard = () => {
            leadAssignee === memberEmail || 
            (leadAssignee && memberName && (leadAssignee.includes(memberName) || memberName.includes(leadAssignee)));
   });
+
+  const isColdCallingEligible = isCeo || 
+    ['cold caller', 'telecaller', 'sales', 'marketing', 'bd', 'business development', 'developer', 'managing director', 'director', 'manager', 'management', 'executive', 'operational executive', 'operational excutive'].includes(teamMemberData?.role?.toLowerCase()) ||
+    (teamMemberData?.role || '').toLowerCase().includes('caller') ||
+    (teamMemberData?.role || '').toLowerCase().includes('sales') ||
+    (teamMemberData?.role || '').toLowerCase().includes('director') ||
+    (teamMemberData?.role || '').toLowerCase().includes('manager') ||
+    (teamMemberData?.role || '').toLowerCase().includes('executive') ||
+    (teamMemberData?.role || '').toLowerCase().includes('excutive') ||
+    myLeads.length > 0;
 
   const todayStart = new Date();
   todayStart.setHours(0,0,0,0);
@@ -798,24 +801,23 @@ const TeamDashboard = () => {
 
   const formatSeconds = (totalSeconds) => {
     if (!totalSeconds || isNaN(totalSeconds)) return '0 mins';
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes} mins`;
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m} mins`;
   };
 
-  const getActiveStatus = (lastActiveAt) => {
-    if (!lastActiveAt) return { label: 'Never Active', color: 'bg-gray-50 text-gray-400 border-gray-150', dotColor: 'bg-gray-300' };
-    const lastActive = new Date(lastActiveAt);
-    const diffMs = new Date() - lastActive;
-    if (diffMs < 120000) { // 2 minutes
-      return { label: 'Online Now', color: 'bg-green-50 text-green-700 border-green-200', dotColor: 'bg-green-500', isOnline: true };
+  const getTimeAgo = (dateStr) => {
+    if (!dateStr) return { label: 'Never', color: 'bg-gray-100 text-gray-500', dotColor: 'bg-gray-400' };
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMins = Math.floor((now - date) / 60000);
+    
+    if (diffMins < 5) {
+      return { label: 'Online now', color: 'bg-emerald-50 text-emerald-600 border-emerald-200', dotColor: 'bg-emerald-500 animate-pulse' };
     }
-    const diffMins = Math.floor(diffMs / 60000);
     if (diffMins < 60) {
-      return { label: `${diffMins} mins ago`, color: 'bg-slate-50 text-slate-600 border-slate-200', dotColor: 'bg-slate-400' };
+      return { label: `${diffMins} mins ago`, color: 'bg-emerald-50 text-emerald-600 border-emerald-200', dotColor: 'bg-emerald-500' };
     }
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) {
@@ -825,7 +827,7 @@ const TeamDashboard = () => {
   };
 
   const leadsToDisplay = coldLeadsFilter === 'History'
-    ? coldLeads.filter(l => l.status === 'Approached')
+    ? myLeads.filter(l => l.status === 'Approached')
     : myLeads.filter(l => l.status === coldLeadsFilter);
 
   return (

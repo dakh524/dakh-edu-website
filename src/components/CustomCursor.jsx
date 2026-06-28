@@ -7,7 +7,14 @@ const CustomCursor = () => {
   const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
-    if (window.matchMedia("(max-width: 768px)").matches) {
+    // Check if it's a touch device or mobile screen
+    const isTouchDevice = 
+      ('ontouchstart' in window) || 
+      (navigator.maxTouchPoints > 0) || 
+      window.matchMedia("(pointer: coarse)").matches || 
+      window.matchMedia("(max-width: 768px)").matches;
+
+    if (isTouchDevice) {
       setIsMobile(true);
       return;
     }
