@@ -831,7 +831,7 @@ const Internship = () => {
                   <div className="bg-slate-50 border border-purple-100 p-6 md:p-10 rounded-3xl text-center space-y-6">
                     <div className="flex flex-col items-center justify-center">
                       <a 
-                        href={`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(`${window.location.origin}/api/badge?domain=${encodeURIComponent(certificate.domain)}\n\nI am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`)}`}
+                        href={`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(`${window.location.origin}/api/badge/${certificate.domain.toLowerCase().replace(/[^a-z0-9]+/g, '-')}\n\nI am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`)}`}
                         target="_blank" 
                         rel="noreferrer"
                         className="block cursor-pointer"
@@ -854,7 +854,7 @@ const Internship = () => {
 
                     <div className="flex justify-center gap-3 flex-wrap">
                       <a 
-                        href={`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(`${window.location.origin}/api/badge?domain=${encodeURIComponent(certificate.domain)}\n\nI am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`)}`}
+                        href={`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(`${window.location.origin}/api/badge/${certificate.domain.toLowerCase().replace(/[^a-z0-9]+/g, '-')}\n\nI am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`)}`}
                         target="_blank" 
                         rel="noreferrer"
                         className="px-6 py-3 bg-[#0a66c2] hover:bg-[#004182] text-white font-bold rounded-xl transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
