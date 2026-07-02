@@ -328,25 +328,35 @@ const Internship = () => {
                   <p>Your badge has been <strong>downloaded</strong> to your device.</p>
                 </div>
                 <div className="flex gap-4 items-start bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
-                  <div className="w-7 h-7 bg-blue-100 text-[#0a66c2] rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5">2</div>
-                  <p>Click "Continue" below to open LinkedIn with your pre-filled text.</p>
+                  <div className="w-7 h-7 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5">2</div>
+                  <p>Click "Continue" below to open LinkedIn. Make sure to tag our company page <strong>@DAKH Edu Solutions</strong>!</p>
                 </div>
                 <div className="flex gap-4 items-start bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
-                  <div className="w-7 h-7 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5">3</div>
-                  <p>Click the <strong>Image icon 🖼️</strong> on LinkedIn and attach your downloaded badge!</p>
+                  <div className="w-7 h-7 bg-blue-100 text-[#0a66c2] rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5">3</div>
+                  <p>Click the <strong>Image icon 🖼️</strong> on LinkedIn and attach your downloaded badge.</p>
                 </div>
               </div>
               
-              <button
-                onClick={() => {
-                  const text = `I am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`;
-                  window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`, '_blank');
-                  setShowShareInstructions(false);
-                }}
-                className="w-full py-4 bg-[#0a66c2] hover:bg-[#004182] text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-500/30 active:translate-y-0.5 flex items-center justify-center gap-2 text-lg"
-              >
-                Continue to LinkedIn <ArrowRight className="w-5 h-5" />
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    const text = `I am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at @DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`;
+                    window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`, '_blank');
+                    setShowShareInstructions(false);
+                  }}
+                  className="w-full py-4 bg-[#0a66c2] hover:bg-[#004182] text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-500/30 active:translate-y-0.5 flex items-center justify-center gap-2 text-lg"
+                >
+                  Continue to LinkedIn <ArrowRight className="w-5 h-5" />
+                </button>
+                <a
+                  href={certificate.certificate_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-3 bg-white hover:bg-slate-50 text-purple-600 font-bold rounded-2xl transition-all border-2 border-purple-100 flex items-center justify-center gap-2"
+                >
+                  <Download className="w-5 h-5" /> Download Certificate from Drive
+                </a>
+              </div>
             </div>
           </div>
         )}
