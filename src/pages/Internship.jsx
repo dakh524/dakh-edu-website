@@ -193,6 +193,7 @@ const Internship = () => {
   const [certError, setCertError] = useState(null);
   const [certificate, setCertificate] = useState(null);
   const [regBackup, setRegBackup] = useState(null);
+  const [showShareInstructions, setShowShareInstructions] = useState(false);
 
   const handleCertSearch = async (e) => {
     e.preventDefault();
@@ -302,6 +303,53 @@ const Internship = () => {
 
   return (
     <PageTransition>
+      <div className="min-h-screen bg-slate-50 pt-24 pb-12 font-sans selection:bg-purple-200">
+        
+        {/* Share Instructions Modal */}
+        {showShareInstructions && certificate && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 backdrop-blur-sm transition-all duration-300">
+            <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-fade-in-up border border-white/20">
+              <button 
+                onClick={() => setShowShareInstructions(false)}
+                className="absolute top-5 right-5 text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="w-16 h-16 bg-blue-50 text-[#0a66c2] rounded-full flex items-center justify-center mb-6 mx-auto shadow-inner border border-blue-100">
+                <Share2 className="w-7 h-7" />
+              </div>
+              
+              <h3 className="text-2xl font-black text-gray-900 text-center mb-3">Share on LinkedIn</h3>
+              
+              <div className="space-y-4 my-8 text-gray-600 text-[15px] leading-relaxed">
+                <div className="flex gap-4 items-start bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                  <div className="w-7 h-7 bg-green-100 text-green-600 rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5">1</div>
+                  <p>Your badge has been <strong>downloaded</strong> to your device.</p>
+                </div>
+                <div className="flex gap-4 items-start bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                  <div className="w-7 h-7 bg-blue-100 text-[#0a66c2] rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5">2</div>
+                  <p>Click "Continue" below to open LinkedIn with your pre-filled text.</p>
+                </div>
+                <div className="flex gap-4 items-start bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                  <div className="w-7 h-7 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold shrink-0 mt-0.5">3</div>
+                  <p>Click the <strong>Image icon 🖼️</strong> on LinkedIn and attach your downloaded badge!</p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => {
+                  const text = `I am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`;
+                  window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`, '_blank');
+                  setShowShareInstructions(false);
+                }}
+                className="w-full py-4 bg-[#0a66c2] hover:bg-[#004182] text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-500/30 active:translate-y-0.5 flex items-center justify-center gap-2 text-lg"
+              >
+                Continue to LinkedIn <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
       {/* 1. Hero */}
       <section className="pt-32 pb-20 px-6 lg:px-8 max-w-5xl mx-auto text-center relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[var(--color-brand-primary)] rounded-full blur-[150px] opacity-20 pointer-events-none -z-10"></div>
@@ -876,9 +924,8 @@ const Internship = () => {
                               window.open(imageUrl, '_blank'); // Fallback if CORS blocks fetch
                             });
 
-                          // Open LinkedIn
-                          const text = `I am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`;
-                          window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`, '_blank');
+                          // Open the instructions modal (user clicks continue to actually go to LinkedIn)
+                          setShowShareInstructions(true);
                         }}
                         className="px-6 py-3 bg-[#0a66c2] hover:bg-[#004182] text-white font-bold rounded-xl transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
                         title="Downloads badge & opens LinkedIn"
