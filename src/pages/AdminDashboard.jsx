@@ -19,6 +19,13 @@ const AdminDashboard = () => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   
+  const [internProjects, setInternProjects] = useState([]);
+  const [ipTitle, setIpTitle] = useState('');
+  const [ipVercelLink, setIpVercelLink] = useState('');
+  const [ipGithubLink, setIpGithubLink] = useState('');
+  const [ipLinkedinImageLink, setIpLinkedinImageLink] = useState('');
+  const [isSubmittingIp, setIsSubmittingIp] = useState(false);
+  
   const [certificates, setCertificates] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [coldLeads, setColdLeads] = useState([]);
@@ -215,6 +222,7 @@ const AdminDashboard = () => {
         fetchTeamMembers();
         fetchColdLeads();
         fetchTeamTasks();
+        fetchInternProjects();
       }
       setLoading(false);
     });
@@ -229,6 +237,48 @@ const AdminDashboard = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const fetchInternProjects = async () => {
+    const { data, error } = await supabase
+      .from('intern_projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setInternProjects(data);
+  };
+
+  const handleAddInternProject = async (e) => {
+    e.preventDefault();
+    if (!ipTitle || !ipVercelLink || !ipGithubLink || !ipLinkedinImageLink) return;
+    setIsSubmittingIp(true);
+    const { error } = await supabase.from('intern_projects').insert([{
+      title: ipTitle,
+      vercel_link: ipVercelLink,
+      github_link: ipGithubLink,
+      linkedin_image_link: ipLinkedinImageLink
+    }]);
+    setIsSubmittingIp(false);
+    if (error) {
+      alert("Error adding intern project: " + error.message);
+    } else {
+      alert("Intern project added successfully!");
+      setIpTitle('');
+      setIpVercelLink('');
+      setIpGithubLink('');
+      setIpLinkedinImageLink('');
+      fetchInternProjects();
+    }
+  };
+
+  const handleDeleteInternProject = async (id) => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      const { error } = await supabase.from('intern_projects').delete().eq('id', id);
+      if (!error) {
+        setInternProjects(internProjects.filter((p) => p.id !== id));
+      } else {
+        alert("Failed to delete project: " + error.message);
+      }
+    }
+  };
 
   const fetchCertificates = async () => {
     const { data, error } = await supabase
@@ -709,6 +759,13 @@ const AdminDashboard = () => {
             <Users className="w-5 h-5" />
             Manage Team
           </button>
+          <button 
+            onClick={() => setActiveTab('intern-projects')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'intern-projects' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <BookOpen className="w-5 h-5" />
+            Intern Projects
+          </button>
         </aside>
 
         {/* Content Area */}
@@ -979,6 +1036,112 @@ const AdminDashboard = () => {
                         </div>
                         <button 
                           onClick={() => handleDeletePartner(partner.id)}
+                          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'intern-projects' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
+              <div className="mb-8">
+                <h2 className="text-2xl font-black text-gray-900">Manage Intern Projects</h2>
+                <p className="text-gray-500 font-medium mt-1">Publish an intern's project to the Internship page.</p>
+              </div>
+
+              <form onSubmit={handleAddInternProject} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Project Title</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={ipTitle}
+                    onChange={(e) => setIpTitle(e.target.value)}
+                    placeholder="e.g. E-Commerce Dashboard"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Vercel (Live) Link</label>
+                  <input 
+                    type="url" 
+                    required
+                    value={ipVercelLink}
+                    onChange={(e) => setIpVercelLink(e.target.value)}
+                    placeholder="https://my-project.vercel.app"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">GitHub Repo Link</label>
+                  <input 
+                    type="url" 
+                    required
+                    value={ipGithubLink}
+                    onChange={(e) => setIpGithubLink(e.target.value)}
+                    placeholder="https://github.com/user/repo"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">LinkedIn Image Link</label>
+                  <input 
+                    type="url" 
+                    required
+                    value={ipLinkedinImageLink}
+                    onChange={(e) => setIpLinkedinImageLink(e.target.value)}
+                    placeholder="https://media.licdn.com/dms/image/..."
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                  />
+                </div>
+                {ipLinkedinImageLink && (
+                  <div className="mt-4 rounded-xl overflow-hidden border border-gray-200">
+                    <img src={ipLinkedinImageLink} alt="Preview" className="w-full h-auto object-cover max-h-64" onError={(e) => e.target.style.display = 'none'} />
+                  </div>
+                )}
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingIp}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
+                >
+                  {isSubmittingIp ? 'Adding Project...' : 'Add Project'}
+                </button>
+              </form>
+
+              <div className="mt-12">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">Manage Uploaded Projects</h3>
+                  <button onClick={fetchInternProjects} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
+                    <Loader2 className="w-4 h-4" /> Refresh
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {internProjects.length === 0 ? (
+                    <div className="col-span-2 p-8 text-center bg-gray-50 rounded-xl text-gray-500 font-medium border border-gray-100">
+                      No projects added yet.
+                    </div>
+                  ) : (
+                    internProjects.map(project => (
+                      <div key={project.id} className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white flex flex-col p-4">
+                        <div className="aspect-video w-full relative bg-gray-50 rounded-lg flex justify-center items-center mb-3">
+                          <img src={project.linkedin_image_link} alt={project.title} className="w-full h-full object-cover rounded-lg" />
+                        </div>
+                        <div className="flex-grow">
+                          <h4 className="font-bold text-gray-900 text-base mb-1">{project.title}</h4>
+                          <div className="flex gap-2 mt-2">
+                            <a href={project.vercel_link} target="_blank" rel="noreferrer" className="text-xs text-purple-600 hover:underline">Live Demo</a>
+                            <span className="text-gray-300">|</span>
+                            <a href={project.github_link} target="_blank" rel="noreferrer" className="text-xs text-gray-600 hover:underline">GitHub</a>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteInternProject(project.id)}
                           className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100"
                         >
                           <Trash2 size={16} />

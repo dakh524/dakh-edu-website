@@ -24,6 +24,36 @@ const CHENNAI_COLLEGES = [
   "Vels University"
 ];
 
+const DOMAINS_LIST = [
+  // IT / CSE
+  "Web Development", "App Development", "AI & Machine Learning", "UI/UX Design", 
+  "Python Full Stack", "MERN Stack", "Cyber Security", "Data Science", "DevOps", 
+  "Blockchain Development", "Game Development", "AR/VR Development", "Cloud Computing", 
+  "Edge Computing", "Bioinformatics", "Computer Vision", "Natural Language Processing (NLP)", 
+  "Software Testing (QA)", "3D Animation & Modeling", "MEAN Stack", 
+  "React Native", "Flutter", "iOS Development", "Android Development", 
+  "Networking", "Ethical Hacking", "Digital Marketing", 
+  "Product Management", "Graphic Design", "Video Editing", "System Administration", 
+  "IT Support", "Information Security", "Quantum Computing", "5G Technologies", 
+  "Cloud Security", "Front-End Development", "Back-End Development", 
+  "Database Administration", "Machine Learning Engineering", "Data Analytics", 
+  "Business Intelligence", "API Development", "Microservices Architecture", 
+  "C/C++ Programming", "Java Full Stack", "Generative AI",
+  // Mechanical
+  "AutoCAD & 3D Modeling", "HVAC Design", "Manufacturing & Production",
+  "Automotive Design", "Computational Fluid Dynamics (CFD)", "Finite Element Analysis (FEA)",
+  "Robotics & Automation", "Mechatronics",
+  // Civil
+  "Structural Engineering", "Construction Management", "AutoCAD Civil 3D",
+  "Urban Planning", "Geotechnical Engineering", "Transportation Engineering",
+  "Surveying & Mapping", "Environmental Engineering",
+  // ECE / EEE
+  "VLSI Design", "Embedded Systems", "Power Systems", "Control Systems",
+  "Digital Signal Processing (DSP)", "Antenna Design", "Electric Vehicles (EV) Technology",
+  "Renewable Energy Systems", "Microcontrollers & PLCs", "PCB Design", "IoT",
+  "Other"
+].sort();
+
 const InternshipModal = ({ isOpen, onClose, planDetails }) => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -238,14 +268,9 @@ const InternshipModal = ({ isOpen, onClose, planDetails }) => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <select required name="domain" value={formData.domain} onChange={handleChange} className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none bg-white">
                           <option value="" disabled>Select Domain</option>
-                          <option value="Web Development">Web Development</option>
-                          <option value="App Development">App Development</option>
-                          <option value="AI & Machine Learning">AI & Machine Learning</option>
-                          <option value="UI/UX Design">UI/UX Design</option>
-                          <option value="Python Full Stack">Python Full Stack</option>
-                          <option value="MERN Stack">MERN Stack</option>
-                          <option value="Cyber Security">Cyber Security</option>
-                          <option value="Data Science">Data Science</option>
+                          {DOMAINS_LIST.map((dom, i) => (
+                            <option key={i} value={dom}>{dom}</option>
+                          ))}
                         </select>
                         <input type="text" name="referral" placeholder="Referral Code (Optional)" value={formData.referral} onChange={handleChange} className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none" />
                       </div>

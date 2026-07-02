@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { Check, Laptop, Users, Building, Globe, Home as HomeIcon, Zap, Target, Award, Star, ArrowRight, CalendarDays, BookOpen, UserCheck, Lightbulb, Code2, Send, CheckCircle2, AlertTriangle, Briefcase, ChevronRight, Key, Download, Loader2 } from 'lucide-react';
+import { Check, Laptop, Users, Building, Globe, Home as HomeIcon, Zap, Target, Award, Star, ArrowRight, CalendarDays, BookOpen, UserCheck, Lightbulb, Code2, Send, CheckCircle2, AlertTriangle, Briefcase, ChevronRight, Key, Download, Loader2, Share2 } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
 import TiltCard from '../components/TiltCard';
@@ -13,6 +13,62 @@ const DOMAINS = [
   'Python Full Stack', 'MERN Stack', 'Cyber Security', 'IoT',
   'Generative AI', 'Java Full Stack', 'Cloud Computing', 'Data Science'
 ];
+
+// Badge Component
+const CompletionBadge = ({ domain, name }) => {
+  const colors = [
+    { primary: '#2563eb', secondary: '#1e40af', ribbon: '#3b82f6' }, // Blue
+    { primary: '#d97706', secondary: '#b45309', ribbon: '#f59e0b' }, // Gold
+    { primary: '#dc2626', secondary: '#991b1b', ribbon: '#ef4444' }, // Red
+    { primary: '#059669', secondary: '#047857', ribbon: '#10b981' }, // Green
+    { primary: '#7c3aed', secondary: '#5b21b6', ribbon: '#8b5cf6' }, // Purple
+  ];
+  const color = colors[domain.length % colors.length];
+  const year = new Date().getFullYear();
+
+  return (
+    <div className="relative w-64 h-64 mx-auto flex items-center justify-center hover:scale-105 transition-transform duration-300 mb-6">
+      <svg viewBox="0 0 200 240" className="w-full h-full font-sans" style={{ filter: 'drop-shadow(0px 10px 15px rgba(0,0,0,0.15))' }}>
+        {/* Ribbon tails at the bottom */}
+        <path d="M40 170 L40 230 L65 210 L90 230 L90 170 Z" fill={color.secondary} />
+        <path d="M110 170 L110 230 L135 210 L160 230 L160 170 Z" fill={color.secondary} />
+        
+        {/* Outer Hexagon */}
+        <polygon points="100,10 180,50 180,140 100,180 20,140 20,50" fill={color.primary} />
+        
+        {/* Inner Hexagons */}
+        <polygon points="100,18 172,55 172,135 100,172 28,135 28,55" fill="#f8fafc" />
+        <polygon points="100,24 166,58 166,132 100,166 34,132 34,58" fill="#ffffff" />
+        
+        {/* Top Logo / Icon placeholder */}
+        <g transform="translate(85, 30)">
+          <path d="M15 0 L30 8 L30 22 L15 30 L0 22 L0 8 Z" fill={color.primary} />
+          <path d="M15 4 L25 10 L25 20 L15 26 L5 20 L5 10 Z" fill="#ffffff" />
+          <circle cx="15" cy="15" r="4" fill={color.primary} />
+        </g>
+        
+        {/* Company Name */}
+        <text x="100" y="78" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#475569">DAKH EDU SOLUTIONS</text>
+        
+        {/* INTERNSHIP COMPLETED text */}
+        <text x="100" y="98" textAnchor="middle" fontSize="10" fontWeight="900" fill="#1e293b" letterSpacing="0.5">INTERNSHIP COMPLETED</text>
+        
+        {/* Center Ribbon Banner */}
+        <path d="M-5 108 L205 108 L195 120.5 L205 133 L-5 133 L5 120.5 Z" fill={color.ribbon} />
+        <path d="M-5 133 L20 133 L20 142 Z" fill={color.secondary} />
+        <path d="M205 133 L180 133 L180 142 Z" fill={color.secondary} />
+        
+        {/* Domain Text */}
+        <text x="100" y="124" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#ffffff" style={{ textTransform: 'uppercase' }}>
+          {domain.length > 26 ? domain.substring(0, 26) + '...' : domain}
+        </text>
+        
+        {/* Year */}
+        <text x="100" y="155" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#64748b">{year}</text>
+      </svg>
+    </div>
+  );
+};
 
 const MODES = {
   Online: {
@@ -217,6 +273,26 @@ const Internship = () => {
     fetchRoadmap();
   }, []);
 
+  const [internProjects, setInternProjects] = useState([]);
+
+  useEffect(() => {
+    const fetchInternProjects = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('intern_projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data) {
+          setInternProjects(data);
+        }
+      } catch (err) {
+        console.error("Error fetching intern projects:", err);
+      }
+    };
+
+    fetchInternProjects();
+  }, []);
+
   const handleApplyClick = (planName, price) => {
     setSelectedPlan({ name: planName, price: price });
     setIsModalOpen(true);
@@ -263,25 +339,25 @@ const Internship = () => {
             <h2 className="font-extrabold text-4xl md:text-5xl text-center mb-16 text-gray-900">Explore Our Domains</h2>
           </ScrollReveal>
         </div>
-        
+
         {/* Infinite Marquee Container */}
         <div className="relative w-full flex overflow-hidden py-16 group relative z-10 [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)] min-h-[500px]">
-          
+
           {/* Start Train Overlay Button */}
           {!isTrainMoving && (
             <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/10 backdrop-blur-[2px]">
-               <button 
-                 onClick={() => setIsTrainMoving(true)} 
-                 className="px-10 py-5 bg-[var(--color-brand-primary)] text-white font-black rounded-full text-2xl shadow-[0_0_50px_rgba(147,51,234,0.6)] animate-pulse hover:scale-110 hover:animate-none transition-all border-4 border-white/20 flex items-center gap-4"
-               >
-                  Start Train <Zap size={24} className="text-yellow-300" />
-               </button>
+              <button
+                onClick={() => setIsTrainMoving(true)}
+                className="px-10 py-5 bg-[var(--color-brand-primary)] text-white font-black rounded-full text-2xl shadow-[0_0_50px_rgba(147,51,234,0.6)] animate-pulse hover:scale-110 hover:animate-none transition-all border-4 border-white/20 flex items-center gap-4"
+              >
+                Start Train <Zap size={24} className="text-yellow-300" />
+              </button>
             </div>
           )}
 
           {/* Train track background line */}
           <div className="absolute bottom-[2.5rem] left-0 w-full h-2 bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300 opacity-50 z-0 border-b border-gray-500"></div>
-          
+
           <div className="animate-marquee flex items-end" style={{ animationDuration: '80s', animationPlayState: isTrainMoving ? 'running' : 'paused' }}>
             {['ENGINE', ...DOMAINS, 'ENGINE', ...DOMAINS].map((domain, i) => {
               const isLastCompartment = i === DOMAINS.length || i === (DOMAINS.length * 2 + 1);
@@ -292,7 +368,7 @@ const Internship = () => {
                     <div className="relative pb-6">
                       {/* Engine Body */}
                       <div className="w-[300px] h-[400px] shrink-0 p-8 rounded-[2rem] rounded-tl-[4rem] bg-gradient-to-br from-gray-800 to-gray-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col relative overflow-hidden z-10 border-b-8 border-gray-950">
-                        
+
                         {/* Steam Chimney (Top Left) */}
                         <div className="absolute top-0 left-8 w-16 h-28 bg-gradient-to-b from-gray-700 to-gray-900 rounded-t-xl border-t-4 border-gray-600 z-0">
                           {/* Smoke Puffs - only animate when moving */}
@@ -308,14 +384,14 @@ const Internship = () => {
 
                         {/* Engine Details */}
                         <div className="mt-auto space-y-4">
-                           <div className="h-4 w-full bg-[var(--color-brand-primary)] rounded-full shadow-[0_0_15px_rgba(147,51,234,0.5)]"></div>
-                           <div className="h-4 w-3/4 bg-gray-700 rounded-full ml-auto"></div>
-                           <div className="h-4 w-1/2 bg-gray-700 rounded-full ml-auto"></div>
+                          <div className="h-4 w-full bg-[var(--color-brand-primary)] rounded-full shadow-[0_0_15px_rgba(147,51,234,0.5)]"></div>
+                          <div className="h-4 w-3/4 bg-gray-700 rounded-full ml-auto"></div>
+                          <div className="h-4 w-1/2 bg-gray-700 rounded-full ml-auto"></div>
                         </div>
 
                         <h3 className="font-black text-5xl text-white mt-8 tracking-widest text-center shadow-black drop-shadow-md">DAKH</h3>
                       </div>
-                      
+
                       {/* Cowcatcher / Grill (Front Left) */}
                       <div className="absolute bottom-6 -left-6 w-16 h-24 bg-gradient-to-r from-gray-700 to-gray-900 border-r-4 border-gray-800 rounded-bl-3xl transform -skew-x-[20deg] z-0 shadow-xl"></div>
 
@@ -334,65 +410,65 @@ const Internship = () => {
 
                     {/* The Train Link connecting engine to first car */}
                     <div className="w-8 h-4 bg-gray-400 border-y-2 border-gray-500 shadow-inner relative z-0 flex items-center justify-center mb-16 mx-2 rounded-sm shrink-0">
-                       <div className="w-full h-1 bg-gray-700"></div>
+                      <div className="w-full h-1 bg-gray-700"></div>
                     </div>
                   </div>
                 );
               }
 
               return (
-              <div key={i} className={`flex items-end shrink-0 ${isLastCompartment ? 'mr-32' : ''}`}>
-                {/* The Train Compartment (Card) */}
-                <div className="relative pb-6">
-                  {/* The Glass Card */}
-                  <div className="w-[280px] sm:w-[320px] shrink-0 p-8 rounded-[2rem] bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_rgba(31,38,135,0.05)] hover:shadow-[0_20px_40px_rgba(147,51,234,0.15)] hover:border-purple-300/50 hover:-translate-y-2 transition-all duration-300 flex flex-col relative overflow-hidden group/card z-10 h-[400px]">
-                    {/* Glossy Reflection overlay */}
-                    <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/60 to-transparent pointer-events-none rounded-t-[2rem]"></div>
-                    
-                    <div className="flex items-center gap-4 mb-6 relative z-10">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white to-purple-50 flex items-center justify-center text-3xl shadow-sm border border-white/80 group-hover/card:scale-110 group-hover/card:rotate-3 transition-transform duration-300">
-                        {getDomainIcon(domain)}
+                <div key={i} className={`flex items-end shrink-0 ${isLastCompartment ? 'mr-32' : ''}`}>
+                  {/* The Train Compartment (Card) */}
+                  <div className="relative pb-6">
+                    {/* The Glass Card */}
+                    <div className="w-[280px] sm:w-[320px] shrink-0 p-8 rounded-[2rem] bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_rgba(31,38,135,0.05)] hover:shadow-[0_20px_40px_rgba(147,51,234,0.15)] hover:border-purple-300/50 hover:-translate-y-2 transition-all duration-300 flex flex-col relative overflow-hidden group/card z-10 h-[400px]">
+                      {/* Glossy Reflection overlay */}
+                      <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/60 to-transparent pointer-events-none rounded-t-[2rem]"></div>
+
+                      <div className="flex items-center gap-4 mb-6 relative z-10">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white to-purple-50 flex items-center justify-center text-3xl shadow-sm border border-white/80 group-hover/card:scale-110 group-hover/card:rotate-3 transition-transform duration-300">
+                          {getDomainIcon(domain)}
+                        </div>
+                        <h3 className="font-black text-xl text-gray-900 tracking-tight leading-tight">{domain}</h3>
                       </div>
-                      <h3 className="font-black text-xl text-gray-900 tracking-tight leading-tight">{domain}</h3>
+
+                      <div className="space-y-4 mb-8 relative z-10 flex-grow">
+                        <div className="flex items-center justify-between text-sm font-bold text-gray-700 bg-white/60 px-4 py-3 rounded-xl border border-white/50 shadow-sm">
+                          <span>Duration:</span>
+                          <span className="text-[var(--color-brand-primary)]">15/30 Days</span>
+                        </div>
+
+                        <ul className="space-y-3 mt-5 text-sm font-bold text-gray-700">
+                          <li className="flex items-center gap-3"><div className="bg-green-100 p-1 rounded-full"><Check size={14} className="text-green-600 font-black" /></div> Certificate</li>
+                          <li className="flex items-center gap-3"><div className="bg-green-100 p-1 rounded-full"><Check size={14} className="text-green-600 font-black" /></div> Mentor Support</li>
+                          <li className="flex items-center gap-3"><div className="bg-green-100 p-1 rounded-full"><Check size={14} className="text-green-600 font-black" /></div> Real Projects</li>
+                        </ul>
+                      </div>
+
+                      <button onClick={() => handleApplyClick(`${domain} Internship`, '449')} className="mt-auto w-full py-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-[var(--color-brand-primary)] hover:shadow-lg hover:shadow-purple-500/30 transition-all relative z-10 overflow-hidden group/btn flex items-center justify-center gap-2">
+                        Apply Now <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
+                      </button>
                     </div>
 
-                    <div className="space-y-4 mb-8 relative z-10 flex-grow">
-                      <div className="flex items-center justify-between text-sm font-bold text-gray-700 bg-white/60 px-4 py-3 rounded-xl border border-white/50 shadow-sm">
-                        <span>Duration:</span>
-                        <span className="text-[var(--color-brand-primary)]">15/30 Days</span>
-                      </div>
-                      
-                      <ul className="space-y-3 mt-5 text-sm font-bold text-gray-700">
-                        <li className="flex items-center gap-3"><div className="bg-green-100 p-1 rounded-full"><Check size={14} className="text-green-600 font-black" /></div> Certificate</li>
-                        <li className="flex items-center gap-3"><div className="bg-green-100 p-1 rounded-full"><Check size={14} className="text-green-600 font-black" /></div> Mentor Support</li>
-                        <li className="flex items-center gap-3"><div className="bg-green-100 p-1 rounded-full"><Check size={14} className="text-green-600 font-black" /></div> Real Projects</li>
-                      </ul>
+                    {/* Train Wheels */}
+                    <div className="absolute bottom-2 left-10 w-10 h-10 rounded-full bg-gray-800 border-[3px] border-gray-400 shadow-md z-20 flex items-center justify-center animate-[spin_4s_linear_infinite_reverse] transition-all" style={{ animationPlayState: isTrainMoving ? 'running' : 'paused' }}>
+                      <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                      <div className="absolute inset-0 border-[2px] border-dashed border-gray-600 rounded-full"></div>
                     </div>
+                    <div className="absolute bottom-2 right-10 w-10 h-10 rounded-full bg-gray-800 border-[3px] border-gray-400 shadow-md z-20 flex items-center justify-center animate-[spin_4s_linear_infinite_reverse] transition-all" style={{ animationPlayState: isTrainMoving ? 'running' : 'paused' }}>
+                      <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                      <div className="absolute inset-0 border-[2px] border-dashed border-gray-600 rounded-full"></div>
+                    </div>
+                  </div>
 
-                    <button onClick={() => handleApplyClick(`${domain} Internship`, '449')} className="mt-auto w-full py-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-[var(--color-brand-primary)] hover:shadow-lg hover:shadow-purple-500/30 transition-all relative z-10 overflow-hidden group/btn flex items-center justify-center gap-2">
-                      Apply Now <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
-                    </button>
-                  </div>
-                  
-                  {/* Train Wheels */}
-                  <div className="absolute bottom-2 left-10 w-10 h-10 rounded-full bg-gray-800 border-[3px] border-gray-400 shadow-md z-20 flex items-center justify-center animate-[spin_4s_linear_infinite_reverse] transition-all" style={{ animationPlayState: isTrainMoving ? 'running' : 'paused' }}>
-                    <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                    <div className="absolute inset-0 border-[2px] border-dashed border-gray-600 rounded-full"></div>
-                  </div>
-                  <div className="absolute bottom-2 right-10 w-10 h-10 rounded-full bg-gray-800 border-[3px] border-gray-400 shadow-md z-20 flex items-center justify-center animate-[spin_4s_linear_infinite_reverse] transition-all" style={{ animationPlayState: isTrainMoving ? 'running' : 'paused' }}>
-                    <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                    <div className="absolute inset-0 border-[2px] border-dashed border-gray-600 rounded-full"></div>
-                  </div>
+                  {/* The Train Link / Connector - hidden if it's the very last compartment before the engine */}
+                  {!isLastCompartment && (
+                    <div className="w-8 h-4 bg-gray-400 border-y-2 border-gray-500 shadow-inner relative z-0 flex items-center justify-center mb-16 mx-2 rounded-sm shrink-0">
+                      <div className="w-full h-1 bg-gray-700"></div>
+                    </div>
+                  )}
                 </div>
-
-                {/* The Train Link / Connector - hidden if it's the very last compartment before the engine */}
-                {!isLastCompartment && (
-                  <div className="w-8 h-4 bg-gray-400 border-y-2 border-gray-500 shadow-inner relative z-0 flex items-center justify-center mb-16 mx-2 rounded-sm shrink-0">
-                     <div className="w-full h-1 bg-gray-700"></div>
-                  </div>
-                )}
-              </div>
-            );
+              );
             })}
           </div>
         </div>
@@ -448,11 +524,33 @@ const Internship = () => {
           <p className="text-center text-[var(--color-brand-text-secondary)] text-lg mb-20 max-w-2xl mx-auto">Invest in your skills. Real projects, dedicated mentorship, and verified certificates.</p>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-8">
+          {/* Project Based Intern */}
+          <ScrollReveal delay={0.05}>
+            <TiltCard className="h-full">
+              <div className="card bg-white p-8 lg:p-10 rounded-[2.5rem] h-full flex flex-col items-center justify-between text-center group hover:border-pink-500 hover:shadow-[0_20px_40px_rgba(236,72,153,0.15)] transition-all">
+                <div>
+                  <div className="w-16 h-16 bg-pink-50 text-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                    <Award size={32} />
+                  </div>
+                  <h3 className="font-black text-gray-900 text-2xl mb-2">Project Based</h3>
+                  <p className="text-[var(--color-brand-text-secondary)] mb-8 font-medium">Only for certificate. Complete a project in one of 50+ domains and get verified.</p>
+
+                  <div className="text-5xl font-black text-gray-900 mb-2">₹149</div>
+                  <div className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-8">+ tax / per person</div>
+                </div>
+
+                <button onClick={() => handleApplyClick('Project Based Intern', '149')} className="w-full py-4 rounded-2xl bg-pink-50 text-pink-600 font-bold hover:bg-pink-600 hover:text-white transition-colors">
+                  Select Project Based
+                </button>
+              </div>
+            </TiltCard>
+          </ScrollReveal>
+
           {/* 15 Days Sprint */}
           <ScrollReveal delay={0.1}>
             <TiltCard className="h-full">
-              <div className="card bg-white p-10 rounded-[2.5rem] h-full flex flex-col items-center justify-between text-center group hover:border-blue-500 hover:shadow-[0_20px_40px_rgba(59,130,246,0.15)] transition-all">
+              <div className="card bg-white p-8 lg:p-10 rounded-[2.5rem] h-full flex flex-col items-center justify-between text-center group hover:border-blue-500 hover:shadow-[0_20px_40px_rgba(59,130,246,0.15)] transition-all">
                 <div>
                   <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
                     <Zap size={32} />
@@ -474,15 +572,15 @@ const Internship = () => {
           {/* 30 Days Mastery */}
           <ScrollReveal delay={0.2}>
             <TiltCard className="h-full">
-              <div className="card bg-gray-900 text-white p-10 rounded-[2.5rem] h-full flex flex-col items-center justify-between text-center relative border-gray-800 shadow-2xl scale-105 z-10 hover:border-[var(--color-brand-primary)] overflow-visible">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 badge bg-[var(--color-brand-secondary)] text-gray-900 border-none shadow-lg whitespace-nowrap">
+              <div className="card bg-gray-900 text-white p-8 lg:p-10 rounded-[2.5rem] h-full flex flex-col items-center justify-between text-center relative border-gray-800 shadow-2xl xl:scale-105 z-10 hover:border-[var(--color-brand-primary)] overflow-visible">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[var(--color-brand-secondary)] text-gray-900 px-4 py-1 rounded-full font-bold text-xs uppercase tracking-wider shadow-lg whitespace-nowrap z-20">
                   Most Popular
                 </div>
                 <div>
                   <div className="w-16 h-16 bg-[rgba(147,51,234,0.2)] text-[var(--color-brand-energy)] rounded-2xl flex items-center justify-center mx-auto mb-6">
                     <Target size={32} />
                   </div>
-                  <h3 className="font-black text-2xl mb-2">30 Days Mastery</h3>
+                  <h3 className="font-black text-white text-2xl mb-2">30 Days Mastery</h3>
                   <p className="text-gray-400 mb-8 font-medium">Deep dive into tech stacks and build a capstone project.</p>
 
                   <div className="text-5xl font-black mb-2">₹449</div>
@@ -499,7 +597,7 @@ const Internship = () => {
           {/* Team Offer */}
           <ScrollReveal delay={0.3}>
             <TiltCard className="h-full">
-              <div className="card bg-white p-10 rounded-[2.5rem] h-full flex flex-col items-center justify-between text-center group hover:border-[var(--color-brand-secondary)] hover:shadow-[0_20px_40px_rgba(250,204,21,0.15)] transition-all relative overflow-hidden">
+              <div className="card bg-white p-8 lg:p-10 rounded-[2.5rem] h-full flex flex-col items-center justify-between text-center group hover:border-[var(--color-brand-secondary)] hover:shadow-[0_20px_40px_rgba(250,204,21,0.15)] transition-all relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-brand-secondary)] rounded-full blur-[80px] opacity-20 pointer-events-none"></div>
                 <div>
                   <div className="w-16 h-16 bg-yellow-50 text-[var(--color-brand-secondary)] rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
@@ -550,6 +648,44 @@ const Internship = () => {
         </div>
       </section>
 
+      {/* Intern Projects Section */}
+      {internProjects.length > 0 && (
+        <section className="py-24 px-6 lg:px-8 bg-white relative overflow-hidden border-t border-gray-100">
+          <div className="max-w-6xl mx-auto relative z-10">
+            <ScrollReveal>
+              <h2 className="font-bold text-3xl md:text-4xl text-center mb-16 text-gray-900">Our Intern Works</h2>
+            </ScrollReveal>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {internProjects.map((project, index) => (
+                <ScrollReveal delay={index * 0.1} key={project.id}>
+                  <div className="card bg-white rounded-[2rem] overflow-hidden border border-gray-150 shadow-sm hover:shadow-xl transition-all group h-full flex flex-col">
+                    <div className="aspect-video w-full overflow-hidden relative bg-gray-100">
+                      <img src={project.linkedin_image_link} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                        <h3 className="text-white font-bold text-xl">{project.title}</h3>
+                      </div>
+                    </div>
+                    <div className="p-6 flex flex-col flex-grow justify-between gap-6">
+                      <h3 className="font-bold text-gray-900 text-xl group-hover:text-purple-600 transition-colors line-clamp-2">
+                        {project.title}
+                      </h3>
+                      <div className="flex gap-3">
+                        <a href={project.vercel_link} target="_blank" rel="noreferrer" className="flex-1 text-center py-2.5 rounded-xl bg-purple-50 text-purple-700 font-bold text-sm hover:bg-purple-600 hover:text-white transition-colors border border-purple-100">
+                          Live Site
+                        </a>
+                        <a href={project.github_link} target="_blank" rel="noreferrer" className="flex-1 text-center py-2.5 rounded-xl bg-gray-50 text-gray-700 font-bold text-sm hover:bg-gray-900 hover:text-white transition-colors border border-gray-200">
+                          GitHub
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 6. Internship Roadmap */}
       <section className="py-24 px-6 lg:px-8 bg-white relative overflow-hidden">
         <div className="max-w-6xl mx-auto">
@@ -569,7 +705,7 @@ const Internship = () => {
               return (
                 <ScrollReveal delay={index * 0.1 + 0.1} key={index}>
                   <div className={`relative flex items-center justify-between group w-full mb-12 md:mb-16 ${isEven ? 'md:flex-row-reverse' : ''}`}>
-                    
+
                     {/* The Number Badge (Center on Desktop, Left on Mobile) */}
                     <div className={`absolute left-[2.25rem] md:left-1/2 transform -translate-x-1/2 w-14 h-14 rounded-full ${step.bgIcon} text-white font-black text-2xl flex items-center justify-center ${step.shadowIcon} border-4 border-white z-20 group-hover:scale-125 group-hover:rotate-12 transition-transform duration-300`}>
                       {step.num}
@@ -590,7 +726,7 @@ const Internship = () => {
                         <p className="text-gray-600 leading-relaxed font-medium text-lg">{step.desc}</p>
                       </div>
                     </div>
-                    
+
                   </div>
                 </ScrollReveal>
               );
@@ -634,7 +770,7 @@ const Internship = () => {
             <div id="verify-certificate-sec" className="bg-white border-2 border-purple-100 rounded-3xl p-8 md:p-12 shadow-xl mb-12 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-yellow-500"></div>
               <div className="absolute top-[-100px] right-[-100px] w-80 h-80 bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
-              
+
               <div className="max-w-3xl mx-auto">
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center gap-2 bg-purple-50 border border-purple-100 text-purple-700 rounded-full px-4 py-1.5 font-bold text-xs mb-3 uppercase tracking-wider">
@@ -649,8 +785,8 @@ const Internship = () => {
                   <form onSubmit={handleCertSearch} className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end bg-slate-50 p-6 rounded-2xl border border-slate-100">
                     <div>
                       <label className="block text-xs font-black text-gray-700 uppercase tracking-wider mb-2">Registered Email Address</label>
-                      <input 
-                        type="email" 
+                      <input
+                        type="email"
                         required
                         value={certEmail}
                         onChange={(e) => setCertEmail(e.target.value)}
@@ -660,8 +796,8 @@ const Internship = () => {
                     </div>
                     <div>
                       <label className="block text-xs font-black text-gray-700 uppercase tracking-wider mb-2">Certificate Code / Intern No.</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         value={certCode}
                         onChange={(e) => setCertCode(e.target.value)}
@@ -676,7 +812,7 @@ const Internship = () => {
                           <div>{certError}</div>
                         </div>
                       )}
-                      <button 
+                      <button
                         type="submit"
                         disabled={certLoading}
                         className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 active:translate-y-0 cursor-pointer disabled:opacity-75"
@@ -692,35 +828,48 @@ const Internship = () => {
                     </div>
                   </form>
                 ) : (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-slate-50 border border-purple-100 p-6 rounded-2xl text-center space-y-4"
-                  >
-                    <div className="w-12 h-12 bg-green-50 text-green-600 border border-green-200 rounded-full flex items-center justify-center mx-auto">
-                      <Check className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-gray-900 text-xl">Verification Successful</h4>
-                      <p className="text-gray-500 text-xs font-medium">Valid certificate match found</p>
+                  <div className="bg-slate-50 border border-purple-100 p-6 md:p-10 rounded-3xl text-center space-y-6">
+                    <div className="flex flex-col items-center justify-center">
+                      <a 
+                        href={`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(`${window.location.origin}/api/badge?domain=${encodeURIComponent(certificate.domain)}\n\nI am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`)}`}
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="block cursor-pointer"
+                        title="Click to share your badge on LinkedIn!"
+                      >
+                        <CompletionBadge domain={certificate.domain} name={certificate.full_name} />
+                      </a>
+                      <div className="w-12 h-12 bg-green-50 text-green-600 border border-green-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Check className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-extrabold text-gray-900 text-2xl">Verification Successful</h4>
+                      <p className="text-gray-500 font-medium">Valid certificate match found</p>
                     </div>
 
-                    <div className="max-w-md mx-auto p-4 bg-white border border-slate-200 rounded-xl text-left space-y-2 text-sm text-gray-700">
+                    <div className="max-w-md mx-auto p-5 bg-white border border-slate-200 rounded-xl text-left space-y-3 text-sm text-gray-700 shadow-sm">
                       <div className="flex justify-between"><span className="text-xs text-gray-400 font-bold uppercase">Intern Name:</span> <span className="font-bold">{certificate.full_name}</span></div>
                       <div className="flex justify-between border-t border-slate-100 pt-2"><span className="text-xs text-gray-400 font-bold uppercase">Domain:</span> <span className="font-bold">{certificate.domain}</span></div>
-                      <div className="flex justify-between border-t border-slate-100 pt-2"><span className="text-xs text-gray-400 font-bold uppercase">Code:</span> <span className="font-mono font-bold text-purple-600">{certificate.certificate_code}</span></div>
+                      <div className="flex justify-between border-t border-slate-100 pt-2"><span className="text-xs text-gray-400 font-bold uppercase">Code:</span> <span className="font-bold text-purple-600 font-mono">{certificate.certificate_code}</span></div>
                     </div>
 
-                    <div className="flex justify-center gap-3">
+                    <div className="flex justify-center gap-3 flex-wrap">
                       <a 
-                        href={certificate.certificate_link}
+                        href={`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(`${window.location.origin}/api/badge?domain=${encodeURIComponent(certificate.domain)}\n\nI am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`)}`}
                         target="_blank" 
+                        rel="noreferrer"
+                        className="px-6 py-3 bg-[#0a66c2] hover:bg-[#004182] text-white font-bold rounded-xl transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
+                      >
+                        <Share2 className="w-4 h-4" /> Share on LinkedIn
+                      </a>
+                      <a
+                        href={certificate.certificate_link}
+                        target="_blank"
                         rel="noreferrer"
                         className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
                       >
                         <Download className="w-4 h-4" /> Download Certificate
                       </a>
-                      <button 
+                      <button
                         onClick={() => {
                           setCertificate(null);
                           setCertEmail('');
@@ -731,7 +880,7 @@ const Internship = () => {
                         Clear
                       </button>
                     </div>
-                  </motion.div>
+                    </div>
                 )}
               </div>
             </div>
@@ -778,10 +927,10 @@ const Internship = () => {
         </div>
       </section>
 
-      <InternshipModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        planDetails={selectedPlan} 
+      <InternshipModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        planDetails={selectedPlan}
       />
 
     </PageTransition>

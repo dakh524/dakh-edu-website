@@ -28,16 +28,15 @@ function App() {
   const isNoNavRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/team');
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // https://www.desmos.com/calculator/brs54l4xou
-      direction: 'vertical',
-      gestureDirection: 'vertical',
-      smooth: true,
-      mouseMultiplier: 1,
+      lerp: 0.05,
+      wheelMultiplier: 1,
+      smoothWheel: true,
       smoothTouch: false,
-      touchMultiplier: 2,
-      infinite: false,
     });
 
     function raf(time) {
