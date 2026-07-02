@@ -194,6 +194,15 @@ const Internship = () => {
   const [certificate, setCertificate] = useState(null);
   const [regBackup, setRegBackup] = useState(null);
   const [showShareInstructions, setShowShareInstructions] = useState(false);
+  const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+
+  const handleDownloadCertificate = () => {
+    setIsDownloadingCert(true);
+    setTimeout(() => {
+      window.open(certificate.certificate_link, '_blank');
+      setIsDownloadingCert(false);
+    }, 2500); // 2.5 second animation
+  };
 
   const handleCertSearch = async (e) => {
     e.preventDefault();
@@ -305,6 +314,25 @@ const Internship = () => {
     <PageTransition>
       <div className="min-h-screen bg-slate-50 pt-24 pb-12 font-sans selection:bg-purple-200">
         
+        {/* Download Certificate Animation Overlay */}
+        {isDownloadingCert && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[120] backdrop-blur-md transition-all duration-300">
+            <div className="bg-white p-8 rounded-3xl flex flex-col items-center justify-center space-y-6 shadow-2xl animate-fade-in-up max-w-sm w-full mx-4 border border-white/20 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-600"></div>
+              <div className="relative mt-2">
+                <div className="w-24 h-24 rounded-full border-4 border-purple-100 border-t-purple-600 animate-spin absolute top-0 left-0"></div>
+                <div className="w-24 h-24 flex items-center justify-center text-purple-600 animate-pulse relative z-10">
+                  <BookOpen className="w-10 h-10" />
+                </div>
+              </div>
+              <div className="text-center">
+                <h3 className="text-xl font-black text-gray-900 mb-2">Preparing Certificate...</h3>
+                <p className="text-gray-500 text-sm font-medium">Please wait while we securely fetch your official document from our drive.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Share Instructions Modal */}
         {showShareInstructions && certificate && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 backdrop-blur-sm transition-all duration-300">
@@ -348,14 +376,12 @@ const Internship = () => {
                 >
                   Continue to LinkedIn <ArrowRight className="w-5 h-5" />
                 </button>
-                <a
-                  href={certificate.certificate_link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full py-3 bg-white hover:bg-slate-50 text-purple-600 font-bold rounded-2xl transition-all border-2 border-purple-100 flex items-center justify-center gap-2"
+                <button
+                  onClick={handleDownloadCertificate}
+                  className="w-full py-3 bg-white hover:bg-slate-50 text-purple-600 font-bold rounded-2xl transition-all border-2 border-purple-100 flex items-center justify-center gap-2 shadow-sm active:translate-y-0.5"
                 >
                   <Download className="w-5 h-5" /> Download Certificate from Drive
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -942,14 +968,12 @@ const Internship = () => {
                       >
                         <Share2 className="w-4 h-4" /> Share on LinkedIn
                       </button>
-                      <a
-                        href={certificate.certificate_link}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        onClick={handleDownloadCertificate}
                         className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
                       >
                         <Download className="w-4 h-4" /> Download Certificate
-                      </a>
+                      </button>
                       <button
                         onClick={() => {
                           setCertificate(null);
