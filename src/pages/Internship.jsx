@@ -1003,7 +1003,7 @@ const Internship = () => {
         onClose={() => setIsModalOpen(false)}
         planDetails={selectedPlan}
       />
-
+      </div>
     </PageTransition>
   );
 };
