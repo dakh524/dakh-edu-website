@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { Check, Laptop, Users, Building, Globe, Home as HomeIcon, Zap, Target, Award, Star, ArrowRight, CalendarDays, BookOpen, UserCheck, Lightbulb, Code2, Send, CheckCircle2, AlertTriangle, Briefcase, ChevronRight, Key, Download, Loader2, Share2 } from 'lucide-react';
+import { Check, Laptop, Users, Building, Globe, Home as HomeIcon, Zap, Target, Award, Star, ArrowRight, CalendarDays, BookOpen, UserCheck, Lightbulb, Code2, Send, CheckCircle2, AlertTriangle, Briefcase, ChevronRight, Key, Download, Loader2, Share2, X } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
 import TiltCard from '../components/TiltCard';
