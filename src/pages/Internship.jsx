@@ -32,37 +32,37 @@ const CompletionBadge = ({ domain, name }) => {
         {/* Ribbon tails at the bottom */}
         <path d="M40 170 L40 230 L65 210 L90 230 L90 170 Z" fill={color.secondary} />
         <path d="M110 170 L110 230 L135 210 L160 230 L160 170 Z" fill={color.secondary} />
-        
+
         {/* Outer Hexagon */}
         <polygon points="100,10 180,50 180,140 100,180 20,140 20,50" fill={color.primary} />
-        
+
         {/* Inner Hexagons */}
         <polygon points="100,18 172,55 172,135 100,172 28,135 28,55" fill="#f8fafc" />
         <polygon points="100,24 166,58 166,132 100,166 34,132 34,58" fill="#ffffff" />
-        
+
         {/* Top Logo / Icon placeholder */}
         <g transform="translate(85, 30)">
           <path d="M15 0 L30 8 L30 22 L15 30 L0 22 L0 8 Z" fill={color.primary} />
           <path d="M15 4 L25 10 L25 20 L15 26 L5 20 L5 10 Z" fill="#ffffff" />
           <circle cx="15" cy="15" r="4" fill={color.primary} />
         </g>
-        
+
         {/* Company Name */}
         <text x="100" y="78" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#475569">DAKH EDU SOLUTIONS</text>
-        
+
         {/* INTERNSHIP COMPLETED text */}
         <text x="100" y="98" textAnchor="middle" fontSize="10" fontWeight="900" fill="#1e293b" letterSpacing="0.5">INTERNSHIP COMPLETED</text>
-        
+
         {/* Center Ribbon Banner */}
         <path d="M-5 108 L205 108 L195 120.5 L205 133 L-5 133 L5 120.5 Z" fill={color.ribbon} />
         <path d="M-5 133 L20 133 L20 142 Z" fill={color.secondary} />
         <path d="M205 133 L180 133 L180 142 Z" fill={color.secondary} />
-        
+
         {/* Domain Text */}
         <text x="100" y="124" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#ffffff" style={{ textTransform: 'uppercase' }}>
           {domain.length > 26 ? domain.substring(0, 26) + '...' : domain}
         </text>
-        
+
         {/* Year */}
         <text x="100" y="155" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#64748b">{year}</text>
       </svg>
@@ -830,16 +830,17 @@ const Internship = () => {
                 ) : (
                   <div className="bg-slate-50 border border-purple-100 p-6 md:p-10 rounded-3xl text-center space-y-6">
                     <div className="flex flex-col items-center justify-center">
-                      <a 
-                        href={`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(`${window.location.origin}/api/badge/${certificate.domain.toLowerCase().replace(/[^a-z0-9]+/g, '-')}\n\nI am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`)}`}
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="block cursor-pointer"
-                        title="Click to share your badge on LinkedIn!"
+                      <div 
+                        onClick={() => {
+                          const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/badges/${certificate.domain.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-badge.png`;
+                          window.open(imageUrl, '_blank');
+                        }}
+                        className="block cursor-pointer transition-transform hover:scale-105"
+                        title="Click to view full badge image"
                       >
                         <CompletionBadge domain={certificate.domain} name={certificate.full_name} />
-                      </a>
-                      <div className="w-12 h-12 bg-green-50 text-green-600 border border-green-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                      </div>
+                      <div className="w-12 h-12 bg-green-50 text-green-600 border border-green-200 rounded-full flex items-center justify-center mx-auto mb-3 mt-4">
                         <Check className="w-6 h-6" />
                       </div>
                       <h4 className="font-extrabold text-gray-900 text-2xl">Verification Successful</h4>
@@ -853,14 +854,37 @@ const Internship = () => {
                     </div>
 
                     <div className="flex justify-center gap-3 flex-wrap">
-                      <a 
-                        href={`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(`${window.location.origin}/api/badge/${certificate.domain.toLowerCase().replace(/[^a-z0-9]+/g, '-')}\n\nI am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`)}`}
-                        target="_blank" 
-                        rel="noreferrer"
+                      <button 
+                        onClick={() => {
+                          const imageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/badges/${certificate.domain.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-badge.png`;
+                          
+                          // Download the image
+                          fetch(imageUrl)
+                            .then(response => response.blob())
+                            .then(blob => {
+                              const url = window.URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.style.display = 'none';
+                              a.href = url;
+                              a.download = `DAKH-Edu-${certificate.domain.replace(/[^a-z0-9]+/gi, '-')}-Badge.png`;
+                              document.body.appendChild(a);
+                              a.click();
+                              window.URL.revokeObjectURL(url);
+                            })
+                            .catch(err => {
+                              console.error('Download failed', err);
+                              window.open(imageUrl, '_blank'); // Fallback if CORS blocks fetch
+                            });
+
+                          // Open LinkedIn
+                          const text = `I am thrilled to share that I have successfully completed my Internship in ${certificate.domain} at DAKH Edu Solutions! 🎓🚀\n\nYou can verify my certificate here: ${certificate.certificate_link}`;
+                          window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`, '_blank');
+                        }}
                         className="px-6 py-3 bg-[#0a66c2] hover:bg-[#004182] text-white font-bold rounded-xl transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
+                        title="Downloads badge & opens LinkedIn"
                       >
                         <Share2 className="w-4 h-4" /> Share on LinkedIn
-                      </a>
+                      </button>
                       <a
                         href={certificate.certificate_link}
                         target="_blank"
@@ -880,7 +904,7 @@ const Internship = () => {
                         Clear
                       </button>
                     </div>
-                    </div>
+                  </div>
                 )}
               </div>
             </div>
