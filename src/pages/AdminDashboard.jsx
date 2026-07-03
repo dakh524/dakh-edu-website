@@ -21,6 +21,7 @@ const AdminDashboard = () => {
   
   const [internProjects, setInternProjects] = useState([]);
   const [ipTitle, setIpTitle] = useState('');
+  const [ipDescription, setIpDescription] = useState('');
   const [ipVercelLink, setIpVercelLink] = useState('');
   const [ipGithubLink, setIpGithubLink] = useState('');
   const [ipLinkedinImageLink, setIpLinkedinImageLink] = useState('');
@@ -252,6 +253,7 @@ const AdminDashboard = () => {
     setIsSubmittingIp(true);
     const { error } = await supabase.from('intern_projects').insert([{
       title: ipTitle,
+      description: ipDescription,
       vercel_link: ipVercelLink,
       github_link: ipGithubLink,
       linkedin_image_link: ipLinkedinImageLink
@@ -262,6 +264,7 @@ const AdminDashboard = () => {
     } else {
       alert("Intern project added successfully!");
       setIpTitle('');
+      setIpDescription('');
       setIpVercelLink('');
       setIpGithubLink('');
       setIpLinkedinImageLink('');
@@ -1066,6 +1069,16 @@ const AdminDashboard = () => {
                     placeholder="e.g. E-Commerce Dashboard"
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Project Description</label>
+                  <textarea
+                    value={ipDescription}
+                    onChange={(e) => setIpDescription(e.target.value)}
+                    placeholder="Brief description of the project"
+                    rows="3"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 resize-none"
+                  ></textarea>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Vercel (Live) Link</label>
