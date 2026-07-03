@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS public.intern_projects (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     title TEXT NOT NULL,
+    description TEXT,
     vercel_link TEXT NOT NULL,
     github_link TEXT NOT NULL,
     linkedin_image_link TEXT NOT NULL
