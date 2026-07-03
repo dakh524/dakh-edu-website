@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { Check, Laptop, Users, Building, Globe, Home as HomeIcon, Zap, Target, Award, Star, ArrowRight, CalendarDays, BookOpen, UserCheck, Lightbulb, Code2, Send, CheckCircle2, AlertTriangle, Briefcase, ChevronRight, Key, Download, Loader2, Share2, X } from 'lucide-react';
+import { Check, Laptop, Users, Building, Globe, Home as HomeIcon, Zap, Target, Award, Star, ArrowRight, CalendarDays, BookOpen, UserCheck, Lightbulb, Code2, Send, CheckCircle2, AlertTriangle, Briefcase, ChevronRight, ChevronDown, Key, Download, Loader2, Share2, X } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
 import TiltCard from '../components/TiltCard';
@@ -176,6 +176,64 @@ const DEFAULT_ROADMAP = [
 // Helper to map string icon names from DB to Lucide React components
 const iconMap = {
   CalendarDays, BookOpen, UserCheck, Lightbulb, Code2, Send, CheckCircle2, AlertTriangle, Briefcase
+};
+
+const InternProjectCard = ({ project }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="card bg-white rounded-[2rem] overflow-hidden border border-gray-150 shadow-sm hover:shadow-xl transition-all group h-full flex flex-col">
+      <div 
+        className="aspect-video w-full overflow-hidden relative bg-gray-100 cursor-pointer" 
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <img src={project.linkedin_image_link} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+          <h3 className="text-white font-bold text-xl">{project.title}</h3>
+        </div>
+      </div>
+      <div className="p-6 flex flex-col flex-grow justify-between gap-6">
+        <div className="flex flex-col">
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full text-left flex justify-between items-start gap-4 group/title"
+          >
+            <h3 className="font-bold text-gray-900 text-xl group-hover/title:text-purple-600 transition-colors">
+              {project.title}
+            </h3>
+            {project.description && (
+              <div className={`mt-1 shrink-0 text-gray-400 group-hover/title:text-purple-600 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                <ChevronDown size={20} />
+              </div>
+            )}
+          </button>
+          
+          {project.description && (
+            <motion.div 
+              initial={false}
+              animate={{ height: isExpanded ? "auto" : "3rem" }}
+              className="overflow-hidden mt-2 relative"
+            >
+              <p className="text-gray-600 text-sm leading-relaxed" style={{ whiteSpace: 'pre-wrap' }}>
+                {project.description}
+              </p>
+              {!isExpanded && (
+                <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+              )}
+            </motion.div>
+          )}
+        </div>
+        <div className="flex gap-3">
+          <a href={project.vercel_link} target="_blank" rel="noreferrer" className="flex-1 text-center py-2.5 rounded-xl bg-purple-50 text-purple-700 font-bold text-sm hover:bg-purple-600 hover:text-white transition-colors border border-purple-100">
+            Live Site
+          </a>
+          <a href={project.github_link} target="_blank" rel="noreferrer" className="flex-1 text-center py-2.5 rounded-xl bg-gray-50 text-gray-700 font-bold text-sm hover:bg-gray-900 hover:text-white transition-colors border border-gray-200">
+            GitHub
+          </a>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const Internship = () => {
@@ -742,34 +800,7 @@ const Internship = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {internProjects.map((project, index) => (
                 <ScrollReveal delay={index * 0.1} key={project.id}>
-                  <div className="card bg-white rounded-[2rem] overflow-hidden border border-gray-150 shadow-sm hover:shadow-xl transition-all group h-full flex flex-col">
-                    <div className="aspect-video w-full overflow-hidden relative bg-gray-100">
-                      <img src={project.linkedin_image_link} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                        <h3 className="text-white font-bold text-xl">{project.title}</h3>
-                      </div>
-                    </div>
-                    <div className="p-6 flex flex-col flex-grow justify-between gap-6">
-                      <div>
-                        <h3 className="font-bold text-gray-900 text-xl group-hover:text-purple-600 transition-colors line-clamp-2">
-                          {project.title}
-                        </h3>
-                        {project.description && (
-                          <p className="text-gray-600 text-sm mt-2 line-clamp-3">
-                            {project.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-3">
-                        <a href={project.vercel_link} target="_blank" rel="noreferrer" className="flex-1 text-center py-2.5 rounded-xl bg-purple-50 text-purple-700 font-bold text-sm hover:bg-purple-600 hover:text-white transition-colors border border-purple-100">
-                          Live Site
-                        </a>
-                        <a href={project.github_link} target="_blank" rel="noreferrer" className="flex-1 text-center py-2.5 rounded-xl bg-gray-50 text-gray-700 font-bold text-sm hover:bg-gray-900 hover:text-white transition-colors border border-gray-200">
-                          GitHub
-                        </a>
-                      </div>
-                    </div>
-                  </div>
+                  <InternProjectCard project={project} />
                 </ScrollReveal>
               ))}
             </div>
