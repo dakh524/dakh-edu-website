@@ -750,9 +750,16 @@ const Internship = () => {
                       </div>
                     </div>
                     <div className="p-6 flex flex-col flex-grow justify-between gap-6">
-                      <h3 className="font-bold text-gray-900 text-xl group-hover:text-purple-600 transition-colors line-clamp-2">
-                        {project.title}
-                      </h3>
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-xl group-hover:text-purple-600 transition-colors line-clamp-2">
+                          {project.title}
+                        </h3>
+                        {project.description && (
+                          <p className="text-gray-600 text-sm mt-2 line-clamp-3">
+                            {project.description}
+                          </p>
+                        )}
+                      </div>
                       <div className="flex gap-3">
                         <a href={project.vercel_link} target="_blank" rel="noreferrer" className="flex-1 text-center py-2.5 rounded-xl bg-purple-50 text-purple-700 font-bold text-sm hover:bg-purple-600 hover:text-white transition-colors border border-purple-100">
                           Live Site
