@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink } from 'lucide-react';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
@@ -26,6 +26,7 @@ const AdminDashboard = () => {
   const [ipGithubLink, setIpGithubLink] = useState('');
   const [ipLinkedinImageLink, setIpLinkedinImageLink] = useState('');
   const [isSubmittingIp, setIsSubmittingIp] = useState(false);
+  const [editingIpId, setEditingIpId] = useState(null);
   
   const [certificates, setCertificates] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -251,25 +252,49 @@ const AdminDashboard = () => {
     e.preventDefault();
     if (!ipTitle || !ipVercelLink || !ipGithubLink || !ipLinkedinImageLink) return;
     setIsSubmittingIp(true);
-    const { error } = await supabase.from('intern_projects').insert([{
-      title: ipTitle,
-      description: ipDescription,
-      vercel_link: ipVercelLink,
-      github_link: ipGithubLink,
-      linkedin_image_link: ipLinkedinImageLink
-    }]);
+    let error;
+    if (editingIpId) {
+      const { error: updateError } = await supabase.from('intern_projects').update({
+        title: ipTitle,
+        description: ipDescription,
+        vercel_link: ipVercelLink,
+        github_link: ipGithubLink,
+        linkedin_image_link: ipLinkedinImageLink
+      }).eq('id', editingIpId);
+      error = updateError;
+    } else {
+      const { error: insertError } = await supabase.from('intern_projects').insert([{
+        title: ipTitle,
+        description: ipDescription,
+        vercel_link: ipVercelLink,
+        github_link: ipGithubLink,
+        linkedin_image_link: ipLinkedinImageLink
+      }]);
+      error = insertError;
+    }
     setIsSubmittingIp(false);
     if (error) {
-      alert("Error adding intern project: " + error.message);
+      alert("Error saving intern project: " + error.message);
     } else {
-      alert("Intern project added successfully!");
+      alert("Intern project saved successfully!");
       setIpTitle('');
       setIpDescription('');
       setIpVercelLink('');
       setIpGithubLink('');
       setIpLinkedinImageLink('');
+      setEditingIpId(null);
       fetchInternProjects();
     }
+  };
+
+  const handleEditInternProject = (project) => {
+    setIpTitle(project.title);
+    setIpDescription(project.description || '');
+    setIpVercelLink(project.vercel_link);
+    setIpGithubLink(project.github_link);
+    setIpLinkedinImageLink(project.linkedin_image_link);
+    setEditingIpId(project.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteInternProject = async (id) => {
@@ -1118,13 +1143,31 @@ const AdminDashboard = () => {
                     <img src={ipLinkedinImageLink} alt="Preview" className="w-full h-auto object-cover max-h-64" onError={(e) => e.target.style.display = 'none'} />
                   </div>
                 )}
-                <button 
-                  type="submit" 
-                  disabled={isSubmittingIp}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
-                >
-                  {isSubmittingIp ? 'Adding Project...' : 'Add Project'}
-                </button>
+                <div className="flex gap-4">
+                  <button 
+                    type="submit" 
+                    disabled={isSubmittingIp}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
+                  >
+                    {isSubmittingIp ? 'Saving...' : (editingIpId ? 'Update Project' : 'Add Project')}
+                  </button>
+                  {editingIpId && (
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setIpTitle('');
+                        setIpDescription('');
+                        setIpVercelLink('');
+                        setIpGithubLink('');
+                        setIpLinkedinImageLink('');
+                        setEditingIpId(null);
+                      }}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl transition-all"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
               </form>
 
               <div className="mt-12">
@@ -1153,12 +1196,20 @@ const AdminDashboard = () => {
                             <a href={project.github_link} target="_blank" rel="noreferrer" className="text-xs text-gray-600 hover:underline">GitHub</a>
                           </div>
                         </div>
-                        <button 
-                          onClick={() => handleDeleteInternProject(project.id)}
-                          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleEditInternProject(project)}
+                            className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-lg transition-colors"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteInternProject(project.id)}
+                            className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                     ))
                   )}
