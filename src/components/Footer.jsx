@@ -103,7 +103,7 @@ const Footer = () => {
           <div className="flex gap-6 text-xs text-gray-500 font-bold">
             <Link to="/admin/login" className="hover:text-purple-600 transition-colors flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block"></span> Admin Dashboard</Link>
             <Link to="/team/login" className="hover:text-purple-600 transition-colors flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block"></span> Team Portal</Link>
-            <a href="#" className="hover:text-purple-600 transition-colors">Privacy Policy</a>
+            <Link to="/privacy-policy" className="hover:text-purple-600 transition-colors">Privacy Policy</Link>
             <a href="#" className="hover:text-purple-600 transition-colors">Terms of Service</a>
           </div>
         </div>

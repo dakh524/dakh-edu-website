@@ -14,6 +14,7 @@ import Collaborations from './pages/Collaborations';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import ApplyFreelancer from './pages/ApplyFreelancer';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 // Admin Pages
 import AdminLogin from './pages/AdminLogin';
@@ -67,6 +68,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/apply" element={<ApplyFreelancer />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
             
             {/* Admin Routes */}
