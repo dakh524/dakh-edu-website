@@ -5,10 +5,11 @@ import {
   LogOut, Users, Map as MapIcon, Loader2, Award, Briefcase, Trash2, 
   FileBadge, FileText, Mail, Phone, Calendar, ClipboardList, ListTodo, 
   Plus, CheckSquare, Search, X, ExternalLink, AlertCircle, CheckCircle2, 
-  XCircle, Clock, Filter, Copy, Check, TrendingUp, PieChart, BarChart2, UserCircle 
+  XCircle, Clock, Filter, Copy, Check, TrendingUp, PieChart, BarChart2, UserCircle, BookOpen 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TeamStudentManager from '../components/TeamStudentManager';
+import AdminLMSManager from '../components/AdminLMSManager';
 
 const TeamDashboard = () => {
   const [session, setSession] = useState(null);
@@ -921,6 +922,17 @@ const TeamDashboard = () => {
               Intern Management
             </button>
             <button 
+              onClick={() => setActiveTab('lms')}
+              className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+                activeTab === 'lms' 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 border border-purple-500' 
+                  : 'text-gray-400 bg-slate-900/30 hover:bg-slate-900/80 border border-slate-800/20 hover:text-slate-200'
+              }`}
+            >
+              <BookOpen className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'lms' ? 'text-white' : 'text-gray-500'}`} />
+              LMS Modules
+            </button>
+            <button 
               onClick={() => setActiveTab('tasks')}
               className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
                 activeTab === 'tasks' 
@@ -1824,6 +1836,12 @@ const TeamDashboard = () => {
           {activeTab === 'interns' && (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-6xl mx-auto">
               <TeamStudentManager />
+            </motion.div>
+          )}
+
+          {activeTab === 'lms' && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-6xl mx-auto">
+              <AdminLMSManager />
             </motion.div>
           )}
 
