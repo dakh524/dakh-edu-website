@@ -16,6 +16,13 @@ const AdminLogin = () => {
     setLoading(true);
     setError(null);
 
+    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
+    if (email !== adminEmail) {
+      setError("Access Denied: Invalid administrator credentials.");
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -25,20 +32,7 @@ const AdminLogin = () => {
       setError(error.message);
       setLoading(false);
     } else {
-      // Check if user is an intern
-      const { data: studentData } = await supabase
-        .from('students')
-        .select('id')
-        .eq('auth_id', data.session.user.id)
-        .single();
-        
-      if (studentData) {
-        await supabase.auth.signOut();
-        setError("Access Denied: Interns cannot access the Admin Portal.");
-        setLoading(false);
-      } else {
-        navigate('/admin/dashboard');
-      }
+      navigate('/admin/dashboard');
     }
   };
 

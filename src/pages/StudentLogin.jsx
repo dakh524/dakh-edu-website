@@ -33,7 +33,12 @@ const StudentLogin = () => {
           .eq('auth_id', data.session.user.id)
           .single();
 
-        if (studentData && studentData.status === 'Suspended') {
+        if (studentError || !studentData) {
+          await supabase.auth.signOut();
+          throw new Error('Access Denied: You are not registered as an intern.');
+        }
+
+        if (studentData.status === 'Suspended') {
           await supabase.auth.signOut();
           throw new Error('Your internship access has been revoked or expired. Please contact support.');
         }

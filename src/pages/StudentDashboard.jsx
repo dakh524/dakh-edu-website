@@ -29,19 +29,15 @@ const StudentDashboard = () => {
           .single();
 
         if (studentError || !studentData) {
-          // For demo purposes, we'll just mock a user if not found in db yet
-          setStudent({
-            full_name: 'John Doe',
-            intern_number: 'DES/INT/2026/001',
-            domain: 'Web Development',
-            progress_percentage: 35
-          });
+          await supabase.auth.signOut();
+          navigate('/student/login');
+          return;
         } else {
           setStudent(studentData);
         }
 
-        let currentDomain = studentData ? studentData.domain : 'Web Development';
-        let currentStudentId = studentData ? studentData.id : null;
+        let currentDomain = studentData.domain;
+        let currentStudentId = studentData.id;
 
         if (currentStudentId) {
           // Fetch real modules for this domain

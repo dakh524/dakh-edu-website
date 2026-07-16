@@ -210,7 +210,10 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
+      if (!session || session.user.email !== import.meta.env.VITE_ADMIN_EMAIL) {
+        if (session && session.user.email !== import.meta.env.VITE_ADMIN_EMAIL) {
+          supabase.auth.signOut();
+        }
         navigate('/admin/login');
       } else {
         setSession(session);
@@ -231,7 +234,7 @@ const AdminDashboard = () => {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
+      if (!session || session.user.email !== import.meta.env.VITE_ADMIN_EMAIL) {
         navigate('/admin/login');
       } else {
         setSession(session);
