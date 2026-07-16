@@ -7,6 +7,7 @@ import ScrollReveal from '../components/ScrollReveal';
 import TiltCard from '../components/TiltCard';
 import CtaButton from '../components/CtaButton';
 import InternshipModal from '../components/InternshipModal';
+import InternBot from '../components/InternBot';
 
 const DOMAINS = [
   'Web Development', 'App Development', 'AI & Machine Learning', 'UI/UX Design',
@@ -457,9 +458,14 @@ const Internship = () => {
           <p className="text-lg md:text-xl text-[var(--color-brand-text-secondary)] mb-10 max-w-2xl mx-auto">
             Hands-on internships in 10+ domains. Real projects, certificates, and performance stipends.
           </p>
-          <button onClick={() => handleApplyClick('Internship Program', '449')} className="px-10 py-5 bg-[var(--color-brand-primary)] text-white font-black rounded-full text-lg shadow-[0_0_30px_rgba(147,51,234,0.4)] hover:scale-105 transition-transform">
-            Apply Now
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button onClick={() => handleApplyClick('Internship Program', '449')} className="px-10 py-4 bg-[var(--color-brand-primary)] text-white font-black rounded-full text-lg shadow-[0_0_30px_rgba(147,51,234,0.4)] hover:scale-105 transition-transform w-full sm:w-auto">
+              Apply Now
+            </button>
+            <button onClick={() => window.location.href='/student/login'} className="px-10 py-4 bg-white text-purple-600 font-black rounded-full text-lg shadow-md border-2 border-purple-100 hover:border-purple-600 hover:scale-105 transition-all w-full sm:w-auto flex items-center justify-center gap-2">
+              <UserCheck className="w-5 h-5" /> Intern Login
+            </button>
+          </div>
 
           <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-16 text-[var(--color-brand-text-secondary)] font-bold">
             <span className="flex items-center gap-2"><Check className="text-[var(--color-brand-secondary)]" /> 15+ Days</span>
@@ -1075,6 +1081,7 @@ const Internship = () => {
         onClose={() => setIsModalOpen(false)}
         planDetails={selectedPlan}
       />
+      <InternBot />
       </div>
     </PageTransition>
   );

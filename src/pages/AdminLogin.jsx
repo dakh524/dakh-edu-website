@@ -16,7 +16,7 @@ const AdminLogin = () => {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -25,7 +25,20 @@ const AdminLogin = () => {
       setError(error.message);
       setLoading(false);
     } else {
-      navigate('/admin/dashboard');
+      // Check if user is an intern
+      const { data: studentData } = await supabase
+        .from('students')
+        .select('id')
+        .eq('auth_id', data.session.user.id)
+        .single();
+        
+      if (studentData) {
+        await supabase.auth.signOut();
+        setError("Access Denied: Interns cannot access the Admin Portal.");
+        setLoading(false);
+      } else {
+        navigate('/admin/dashboard');
+      }
     }
   };
 

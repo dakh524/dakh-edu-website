@@ -24,9 +24,13 @@ import AdminDashboard from './pages/AdminDashboard';
 import TeamLogin from './pages/TeamLogin';
 import TeamDashboard from './pages/TeamDashboard';
 
+// Student Pages
+import StudentLogin from './pages/StudentLogin';
+import StudentDashboard from './pages/StudentDashboard';
+
 function App() {
   const location = useLocation();
-  const isNoNavRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/team');
+  const isNoNavRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/team') || location.pathname.startsWith('/student');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -78,6 +82,10 @@ function App() {
             {/* Team Routes */}
             <Route path="/team/login" element={<TeamLogin />} />
             <Route path="/team/dashboard" element={<TeamDashboard />} />
+
+            {/* Student Routes */}
+            <Route path="/student/login" element={<StudentLogin />} />
+            <Route path="/student/dashboard" element={<StudentDashboard />} />
           </Routes>
         </AnimatePresence>
       </main>

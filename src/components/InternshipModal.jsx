@@ -69,6 +69,7 @@ const InternshipModal = ({ isOpen, onClose, planDetails }) => {
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [credentials, setCredentials] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,8 +79,21 @@ const InternshipModal = ({ isOpen, onClose, planDetails }) => {
     }
 
     try {
-      // Save to Supabase
-      const { error } = await supabase.from('registrations').insert([{
+      // Generate a temporary password (e.g. random 6 chars)
+      const randomPassword = Math.random().toString(36).slice(-6) + 'Dakh@';
+      
+      // 1. Sign up to Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: randomPassword,
+      });
+
+      if (authError) {
+        console.error("Auth creation failed:", authError);
+      }
+
+      // 2. Save Registration
+      const { data: regData, error: regError } = await supabase.from('registrations').insert([{
         full_name: formData.fullName,
         email: formData.email,
         phone: formData.phone,
@@ -92,20 +106,36 @@ const InternshipModal = ({ isOpen, onClose, planDetails }) => {
         referral_code: formData.referral,
         utr_number: formData.utr,
         payment_completed: formData.paymentCompleted
-      }]);
+      }]).select();
 
-      if (error) {
-        console.error("Error saving to database:", error);
+      if (regError) {
+        console.error("Error saving registration:", regError);
         alert("There was an issue saving your application. We will still redirect you to WhatsApp.");
       }
+
+      // 3. Save Student Record (if auth succeeded)
+      if (authData?.user && !regError) {
+        const internNumber = `DES/INT/2026/${Math.floor(1000 + Math.random() * 9000)}`;
+        await supabase.from('students').insert([{
+          auth_id: authData.user.id,
+          registration_id: regData[0].id,
+          full_name: formData.fullName,
+          email: formData.email,
+          intern_number: internNumber,
+          domain: formData.domain
+        }]);
+        
+        setCredentials({
+          email: formData.email,
+          password: randomPassword,
+          intern_number: internNumber
+        });
+      }
+
     } catch (err) {
       console.error(err);
     }
 
-    // Keep WhatsApp Redirect
-    const text = `*New Internship Registration*%0A%0A*Name:* ${formData.fullName}%0A*Email:* ${formData.email}%0A*Phone:* ${formData.phone}%0A*College:* ${formData.college}%0A*Department:* ${formData.department}%0A*Year:* ${formData.year}%0A*Domain:* ${formData.domain}%0A*Plan:* ${planDetails?.name || 'Internship'} (₹${planDetails?.price || '449'})%0A*Referral:* ${formData.referral || 'None'}%0A*UTR/Txn ID:* ${formData.utr}`;
-    
-    window.open(`https://wa.me/918778317180?text=${text}`, '_blank');
     setIsSubmitted(true);
   };
 
@@ -152,18 +182,45 @@ const InternshipModal = ({ isOpen, onClose, planDetails }) => {
                   <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                 </div>
                 <h3 className="text-3xl font-black text-gray-900 mb-4">Registration Sent!</h3>
-                <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8 leading-relaxed">
-                  After completing the payment, our team will save your data in our database. You can access our DAKH Intern Bot in Telegram right now. Visit it below, and once our team verifies your payment, we will notify you!
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6 leading-relaxed">
+                  Your internship portal credentials have been generated successfully. 
+                  <strong>Please save these details before closing this window.</strong>
                 </p>
-                <a 
-                  href="https://t.me/DakhTutorbot" 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="px-8 py-4 bg-blue-500 text-white font-bold rounded-xl shadow-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.21-1.12-.33-1.08-.7.02-.19.27-.39.75-.59 2.95-1.28 4.92-2.13 5.92-2.54 2.81-1.18 3.4-1.38 3.78-1.38.08 0 .27.02.39.1.1.06.13.15.15.24.01.07.01.16 0 .24z"/></svg>
-                  Open Telegram Bot
-                </a>
+                
+                {credentials && (
+                  <div className="bg-yellow-50 p-6 rounded-xl border border-yellow-200 mb-8 max-w-md w-full mx-auto text-left">
+                    <p className="text-sm font-bold text-yellow-800 uppercase mb-4 text-center tracking-widest">Your Portal Credentials</p>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-xs font-bold text-gray-500 uppercase block mb-1">Email (Username)</span>
+                        <div className="font-mono text-gray-900 font-bold bg-white p-2 rounded border text-sm">{credentials.email}</div>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-gray-500 uppercase block mb-1">Password</span>
+                        <div className="font-mono text-gray-900 font-bold bg-white p-2 rounded border text-sm">{credentials.password}</div>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-gray-500 uppercase block mb-1">Intern Number</span>
+                        <div className="font-mono text-gray-900 font-bold bg-white p-2 rounded border text-sm">{credentials.intern_number}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-4">
+                  <a 
+                    href="/student/login" 
+                    className="px-8 py-4 bg-purple-600 text-white font-bold rounded-xl shadow-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                  >
+                    Go to Portal Login
+                  </a>
+                  <button 
+                    onClick={onClose}
+                    className="px-8 py-4 bg-gray-200 text-gray-800 font-bold rounded-xl shadow hover:bg-gray-300 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             ) : (
               <>
