@@ -162,21 +162,21 @@ const TeamStudentManager = () => {
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="text" required value={newInternName} onChange={e => setNewInternName(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none" placeholder="John Doe" />
+                  <input type="text" required value={newInternName} onChange={e => setNewInternName(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-gray-900 bg-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none" placeholder="John Doe" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Gmail ID</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="email" required value={newInternEmail} onChange={e => setNewInternEmail(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none" placeholder="intern@gmail.com" />
+                  <input type="email" required value={newInternEmail} onChange={e => setNewInternEmail(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-gray-900 bg-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none" placeholder="intern@gmail.com" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Domain</label>
                 <div className="relative">
                   <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <select value={newInternDomain} onChange={e => setNewInternDomain(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none bg-white">
+                  <select value={newInternDomain} onChange={e => setNewInternDomain(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-gray-900 bg-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none">
                     {domains.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>

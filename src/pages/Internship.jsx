@@ -1010,13 +1010,7 @@ const Internship = () => {
                         className="px-6 py-3 bg-[#0a66c2] hover:bg-[#004182] text-white font-bold rounded-xl transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
                         title="Downloads badge & opens LinkedIn"
                       >
-                        <Share2 className="w-4 h-4" /> Share on LinkedIn
-                      </button>
-                      <button
-                        onClick={handleDownloadCertificate}
-                        className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
-                      >
-                        <Download className="w-4 h-4" /> Download Certificate
+                        <Share2 className="w-4 h-4" /> Share badges in LinkedIn and showcase your project
                       </button>
                       <button
                         onClick={() => {
