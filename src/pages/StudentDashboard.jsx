@@ -10,6 +10,8 @@ const StudentDashboard = () => {
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
+  const [studentAnswers, setStudentAnswers] = useState({});
+  const [showAnswers, setShowAnswers] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -175,8 +177,9 @@ const StudentDashboard = () => {
             <div className="grid gap-4">
               {modules.map((module) => {
                 const isCompleted = progress.some(p => p.module_id === module.id && p.is_completed);
-                const isCurrent = !isCompleted && module.week_number === activeWeek;
-                const isLocked = !isCompleted && module.week_number > activeWeek;
+                const isTimeLocked = module.unlock_date && new Date(module.unlock_date) > new Date();
+                const isLocked = (!isCompleted && module.week_number > activeWeek) || isTimeLocked;
+                const isCurrent = !isCompleted && module.week_number === activeWeek && !isTimeLocked;
                 
                 return (
                   <motion.div 
@@ -188,6 +191,11 @@ const StudentDashboard = () => {
                       <div>
                         <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">Week {module.week_number}</span>
                         <h4 className="text-lg font-bold text-slate-800 mt-1">{module.title}</h4>
+                        {isTimeLocked && (
+                           <div className="text-xs text-red-500 font-bold mt-2 bg-red-50 p-2 rounded-lg border border-red-100">
+                             🔒 Unlocks on: {new Date(module.unlock_date).toLocaleString()}
+                           </div>
+                        )}
                       </div>
                       {isCompleted && <CheckCircle className="w-6 h-6 text-green-500" />}
                       {isCurrent && <Clock className="w-6 h-6 text-blue-500" />}
@@ -209,6 +217,18 @@ const StudentDashboard = () => {
                     {isCurrent && (
                       <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-4">
                         
+                        {module.reading_material && (
+                          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                             <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                               <BookOpen className="w-5 h-5 text-purple-600" />
+                               Reading Material
+                             </h4>
+                             <div className="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap font-medium">
+                               {module.reading_material}
+                             </div>
+                          </div>
+                        )}
+
                         {module.video_url && (
                            <div className="aspect-video w-full rounded-xl overflow-hidden bg-black">
                              {/* Attempt to parse Youtube ID for embed */}
@@ -229,6 +249,55 @@ const StudentDashboard = () => {
                                </a>
                              )}
                            </div>
+                        )}
+
+                        {/* Quiz Section */}
+                        {module.quiz_data && module.quiz_data.length > 0 && (
+                          <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mt-4">
+                            <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                              <FileText className="w-5 h-5 text-purple-600" />
+                              Module Quiz / Test
+                            </h4>
+                            <div className="space-y-6">
+                              {module.quiz_data.map((q, index) => (
+                                <div key={index} className="space-y-2">
+                                  <p className="font-semibold text-slate-700 text-sm">{index + 1}. {q.question}</p>
+                                  
+                                  <textarea
+                                    rows={3}
+                                    placeholder="Type your answer here..."
+                                    value={studentAnswers[module.id]?.[index] || ''}
+                                    onChange={(e) => {
+                                      setStudentAnswers(prev => ({
+                                        ...prev,
+                                        [module.id]: {
+                                          ...(prev[module.id] || {}),
+                                          [index]: e.target.value
+                                        }
+                                      }));
+                                    }}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white resize-none text-sm"
+                                  ></textarea>
+
+                                  {showAnswers[module.id] && (
+                                    <div className="bg-green-50 p-4 rounded-xl border border-green-100 mt-2">
+                                      <p className="text-xs font-bold text-green-700 uppercase mb-1">Perfect Answer</p>
+                                      <p className="text-sm text-green-800">{q.answer}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            
+                            <div className="mt-6 flex justify-end">
+                              <button
+                                onClick={() => setShowAnswers(prev => ({ ...prev, [module.id]: !prev[module.id] }))}
+                                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-bold transition-colors"
+                              >
+                                {showAnswers[module.id] ? 'Hide Perfect Answers' : 'Check Answers'}
+                              </button>
+                            </div>
+                          </div>
                         )}
 
                         <div className="flex flex-wrap gap-3 mt-2">

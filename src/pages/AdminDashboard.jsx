@@ -210,8 +210,9 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session || session.user.email !== import.meta.env.VITE_ADMIN_EMAIL) {
-        if (session && session.user.email !== import.meta.env.VITE_ADMIN_EMAIL) {
+      const allowedEmails = [import.meta.env.VITE_ADMIN_EMAIL, 'ceo@dakhedusolutions.in'];
+      if (!session || !allowedEmails.includes(session.user?.email)) {
+        if (session && !allowedEmails.includes(session.user?.email)) {
           supabase.auth.signOut();
         }
         navigate('/admin/login');
@@ -234,7 +235,8 @@ const AdminDashboard = () => {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session || session.user.email !== import.meta.env.VITE_ADMIN_EMAIL) {
+      const allowedEmails = [import.meta.env.VITE_ADMIN_EMAIL, 'ceo@dakhedusolutions.in'];
+      if (!session || !allowedEmails.includes(session.user?.email)) {
         navigate('/admin/login');
       } else {
         setSession(session);

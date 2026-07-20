@@ -9,11 +9,15 @@ const AdminLMSManager = () => {
   
   // Form state
   const [selectedDomain, setSelectedDomain] = useState('Web Development');
+  const [customDomain, setCustomDomain] = useState('');
   const [weekNumber, setWeekNumber] = useState(1);
   const [title, setTitle] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [taskDetails, setTaskDetails] = useState('');
   const [passMark, setPassMark] = useState(70);
+  const [quizData, setQuizData] = useState([]);
+  const [readingMaterial, setReadingMaterial] = useState('');
+  const [unlockDate, setUnlockDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -30,22 +34,30 @@ const AdminLMSManager = () => {
       
     if (!error && data) {
       setModules(data);
+      const uniqueDomains = [...new Set(data.map(m => m.domain))];
+      const defaultDomains = ['Web Development', 'UI/UX Design', 'App Development', 'Data Science'];
+      const mergedDomains = [...new Set([...defaultDomains, ...uniqueDomains])];
+      setDomains(mergedDomains);
     }
     setLoading(false);
   };
 
   const handleAddModule = async (e) => {
     e.preventDefault();
-    if (!title || !weekNumber) return;
+    const finalDomain = selectedDomain === 'custom' ? customDomain : selectedDomain;
+    if (!title || !weekNumber || !finalDomain) return;
     setIsSubmitting(true);
     
     const { error } = await supabase.from('lms_modules').insert([{
-      domain: selectedDomain,
+      domain: finalDomain,
       week_number: parseInt(weekNumber),
       title,
       video_url: videoUrl,
       task_details: taskDetails,
+      reading_material: readingMaterial,
+      unlock_date: unlockDate ? new Date(unlockDate).toISOString() : null,
       pass_mark: parseInt(passMark),
+      quiz_data: quizData,
       is_published: true
     }]);
 
@@ -57,6 +69,13 @@ const AdminLMSManager = () => {
       setTitle('');
       setVideoUrl('');
       setTaskDetails('');
+      setReadingMaterial('');
+      setUnlockDate('');
+      setQuizData([]);
+      if (selectedDomain === 'custom') {
+        setSelectedDomain(customDomain);
+        setCustomDomain('');
+      }
       setWeekNumber(prev => parseInt(prev) + 1);
       fetchModules();
     }
@@ -97,7 +116,18 @@ const AdminLMSManager = () => {
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
               >
                 {domains.map(d => <option key={d} value={d}>{d}</option>)}
+                <option value="custom">Other (Add Custom)...</option>
               </select>
+              {selectedDomain === 'custom' && (
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter custom domain name"
+                  value={customDomain}
+                  onChange={(e) => setCustomDomain(e.target.value)}
+                  className="w-full px-4 py-3 mt-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                />
+              )}
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Week Number</label>
@@ -136,6 +166,28 @@ const AdminLMSManager = () => {
           </div>
 
           <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Reading Material (Text/Notes)</label>
+            <textarea 
+              rows={4}
+              value={readingMaterial}
+              onChange={(e) => setReadingMaterial(e.target.value)}
+              placeholder="Paste reading material, articles, or documentation here..."
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white resize-none"
+            ></textarea>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Scheduled Unlock Date & Time (Optional)</label>
+            <input 
+              type="datetime-local" 
+              value={unlockDate}
+              onChange={(e) => setUnlockDate(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            />
+            <p className="text-xs text-gray-500 mt-1">If set, the module will be locked for students until this time.</p>
+          </div>
+
+          <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Task Details / Instructions</label>
             <textarea 
               rows={4}
@@ -156,6 +208,69 @@ const AdminLMSManager = () => {
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
               />
               <p className="text-xs text-gray-500 mt-1">Students must hit this score on their task/test to unlock the next week.</p>
+          </div>
+
+          {/* Quiz / Test Module Section */}
+          <div className="pt-4 border-t border-gray-200">
+            <div className="flex justify-between items-center mb-4">
+              <label className="block text-sm font-bold text-gray-700">Test Questions (Optional)</label>
+              <button
+                type="button"
+                onClick={() => setQuizData([...quizData, { question: '', answer: '' }])}
+                className="flex items-center gap-1 text-sm bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition-colors font-bold"
+              >
+                <Plus className="w-4 h-4" /> Add Question
+              </button>
+            </div>
+            
+            {quizData.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">No questions added yet. Click 'Add Question' to create a test for this module.</p>
+            ) : (
+              <div className="space-y-4">
+                {quizData.map((q, index) => (
+                  <div key={index} className="bg-white p-4 rounded-xl border border-gray-200 relative shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => setQuizData(quizData.filter((_, i) => i !== index))}
+                      className="absolute top-3 right-3 text-red-400 hover:text-red-600 transition-colors"
+                      title="Remove Question"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                    <div className="mb-3 pr-8">
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Question {index + 1}</label>
+                      <input
+                        type="text"
+                        required
+                        value={q.question}
+                        onChange={(e) => {
+                          const newQuiz = [...quizData];
+                          newQuiz[index].question = e.target.value;
+                          setQuizData(newQuiz);
+                        }}
+                        placeholder="e.g., What does HTML stand for?"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-green-600 uppercase mb-1">Perfect Answer</label>
+                      <textarea
+                        required
+                        rows={2}
+                        value={q.answer}
+                        onChange={(e) => {
+                          const newQuiz = [...quizData];
+                          newQuiz[index].answer = e.target.value;
+                          setQuizData(newQuiz);
+                        }}
+                        placeholder="The ideal answer you expect from the student..."
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                      ></textarea>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <button 

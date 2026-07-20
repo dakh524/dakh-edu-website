@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, MessageCircle, ExternalLink, Phone } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
 import MagneticButton from '../components/MagneticButton';
@@ -332,6 +332,48 @@ const Home = () => {
               </ScrollReveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* 4.5. Telecaller CTA Section */}
+      <section className="bg-gradient-to-r from-gray-950 via-indigo-950 to-gray-950 py-16 relative overflow-hidden border-t border-b border-white/5">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-[var(--color-brand-primary)] rounded-full blur-[150px] opacity-20"></div>
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-[var(--color-brand-secondary)] rounded-full blur-[150px] opacity-20"></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+          <ScrollReveal>
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-8 md:p-12 rounded-3xl shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-8 hover:border-white/20 transition-all duration-300">
+              <div className="text-center lg:text-left flex-1">
+                <div className="inline-flex items-center justify-center space-x-2 bg-indigo-500/10 text-indigo-400 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-6 border border-indigo-500/20">
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>Join Our Team</span>
+                </div>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight leading-tight">Become a Telecaller</h2>
+                <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto lg:mx-0">Connect with us on WhatsApp or directly access our telecalling portal to start your journey with us.</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto mt-6 lg:mt-0">
+                <a 
+                  href="https://wa.me/918667399640" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="group flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 shadow-lg shadow-[#25D366]/20 hover:shadow-[#25D366]/40 hover:-translate-y-1"
+                >
+                  <MessageCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  WhatsApp Us
+                </a>
+                <a 
+                  href="https://cold-calling-1atm45hxo-dakh524s-projects.vercel.app" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="group flex items-center justify-center gap-2 bg-[var(--color-brand-primary)] hover:bg-purple-500 text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 shadow-lg shadow-purple-600/20 hover:shadow-purple-600/40 hover:-translate-y-1"
+                >
+                  <ExternalLink className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  Access Portal
+                </a>
+              </div>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 

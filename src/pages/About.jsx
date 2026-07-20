@@ -467,11 +467,18 @@ const About = () => {
             <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
               {events.map((event, i) => (
                 <ScrollReveal key={event.id} delay={i * 0.1}>
-                  <div className="break-inside-avoid rounded-3xl overflow-hidden shadow-xl group relative">
-                    <img src={event.image_url} alt={event.title || 'Event'} className="w-full h-auto transform group-hover:scale-105 transition-transform duration-700" />
+                  <div className="break-inside-avoid rounded-3xl overflow-hidden shadow-xl group relative bg-gradient-to-br from-purple-100 to-indigo-100 min-h-[250px] flex items-end">
+                    <img 
+                      src={event.image_url} 
+                      alt={event.title || 'Event'} 
+                      className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" 
+                      onError={(e) => {
+                        e.target.style.opacity = '0';
+                      }}
+                    />
                     {event.title && (
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                        <h3 className="text-white font-bold text-xl">{event.title}</h3>
+                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent opacity-100 transition-opacity duration-300 flex items-end p-6">
+                        <h3 className="text-white font-bold text-xl leading-snug">{event.title}</h3>
                       </div>
                     )}
                   </div>
@@ -499,8 +506,15 @@ const About = () => {
               {products.map((product, i) => (
                 <ScrollReveal key={product.id} delay={i * 0.1}>
                   <div className="bg-white rounded-[2rem] overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col group border border-gray-100 h-full">
-                    <div className="relative aspect-video w-full bg-gray-50 overflow-hidden">
-                      <img src={product.image_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div className="relative aspect-video w-full bg-gradient-to-br from-purple-100 to-indigo-100 overflow-hidden">
+                      <img 
+                        src={product.image_url} 
+                        alt={product.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        onError={(e) => {
+                          e.target.style.opacity = '0';
+                        }}
+                      />
                     </div>
                     <div className="p-8 bg-white flex flex-col flex-grow text-center">
                       <h3 className="text-2xl font-black text-gray-900 mb-3">{product.title}</h3>

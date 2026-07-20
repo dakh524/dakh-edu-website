@@ -17,7 +17,9 @@ const AdminLogin = () => {
     setError(null);
 
     const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
-    if (email !== adminEmail) {
+    const allowedEmails = [adminEmail, 'ceo@dakhedusolutions.in'];
+    
+    if (!allowedEmails.includes(email)) {
       setError("Access Denied: Invalid administrator credentials.");
       setLoading(false);
       return;
