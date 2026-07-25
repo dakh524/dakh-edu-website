@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, BookOpen, CheckCircle, FileText, Award, PlayCircle, Download, Link as LinkIcon, CheckCircle2, ChevronRight, UserCircle, Lock, MonitorPlay, Code2, ArrowRight, HelpCircle, MessageSquare, TrendingUp, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GEN_AI_MODULES } from '../data/genAiModules';
 
 const DOMAIN_PROJECTS = {
   'Web Development': [
@@ -337,6 +338,8 @@ const StudentDashboard = () => {
           if (!dbModules || dbModules.length === 0) {
             if (currentDomain && currentDomain.toLowerCase().includes('vibe coding')) {
               setModules(VIBE_CODING_MODULES);
+            } else if (currentDomain && currentDomain.toLowerCase().includes('gen')) {
+              setModules(GEN_AI_MODULES);
             } else {
               setModules(DUMMY_MODULES);
             }
