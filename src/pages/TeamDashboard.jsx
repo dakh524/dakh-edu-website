@@ -5,7 +5,7 @@ import {
   LogOut, Users, Map as MapIcon, Loader2, Award, Briefcase, Trash2, 
   FileBadge, FileText, Mail, Phone, Calendar, ClipboardList, ListTodo, 
   Plus, CheckSquare, Search, X, ExternalLink, AlertCircle, CheckCircle2, 
-  XCircle, Clock, Filter, Copy, Check, TrendingUp, PieChart, BarChart2, UserCircle, BookOpen 
+  XCircle, Clock, Filter, Copy, Check, TrendingUp, PieChart, BarChart2, UserCircle, BookOpen, ImageIcon, Handshake 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TeamStudentManager from '../components/TeamStudentManager';
@@ -36,6 +36,26 @@ const TeamDashboard = () => {
   const [certDomain, setCertDomain] = useState('');
   const [certLink, setCertLink] = useState('');
   const [isSubmittingCert, setIsSubmittingCert] = useState(false);
+
+  // Advertisement state
+  const [currentAd, setCurrentAd] = useState(null);
+  const [adImageUrl, setAdImageUrl] = useState('');
+  const [adLinkUrl, setAdLinkUrl] = useState('');
+  const [isSubmittingAd, setIsSubmittingAd] = useState(false);
+
+  // Events state
+  const [events, setEvents] = useState([]);
+  const [eventTitle, setEventTitle] = useState('');
+  const [eventImageUrl, setEventImageUrl] = useState('');
+  const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+
+  // Partners state
+  const [partners, setPartners] = useState([]);
+  const [partnerName, setPartnerName] = useState('');
+  const [partnerLogoUrl, setPartnerLogoUrl] = useState('');
+  const [partnerDescription, setPartnerDescription] = useState('');
+  const [partnerCategory, setPartnerCategory] = useState('Community');
+  const [isSubmittingPartner, setIsSubmittingPartner] = useState(false);
 
   // Weekly tasks management state
   const [tasks, setTasks] = useState([]);
@@ -122,6 +142,9 @@ const TeamDashboard = () => {
         fetchTeamTasks();
         fetchTeamMembers();
         fetchColdLeads();
+        fetchEvents();
+        fetchPartners();
+        fetchAdvertisement();
       }
     } catch (err) {
       console.error(err);
@@ -713,6 +736,120 @@ const TeamDashboard = () => {
     }
   };
 
+  const fetchEvents = async () => {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setEvents(data);
+  };
+
+  const fetchPartners = async () => {
+    const { data, error } = await supabase
+      .from('partnered_companies')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setPartners(data);
+  };
+
+  const fetchAdvertisement = async () => {
+    const { data, error } = await supabase
+      .from('advertisements')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (!error && data && data.length > 0) {
+      setCurrentAd(data[0]);
+    } else {
+      setCurrentAd(null);
+    }
+  };
+
+  const handleUpdateAd = async (e) => {
+    e.preventDefault();
+    if (!adImageUrl) return;
+    setIsSubmittingAd(true);
+    const { error } = await supabase.from('advertisements').insert([{ image_url: adImageUrl, link_url: adLinkUrl }]);
+    setIsSubmittingAd(false);
+    if (error) {
+      alert("Error updating advertisement: " + error.message);
+    } else {
+      alert("Advertisement updated successfully!");
+      setAdImageUrl('');
+      setAdLinkUrl('');
+      fetchAdvertisement();
+    }
+  };
+
+  const handleDeleteAd = async () => {
+    if (!currentAd) return;
+    if (window.confirm('Are you sure you want to delete the current advertisement?')) {
+      const { error } = await supabase.from('advertisements').delete().eq('id', currentAd.id);
+      if (!error) {
+        setCurrentAd(null);
+        alert("Advertisement removed!");
+      } else {
+        alert("Error removing advertisement: " + error.message);
+      }
+    }
+  };
+
+  const handleAddEvent = async (e) => {
+    e.preventDefault();
+    if (!eventImageUrl) return;
+    setIsSubmittingEvent(true);
+    const { error } = await supabase.from('events').insert([{ title: eventTitle, image_url: eventImageUrl }]);
+    setIsSubmittingEvent(false);
+    if (error) {
+      alert("Error adding event: " + error.message);
+    } else {
+      alert("Event added successfully!");
+      setEventTitle('');
+      setEventImageUrl('');
+      fetchEvents();
+    }
+  };
+
+  const handleDeleteEvent = async (id) => {
+    if (window.confirm('Are you sure you want to delete this event?')) {
+      const { error } = await supabase.from('events').delete().eq('id', id);
+      if (!error) {
+        setEvents(events.filter((e) => e.id !== id));
+      } else {
+        alert("Failed to delete event: " + error.message);
+      }
+    }
+  };
+
+  const handleAddPartner = async (e) => {
+    e.preventDefault();
+    if (!partnerName || !partnerLogoUrl || !partnerDescription || !partnerCategory) return;
+    setIsSubmittingPartner(true);
+    const { error } = await supabase.from('partnered_companies').insert([{ name: partnerName, logo_url: partnerLogoUrl, description: partnerDescription, category: partnerCategory }]);
+    setIsSubmittingPartner(false);
+    if (error) {
+      alert("Error adding partner: " + error.message);
+    } else {
+      alert("Partner added successfully!");
+      setPartnerName('');
+      setPartnerLogoUrl('');
+      setPartnerDescription('');
+      setPartnerCategory('Community');
+      fetchPartners();
+    }
+  };
+
+  const handleDeletePartner = async (id) => {
+    if (window.confirm('Are you sure you want to delete this partner?')) {
+      const { error } = await supabase.from('partnered_companies').delete().eq('id', id);
+      if (!error) {
+        setPartners(partners.filter((p) => p.id !== id));
+      } else {
+        alert("Failed to delete partner: " + error.message);
+      }
+    }
+  };
+
   const handleQuickCertLink = (reg) => {
     setCertName(reg.full_name);
     setCertEmail(reg.email);
@@ -931,6 +1068,39 @@ const TeamDashboard = () => {
             >
               <BookOpen className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'lms' ? 'text-white' : 'text-gray-500'}`} />
               LMS Modules
+            </button>
+            <button 
+              onClick={() => setActiveTab('advertisement')}
+              className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+                activeTab === 'advertisement' 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 border border-purple-500' 
+                  : 'text-gray-400 bg-slate-900/30 hover:bg-slate-900/80 border border-slate-800/20 hover:text-slate-200'
+              }`}
+            >
+              <ImageIcon className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'advertisement' ? 'text-white' : 'text-gray-500'}`} />
+              Manage Ads
+            </button>
+            <button 
+              onClick={() => setActiveTab('events')}
+              className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+                activeTab === 'events' 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 border border-purple-500' 
+                  : 'text-gray-400 bg-slate-900/30 hover:bg-slate-900/80 border border-slate-800/20 hover:text-slate-200'
+              }`}
+            >
+              <Calendar className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'events' ? 'text-white' : 'text-gray-500'}`} />
+              Events & Gallery
+            </button>
+            <button 
+              onClick={() => setActiveTab('partners')}
+              className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+                activeTab === 'partners' 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 border border-purple-500' 
+                  : 'text-gray-400 bg-slate-900/30 hover:bg-slate-900/80 border border-slate-800/20 hover:text-slate-200'
+              }`}
+            >
+              <Handshake className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'partners' ? 'text-white' : 'text-gray-500'}`} />
+              Partners
             </button>
             <button 
               onClick={() => setActiveTab('tasks')}
@@ -2829,6 +2999,263 @@ const TeamDashboard = () => {
                   </>
                 )}
               </AnimatePresence>
+            </motion.div>
+          )}
+
+          {activeTab === 'advertisement' && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="max-w-2xl mx-auto space-y-6">
+              <div className="bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm">
+                <div className="mb-8">
+                  <h2 className="text-2xl font-black text-gray-900">Manage Advertisement</h2>
+                  <p className="text-gray-500 font-medium mt-1">Upload a 16:9 poster to display prominently on the Home page.</p>
+                </div>
+
+                {currentAd && (
+                  <div className="mb-10 p-6 bg-white border border-purple-200 rounded-3xl shadow-sm relative group overflow-hidden">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Award size={20} className="text-purple-600"/> Current Live Advertisement</h3>
+                    <div className="aspect-video w-full rounded-xl overflow-hidden border border-gray-100 bg-gray-50 mb-4 relative">
+                      <img src={currentAd.image_url} alt="Current Ad" className="w-full h-full object-cover" />
+                      {currentAd.link_url && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-3 text-white text-sm font-medium">
+                          Links to: <a href={currentAd.link_url} target="_blank" rel="noreferrer" className="text-purple-300 hover:underline">{currentAd.link_url}</a>
+                        </div>
+                      )}
+                    </div>
+                    <button onClick={handleDeleteAd} className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition-colors flex justify-center items-center gap-2 cursor-pointer">
+                      <Trash2 size={18} /> Remove Live Advertisement
+                    </button>
+                  </div>
+                )}
+
+                <div className="p-8 bg-gray-50 border border-gray-200 rounded-3xl">
+                  <h3 className="text-lg font-bold text-gray-900 mb-6">{currentAd ? 'Replace Advertisement' : 'Upload New Advertisement'}</h3>
+                  <form onSubmit={handleUpdateAd} className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Image URL (Required - 16:9 Aspect Ratio)</label>
+                      <input 
+                        type="url" 
+                        required
+                        value={adImageUrl}
+                        onChange={(e) => setAdImageUrl(e.target.value)}
+                        placeholder="https://example.com/ad-poster.jpg"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Redirect Link (Optional)</label>
+                      <input 
+                        type="url" 
+                        value={adLinkUrl}
+                        onChange={(e) => setAdLinkUrl(e.target.value)}
+                        placeholder="https://example.com/product"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                      />
+                    </div>
+                    {adImageUrl && (
+                      <div className="mt-4 aspect-video w-full rounded-xl overflow-hidden border border-gray-200">
+                        <img src={adImageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+                      </div>
+                    )}
+                    <button 
+                      type="submit" 
+                      disabled={isSubmittingAd}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      {isSubmittingAd ? 'Publishing...' : (currentAd ? 'Replace Live Advertisement' : 'Publish Advertisement')}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'events' && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="max-w-2xl mx-auto space-y-6">
+              <div className="bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm">
+                <div className="mb-8">
+                  <h2 className="text-2xl font-black text-gray-900">Add New Event</h2>
+                  <p className="text-gray-500 font-medium mt-1">Publish an event image to the About Us page gallery.</p>
+                </div>
+
+                <form onSubmit={handleAddEvent} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Event Title (Optional)</label>
+                    <input 
+                      type="text" 
+                      value={eventTitle}
+                      onChange={(e) => setEventTitle(e.target.value)}
+                      placeholder="e.g. DAKH Hackathon 2026"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Image URL (Required)</label>
+                    <input 
+                      type="url" 
+                      required
+                      value={eventImageUrl}
+                      onChange={(e) => setEventImageUrl(e.target.value)}
+                      placeholder="https://example.com/image.png"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">Paste a direct link to the image (e.g., from Imgur, Google Drive, or Canva).</p>
+                  </div>
+                  {eventImageUrl && (
+                    <div className="mt-4 rounded-xl overflow-hidden border border-gray-200">
+                      <img src={eventImageUrl} alt="Preview" className="w-full h-auto object-cover max-h-64" onError={(e) => e.target.style.display = 'none'} />
+                    </div>
+                  )}
+                  <button 
+                    type="submit" 
+                    disabled={isSubmittingEvent}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSubmittingEvent ? 'Publishing Event...' : 'Publish Event'}
+                  </button>
+                </form>
+
+                <div className="mt-12">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-gray-900">Manage Uploaded Events</h3>
+                    <button onClick={fetchEvents} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2 cursor-pointer">
+                      <Loader2 className="w-4 h-4" /> Refresh
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {events.length === 0 ? (
+                      <div className="col-span-2 p-8 text-center bg-gray-50 rounded-xl text-gray-500 font-medium border border-gray-100">
+                        No events added yet.
+                      </div>
+                    ) : (
+                      events.map(event => (
+                        <div key={event.id} className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                          <img src={event.image_url} alt={event.title || 'Event'} className="w-full h-48 object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
+                            <p className="text-white font-bold">{event.title || 'Untitled Event'}</p>
+                            <p className="text-white/80 text-xs mt-1">{new Date(event.created_at).toLocaleDateString()}</p>
+                          </div>
+                          <button 
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'partners' && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="max-w-2xl mx-auto space-y-6">
+              <div className="bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm">
+                <div className="mb-8">
+                  <h2 className="text-2xl font-black text-gray-900">Add New Partner</h2>
+                  <p className="text-gray-500 font-medium mt-1">Add an organization to the "Our Partnered Companies" section.</p>
+                </div>
+
+                <form onSubmit={handleAddPartner} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Company/Organization Name</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={partnerName}
+                      onChange={(e) => setPartnerName(e.target.value)}
+                      placeholder="e.g. Otrumai Foundation"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
+                    <textarea 
+                      required
+                      rows={3}
+                      value={partnerDescription}
+                      onChange={(e) => setPartnerDescription(e.target.value)}
+                      placeholder="A short description about the partnership."
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 resize-none"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Logo URL</label>
+                    <input 
+                      type="url" 
+                      required
+                      value={partnerLogoUrl}
+                      onChange={(e) => setPartnerLogoUrl(e.target.value)}
+                      placeholder="https://example.com/logo.png"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
+                    <select 
+                      value={partnerCategory}
+                      onChange={(e) => setPartnerCategory(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 font-medium"
+                    >
+                      <option value="Community">Community (Teal)</option>
+                      <option value="Tech Partner">Tech Partner (Gray)</option>
+                      <option value="Placement">Placement (Red)</option>
+                      <option value="EdTech">EdTech (Purple)</option>
+                      <option value="Internship Partner">Internship Partner (Blue)</option>
+                    </select>
+                  </div>
+                  {partnerLogoUrl && (
+                    <div className="mt-4 p-4 rounded-xl border border-gray-200 bg-white flex justify-center items-center h-32 w-1/2 mx-auto">
+                      <img src={partnerLogoUrl} alt="Preview" className="max-w-full max-h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
+                    </div>
+                  )}
+                  <button 
+                    type="submit" 
+                    disabled={isSubmittingPartner}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSubmittingPartner ? 'Adding Partner...' : 'Add Partner'}
+                  </button>
+                </form>
+
+                <div className="mt-12">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-gray-900">Manage Partners</h3>
+                    <button onClick={fetchPartners} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2 cursor-pointer">
+                      <Loader2 className="w-4 h-4" /> Refresh
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {partners.length === 0 ? (
+                      <div className="col-span-2 p-8 text-center bg-gray-50 rounded-xl text-gray-500 font-medium border border-gray-100">
+                        No partners added yet.
+                      </div>
+                    ) : (
+                      partners.map(partner => (
+                        <div key={partner.id} className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white flex flex-col p-4">
+                          <div className="h-20 w-full relative bg-gray-50 rounded-lg flex justify-center items-center border border-gray-100 mb-3">
+                            <img src={partner.logo_url} alt={partner.name} className="max-w-[80%] max-h-[80%] object-contain" />
+                          </div>
+                          <div className="flex-grow">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100/50 mb-2 inline-block">
+                              {partner.category}
+                            </span>
+                            <h4 className="font-bold text-gray-900 text-base mb-1">{partner.name}</h4>
+                            <p className="text-sm text-gray-500 line-clamp-2">{partner.description}</p>
+                          </div>
+                          <button 
+                            onClick={() => handleDeletePartner(partner.id)}
+                            className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
             </motion.div>
           )}
 
