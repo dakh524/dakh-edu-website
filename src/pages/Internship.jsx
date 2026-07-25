@@ -6,7 +6,7 @@ import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
 import TiltCard from '../components/TiltCard';
 import CtaButton from '../components/CtaButton';
-import InternshipModal from '../components/InternshipModal';
+import { useNavigate } from 'react-router-dom';
 import InternBot from '../components/InternBot';
 
 const DOMAINS = [
@@ -241,8 +241,7 @@ const Internship = () => {
   const [selectedDomain, setSelectedDomain] = useState(DOMAINS[0]);
   const [selectedMode, setSelectedMode] = useState('Online');
   const [isTrainMoving, setIsTrainMoving] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState({ name: '30 Days Mastery', price: '449' });
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
   const [roadmapSteps, setRoadmapSteps] = useState(DEFAULT_ROADMAP);
 
   // Certificate Verification states
@@ -363,8 +362,7 @@ const Internship = () => {
   }, []);
 
   const handleApplyClick = (planName, price) => {
-    setSelectedPlan({ name: planName, price: price });
-    setIsModalOpen(true);
+    navigate(`/apply-internship?plan=${encodeURIComponent(planName)}&price=${price}`);
   };
 
   const ActiveModeIcon = MODES[selectedMode].icon;
@@ -1070,11 +1068,7 @@ const Internship = () => {
         </div>
       </section>
 
-      <InternshipModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        planDetails={selectedPlan}
-      />
+      {/* Apply button click now navigates instead of modal */}
       <InternBot />
       </div>
     </PageTransition>
