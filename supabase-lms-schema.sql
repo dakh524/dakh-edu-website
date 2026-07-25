@@ -101,9 +101,17 @@ CREATE POLICY "Students read own submissions" ON public.lms_submissions FOR SELE
 CREATE POLICY "Students insert submissions" ON public.lms_submissions FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public read announcements" ON public.lms_announcements FOR SELECT USING (true);
 CREATE POLICY "Public read students" ON public.students FOR SELECT USING (true);
+CREATE POLICY "Public insert students" ON public.students FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public update students" ON public.students FOR UPDATE USING (true);
+CREATE POLICY "Public delete students" ON public.students FOR DELETE USING (true);
 
 -- V2 Updates: Quizzes and Pass Marks
 ALTER TABLE public.lms_modules ADD COLUMN IF NOT EXISTS pass_mark integer DEFAULT 0;
 ALTER TABLE public.lms_modules ADD COLUMN IF NOT EXISTS quiz_data jsonb;
 ALTER TABLE public.lms_modules ADD COLUMN IF NOT EXISTS video_url text; -- For the unlisted Youtube link
 ALTER TABLE public.lms_modules ADD COLUMN IF NOT EXISTS task_details text; -- Description of the weekly task
+
+-- V3 Updates: Student Dashboard Revamp
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS selected_project text;
+ALTER TABLE public.lms_modules ADD COLUMN IF NOT EXISTS videos jsonb; -- Array of { title, url, duration }
+ALTER TABLE public.lms_modules ADD COLUMN IF NOT EXISTS related_videos jsonb; -- Array of { title, url }

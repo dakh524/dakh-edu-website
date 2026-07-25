@@ -1598,11 +1598,20 @@ const AdminDashboard = () => {
                     <input 
                       type="text" 
                       required
+                      list="admin-cert-domains"
                       value={certDomain}
                       onChange={(e) => setCertDomain(e.target.value)}
                       placeholder="e.g. Web Development"
                       className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
                     />
+                    <datalist id="admin-cert-domains">
+                      <option value="Web Development" />
+                      <option value="UI/UX Design" />
+                      <option value="App Development" />
+                      <option value="Data Science" />
+                      <option value="Vibe Coding" />
+                      <option value="Machine Learning" />
+                    </datalist>
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Certificate Link (URL)</label>

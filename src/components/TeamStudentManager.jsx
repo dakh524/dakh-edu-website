@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { createClient } from '@supabase/supabase-js';
-import { Loader2, UserMinus, ShieldAlert, CheckCircle2, UserCircle, Plus, Mail, User, BookOpen } from 'lucide-react';
+import { Loader2, UserMinus, ShieldAlert, CheckCircle2, UserCircle, Plus, Mail, User, BookOpen, Lock } from 'lucide-react';
 
 const TeamStudentManager = () => {
   const [students, setStudents] = useState([]);
@@ -12,10 +12,17 @@ const TeamStudentManager = () => {
   const [newInternName, setNewInternName] = useState('');
   const [newInternEmail, setNewInternEmail] = useState('');
   const [newInternDomain, setNewInternDomain] = useState('Web Development');
+  const [newInternDuration, setNewInternDuration] = useState('1 Month Masterclass');
+  const [newInternStartDate, setNewInternStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [newInternEndDate, setNewInternEndDate] = useState('');
+  
+  const generateRandomPassword = () => `Dakh@${Math.floor(1000 + Math.random() * 9000)}abc`;
+  const [newInternPassword, setNewInternPassword] = useState(generateRandomPassword());
+  
   const [generatedPassword, setGeneratedPassword] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   
-  const domains = ['Web Development', 'UI/UX Design', 'App Development', 'Data Science'];
+  const domains = ['Web Development', 'UI/UX Design', 'App Development', 'Data Science', 'Vibe Coding', 'Machine Learning'];
 
   useEffect(() => {
     fetchStudents();
@@ -71,11 +78,10 @@ const TeamStudentManager = () => {
     setGeneratedPassword(null);
 
     const email = newInternEmail.trim().toLowerCase();
-    const tempPassword = `Dakh@${Math.floor(1000 + Math.random() * 9000)}${Math.random().toString(36).substring(2, 5)}`;
     const internNumber = `DES/INT/2026/${Math.floor(1000 + Math.random() * 9000)}`;
+    const tempPassword = newInternPassword;
 
     try {
-      // Use a secondary client with in-memory storage to prevent logging out the current admin
       const supabaseAdmin = createClient(
         import.meta.env.VITE_SUPABASE_URL,
         import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -101,6 +107,9 @@ const TeamStudentManager = () => {
         email: email,
         intern_number: internNumber,
         domain: newInternDomain,
+        duration: newInternDuration,
+        start_date: newInternStartDate || null,
+        end_date: newInternEndDate || null,
         status: 'Active',
         progress_percentage: 0
       };
@@ -118,6 +127,9 @@ const TeamStudentManager = () => {
       setNewInternName('');
       setNewInternEmail('');
       setNewInternDomain('Web Development');
+      setNewInternDuration('1 Month Masterclass');
+      setNewInternEndDate('');
+      setNewInternPassword(generateRandomPassword());
     } catch (err) {
       setError("Failed to add intern: " + err.message);
     } finally {
@@ -176,10 +188,43 @@ const TeamStudentManager = () => {
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Domain</label>
                 <div className="relative">
                   <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <select value={newInternDomain} onChange={e => setNewInternDomain(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-gray-900 bg-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none">
-                    {domains.map(d => <option key={d} value={d}>{d}</option>)}
+                  <input 
+                    list="intern-domains-list"
+                    value={newInternDomain} 
+                    onChange={e => setNewInternDomain(e.target.value)} 
+                    placeholder="Select or type domain"
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-gray-900 bg-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none"
+                  />
+                  <datalist id="intern-domains-list">
+                    {domains.map(d => <option key={d} value={d} />)}
+                  </datalist>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Duration</label>
+                <div className="relative">
+                  <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <select value={newInternDuration} onChange={e => setNewInternDuration(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-gray-900 bg-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none">
+                    <option value="1 Month Masterclass">1 Month Masterclass</option>
+                    <option value="15 Days Sprint">15 Days Sprint</option>
+                    <option value="2 Months Special">2 Months Special</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input type="text" required value={newInternPassword} onChange={e => setNewInternPassword(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-gray-900 bg-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Start Date</label>
+                <input type="date" value={newInternStartDate} onChange={e => setNewInternStartDate(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900 bg-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">End Date</label>
+                <input type="date" value={newInternEndDate} onChange={e => setNewInternEndDate(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 text-gray-900 bg-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none" />
               </div>
             </div>
             <div className="flex justify-end mt-2">
@@ -226,7 +271,9 @@ const TeamStudentManager = () => {
                 <td colSpan="4" className="py-8 text-center text-slate-500 font-medium">No interns found.</td>
               </tr>
             ) : (
-              students.map((student) => (
+              students.map((student) => {
+                const isExpired = student.end_date && new Date() > new Date(student.end_date);
+                return (
                 <tr key={student.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="py-4 px-4">
                     <div className="font-bold text-gray-900">{student.full_name}</div>
@@ -235,12 +282,23 @@ const TeamStudentManager = () => {
                   <td className="py-4 px-4">
                     <div className="text-sm font-semibold text-purple-600 bg-purple-50 inline-block px-2 py-0.5 rounded-lg mb-1">{student.intern_number}</div>
                     <div className="text-xs text-slate-500 font-medium">{student.domain}</div>
+                    {student.end_date && <div className="text-[10px] text-slate-400 mt-1 font-medium tracking-wide">Ends: {student.end_date}</div>}
                   </td>
                   <td className="py-4 px-4">
-                    <div className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded-lg text-xs font-bold">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      {student.status || 'Active'}
-                    </div>
+                    {isExpired ? (
+                      <div className="flex flex-col gap-1 w-fit">
+                        <div className="flex items-center gap-1.5 text-red-600 bg-red-50 px-2 py-1 rounded-lg text-xs font-bold border border-red-200">
+                          <Lock className="w-3.5 h-3.5" />
+                          Expired
+                        </div>
+                        <span className="text-[10px] text-red-500 font-bold whitespace-nowrap bg-red-50 px-1.5 py-0.5 rounded border border-red-100">Remove auth from Supabase</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded-lg text-xs font-bold">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {student.status || 'Active'}
+                      </div>
+                    )}
                   </td>
                   <td className="py-4 px-4 text-right">
                     <button
@@ -258,7 +316,8 @@ const TeamStudentManager = () => {
                     </button>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

@@ -41,7 +41,7 @@ const DOMAINS_LIST = [
   "Cloud Security", "Front-End Development", "Back-End Development", 
   "Database Administration", "Machine Learning Engineering", "Data Analytics", 
   "Business Intelligence", "API Development", "Microservices Architecture", 
-  "C/C++ Programming", "Java Full Stack", "Generative AI",
+  "C/C++ Programming", "Java Full Stack", "Generative AI", "Vibe Coding", "Machine Learning",
   // Mechanical
   "AutoCAD & 3D Modeling", "HVAC Design", "Manufacturing & Production",
   "Automotive Design", "Computational Fluid Dynamics (CFD)", "Finite Element Analysis (FEA)",
