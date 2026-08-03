@@ -363,7 +363,7 @@ const Home = () => {
                   WhatsApp Us
                 </a>
                 <a 
-                  href="https://cold-calling-1atm45hxo-dakh524s-projects.vercel.app" 
+                  href="https://cold-calling-cunauudzr-dakh524s-projects.vercel.app/" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="group flex items-center justify-center gap-2 bg-[var(--color-brand-primary)] hover:bg-purple-500 text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 shadow-lg shadow-purple-600/20 hover:shadow-purple-600/40 hover:-translate-y-1"

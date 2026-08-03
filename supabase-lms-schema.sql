@@ -3,7 +3,7 @@
 -- 1. Students Table (Extending Auth Users and Registrations)
 CREATE TABLE IF NOT EXISTS public.students (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  auth_id uuid REFERENCES auth.users(id), -- Nullable if they haven't signed up yet
+  auth_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, -- Nullable if they haven't signed up yet
   registration_id uuid REFERENCES public.registrations(id),
   full_name text NOT NULL,
   email text NOT NULL UNIQUE,

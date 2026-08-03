@@ -464,23 +464,25 @@ const About = () => {
               <p className="text-gray-500 font-medium">No events published yet.</p>
             </div>
           ) : (
-            <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+            <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
               {events.map((event, i) => (
                 <ScrollReveal key={event.id} delay={i * 0.1}>
-                  <div className="break-inside-avoid rounded-3xl overflow-hidden shadow-xl group relative bg-gradient-to-br from-purple-100 to-indigo-100 min-h-[250px] flex items-end">
-                    <img 
-                      src={event.image_url} 
-                      alt={event.title || 'Event'} 
-                      className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" 
-                      onError={(e) => {
-                        e.target.style.opacity = '0';
-                      }}
-                    />
-                    {event.title && (
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent opacity-100 transition-opacity duration-300 flex items-end p-6">
-                        <h3 className="text-white font-bold text-xl leading-snug">{event.title}</h3>
-                      </div>
-                    )}
+                  <div className="break-inside-avoid bg-white/40 backdrop-blur-3xl border border-white/60 p-3 rounded-[2rem] shadow-[0_8px_32px_rgba(31,38,135,0.05)] hover:shadow-[0_20px_40px_rgba(147,51,234,0.15)] transition-all duration-500 group relative">
+                    <div className="rounded-[1.5rem] overflow-hidden relative bg-gray-50/50 shadow-inner">
+                      <img 
+                        src={event.image_url} 
+                        alt={event.title || 'Event'} 
+                        className="w-full h-auto object-cover transform group-hover:scale-[1.03] transition-transform duration-700" 
+                        onError={(e) => {
+                          e.target.style.opacity = '0';
+                        }}
+                      />
+                      {event.title && (
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-gray-900/95 via-gray-900/60 to-transparent pt-16 pb-6 px-6 translate-y-2 group-hover:translate-y-0 opacity-90 group-hover:opacity-100 transition-all duration-500">
+                          <h3 className="text-white font-extrabold text-xl leading-snug tracking-tight">{event.title}</h3>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </ScrollReveal>
               ))}

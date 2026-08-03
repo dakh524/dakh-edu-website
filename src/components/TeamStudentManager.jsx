@@ -22,7 +22,7 @@ const TeamStudentManager = () => {
   const [generatedPassword, setGeneratedPassword] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   
-  const domains = ['Web Development', 'UI/UX Design', 'App Development', 'Data Science', 'Vibe Coding', 'Machine Learning'];
+  const domains = ['Web Development', 'UI/UX Design', 'App Development', 'Data Science', 'Vibe Coding', 'Machine Learning', 'Full Stack Development'];
 
   useEffect(() => {
     fetchStudents();
@@ -111,7 +111,8 @@ const TeamStudentManager = () => {
         start_date: newInternStartDate || null,
         end_date: newInternEndDate || null,
         status: 'Active',
-        progress_percentage: 0
+        progress_percentage: 0,
+        password: tempPassword
       };
 
       const { data: insertedStudent, error: insertError } = await supabase
@@ -282,6 +283,7 @@ const TeamStudentManager = () => {
                   <td className="py-4 px-4">
                     <div className="text-sm font-semibold text-purple-600 bg-purple-50 inline-block px-2 py-0.5 rounded-lg mb-1">{student.intern_number}</div>
                     <div className="text-xs text-slate-500 font-medium">{student.domain}</div>
+                    {student.password && <div className="text-[11px] text-slate-600 mt-1 font-mono bg-slate-100 inline-block px-1.5 py-0.5 rounded border border-slate-200">Pass: {student.password}</div>}
                     {student.end_date && <div className="text-[10px] text-slate-400 mt-1 font-medium tracking-wide">Ends: {student.end_date}</div>}
                   </td>
                   <td className="py-4 px-4">

@@ -4,8 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { LogOut, BookOpen, CheckCircle, FileText, Award, PlayCircle, Download, Link as LinkIcon, CheckCircle2, ChevronRight, UserCircle, Lock, MonitorPlay, Code2, ArrowRight, HelpCircle, MessageSquare, TrendingUp, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GEN_AI_MODULES } from '../data/genAiModules';
-
+import { FULL_STACK_MODULES } from '../data/fullStackModules';
 const DOMAIN_PROJECTS = {
+  'Full Stack Development': [
+    { id: 'fs_1', title: 'Photography Portfolio & Booking Website', description: 'Build a professional website for a photography business where clients can explore portfolios and book photography sessions.' },
+    { id: 'fs_2', title: 'E-Commerce Website', description: 'Develop a full-stack online shopping platform for browsing and purchasing products.' },
+    { id: 'fs_3', title: 'Barber Shop Management System', description: 'Create an online appointment and management system for a barber shop.' }
+  ],
   'Web Development': [
     { id: 'wd_1', title: 'E-Commerce Platform', description: 'Build a full-stack e-commerce app with cart, user authentication, checkout, and payment gateway integration.' },
     { id: 'wd_2', title: 'Social Media Dashboard', description: 'Create a responsive dashboard with real-time analytics, dynamic charts, and user management.' },
@@ -340,6 +345,8 @@ const StudentDashboard = () => {
               setModules(VIBE_CODING_MODULES);
             } else if (currentDomain && currentDomain.toLowerCase().includes('gen')) {
               setModules(GEN_AI_MODULES);
+            } else if (currentDomain && (currentDomain.toLowerCase().includes('full stack') || currentDomain.toLowerCase().includes('web development'))) {
+              setModules(FULL_STACK_MODULES);
             } else {
               setModules(DUMMY_MODULES);
             }
@@ -997,6 +1004,70 @@ const StudentDashboard = () => {
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
               </a>
+            </div>
+          </div>
+          
+          {/* Internship Roadmap Widget (Ultra-Premium) */}
+          <div className="bg-white rounded-[1.25rem] p-6 border border-slate-200 shadow-sm relative overflow-hidden">
+            <h3 className="text-[15px] font-bold text-[#111827] mb-5 flex items-center gap-2 tracking-tight">
+              <BookOpen className="w-4 h-4 text-indigo-500" />
+              About & Roadmap
+            </h3>
+            
+            <p className="text-[13px] text-slate-500 mb-6 leading-relaxed">
+              Complete the required modules, build your capstone project, and submit it for review to receive your verified certification.
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex gap-3 items-start">
+                <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5 border border-indigo-100">
+                  <PlayCircle className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#111827] text-[13px]">1. Watch Modules</h4>
+                  <p className="text-slate-500 text-[11px] mt-0.5">Learn from curated video content.</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 items-start">
+                <div className="w-6 h-6 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center flex-shrink-0 mt-0.5 border border-orange-100">
+                  <Code2 className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#111827] text-[13px]">2. Complete Assessment</h4>
+                  <p className="text-slate-500 text-[11px] mt-0.5">Pass the MCQ quizzes.</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 items-start">
+                <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5 border border-emerald-100">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#111827] text-[13px]">3. Build Capstone</h4>
+                  <p className="text-slate-500 text-[11px] mt-0.5">Develop your selected project.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-start">
+                <div className="w-6 h-6 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5 border border-purple-100">
+                  <LinkIcon className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#111827] text-[13px]">4. Submit Links</h4>
+                  <p className="text-slate-500 text-[11px] mt-0.5">Provide live and GitHub URLs.</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 items-start">
+                <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 border border-blue-100">
+                  <Award className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#111827] text-[13px]">5. Get Certified</h4>
+                  <p className="text-slate-500 text-[11px] mt-0.5">Earn your verified certificate!</p>
+                </div>
+              </div>
             </div>
           </div>
           
