@@ -29,9 +29,7 @@ const Footer = () => {
           {/* Brand Col */}
           <div className="col-span-1 md:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform -rotate-6">
-                <span className="font-black text-2xl text-white">D</span>
-              </div>
+              <img src="/companylogo.jpg" alt="DAKH Logo" className="h-10 w-auto object-contain rounded" />
               <h3 className="font-black text-3xl tracking-tight text-gray-900">DAKH</h3>
             </div>
             <p className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-4">Learn. Build. Earn.</p>

@@ -15,7 +15,7 @@ const TeamDashboard = () => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [teamMemberData, setTeamMemberData] = useState(null);
-  const [activeTab, setActiveTab] = useState('analytics');
+  const [activeTab, setActiveTab] = useState('intern-projects');
   const [registrations, setRegistrations] = useState([]);
   const [freelancers, setFreelancers] = useState([]);
   const [certificates, setCertificates] = useState([]);
@@ -56,42 +56,28 @@ const TeamDashboard = () => {
   const [partnerDescription, setPartnerDescription] = useState('');
   const [partnerCategory, setPartnerCategory] = useState('Community');
   const [isSubmittingPartner, setIsSubmittingPartner] = useState(false);
+  const [editingPartner, setEditingPartner] = useState(null);
 
   // Weekly tasks management state
-  const [tasks, setTasks] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskDesc, setTaskDesc] = useState('');
-  const [taskAssignedTo, setTaskAssignedTo] = useState('');
-  const [taskDueDate, setTaskDueDate] = useState('');
-  const [taskPriority, setTaskPriority] = useState('Medium');
-  const [isSubmittingTask, setIsSubmittingTask] = useState(false);
 
-  // Cold calling states
-  const [coldLeads, setColdLeads] = useState([]);
-  const [isSubmittingLead, setIsSubmittingLead] = useState(false);
-  const [leadName, setLeadName] = useState('');
-  const [leadPhone, setLeadPhone] = useState('');
-  const [leadCategory, setLeadCategory] = useState('');
-  const [leadLocation, setLeadLocation] = useState('');
-  const [leadRating, setLeadRating] = useState('');
-  const [leadReviews, setLeadReviews] = useState('');
-  const [leadWebsite, setLeadWebsite] = useState('');
-  const [leadPriority, setLeadPriority] = useState('High');
-  const [leadCallOrNot, setLeadCallOrNot] = useState('Yes - Call');
-  const [leadWebsiteType, setLeadWebsiteType] = useState('');
-  const [leadSuggestedPrice, setLeadSuggestedPrice] = useState('');
-  const [leadKeyHook, setLeadKeyHook] = useState('');
-  const [leadGoogleMaps, setLeadGoogleMaps] = useState('');
-  const [selectedAssignee, setSelectedAssignee] = useState('');
-  const [selectedAssigneeFilter, setSelectedAssigneeFilter] = useState('All');
-  const [selectedLead, setSelectedLead] = useState(null);
-  const [leadRemarks, setLeadRemarks] = useState('');
-  const [isSavingFeedback, setIsSavingFeedback] = useState(false);
-  const [coldLeadsFilter, setColdLeadsFilter] = useState('Pending'); // 'Pending', 'Approached'
-  const [weeklyTargetInput, setWeeklyTargetInput] = useState('');
-  const [isSavingWeeklyTarget, setIsSavingWeeklyTarget] = useState(false);
-  const [showTargetSetupModal, setShowTargetSetupModal] = useState(false);
+  // Intern Projects Management State
+  const [internProjects, setInternProjects] = useState([]);
+  const [ipTitle, setIpTitle] = useState('');
+  const [ipDesc, setIpDesc] = useState('');
+  const [ipVercelLink, setIpVercelLink] = useState('');
+  const [ipGithubLink, setIpGithubLink] = useState('');
+  const [ipLinkedinLink, setIpLinkedinLink] = useState('');
+  const [isSubmittingIp, setIsSubmittingIp] = useState(false);
+  const [editingIp, setEditingIp] = useState(null);
+
+  // Products & Services Management State
+  const [products, setProducts] = useState([]);
+  const [prodTitle, setProdTitle] = useState('');
+  const [prodDesc, setProdDesc] = useState('');
+  const [prodImageUrl, setProdImageUrl] = useState('');
+  const [isSubmittingProd, setIsSubmittingProd] = useState(false);
+  const [editingProd, setEditingProd] = useState(null);
 
   const navigate = useNavigate();
 
@@ -134,14 +120,13 @@ const TeamDashboard = () => {
         navigate('/team/login');
       } else {
         setTeamMemberData(teamMember);
-        setWeeklyTargetInput(teamMember.weekly_call_target || 50);
         // Load data
         fetchRegistrations();
         fetchFreelancers();
         fetchCertificates();
-        fetchTeamTasks();
         fetchTeamMembers();
-        fetchColdLeads();
+        fetchInternProjects();
+        fetchProducts();
         fetchEvents();
         fetchPartners();
         fetchAdvertisement();
@@ -155,14 +140,6 @@ const TeamDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    if (coldLeads.length >= 1000 && teamMemberData) {
-      const dismissed = sessionStorage.getItem(`dismissed_goal_prompt_${teamMemberData.id}`);
-      if (!dismissed && (teamMemberData.weekly_call_target === 50 || !teamMemberData.weekly_call_target)) {
-        setShowTargetSetupModal(true);
-      }
-    }
-  }, [coldLeads, teamMemberData]);
 
   // Background activity and working hours tracker
   useEffect(() => {
@@ -207,25 +184,6 @@ const TeamDashboard = () => {
     return () => clearInterval(timer);
   }, [teamMemberData?.id]);
 
-  const handleSaveWeeklyTarget = async (e) => {
-    e.preventDefault();
-    if (!weeklyTargetInput || isNaN(weeklyTargetInput) || parseInt(weeklyTargetInput) <= 0) {
-      alert("Please enter a valid weekly target count.");
-      return;
-    }
-    setIsSavingWeeklyTarget(true);
-    const { error } = await supabase
-      .from('team_members')
-      .update({ weekly_call_target: parseInt(weeklyTargetInput) })
-      .eq('id', teamMemberData.id);
-    setIsSavingWeeklyTarget(false);
-    if (error) {
-      alert("Error saving weekly target: " + error.message);
-    } else {
-      alert("Weekly call target updated!");
-      setTeamMemberData(prev => ({ ...prev, weekly_call_target: parseInt(weeklyTargetInput) }));
-    }
-  };
 
   const fetchRegistrations = async () => {
     const { data, error } = await supabase
@@ -253,12 +211,15 @@ const TeamDashboard = () => {
       .order('created_at', { ascending: false });
     if (!error && data) setCertificates(data);
   };
-  const fetchTeamTasks = async () => {
-    const { data, error } = await supabase
-      .from('team_tasks')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && data) setTasks(data);
+
+  const fetchInternProjects = async () => {
+    const { data, error } = await supabase.from('intern_projects').select('*').order('created_at', { ascending: false });
+    if (!error && data) setInternProjects(data);
+  };
+
+  const fetchProducts = async () => {
+    const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+    if (!error && data) setProducts(data);
   };
 
   const fetchTeamMembers = async () => {
@@ -269,13 +230,6 @@ const TeamDashboard = () => {
     if (!error && data) setTeamMembers(data);
   };
 
-  const fetchColdLeads = async () => {
-    const { data, error } = await supabase
-      .from('cold_leads')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && data) setColdLeads(data);
-  };
 
   const handleAddTask = async (e) => {
     e.preventDefault();
@@ -310,7 +264,6 @@ const TeamDashboard = () => {
       setTaskAssignedTo('');
       setTaskDueDate('');
       setTaskPriority('Medium');
-      fetchTeamTasks();
     }
   };
 
@@ -322,7 +275,6 @@ const TeamDashboard = () => {
     if (error) {
       alert("Error updating task status: " + error.message);
     } else {
-      fetchTeamTasks();
     }
   };
 
@@ -334,7 +286,6 @@ const TeamDashboard = () => {
     if (error) {
       alert("Error approving task: " + error.message);
     } else {
-      fetchTeamTasks();
     }
   };
 
@@ -347,7 +298,6 @@ const TeamDashboard = () => {
       if (error) {
         alert("Error rejecting task: " + error.message);
       } else {
-        fetchTeamTasks();
       }
     }
   };
@@ -397,7 +347,8 @@ const TeamDashboard = () => {
       setLeadSuggestedPrice('');
       setLeadKeyHook('');
       setLeadGoogleMaps('');
-      fetchColdLeads();
+      fetchInternProjects();
+        fetchProducts();
     }
   };
 
@@ -524,7 +475,8 @@ const TeamDashboard = () => {
           alert("Error uploading leads: " + error.message);
         } else {
           alert(`Successfully uploaded ${parsedLeads.length} leads assigned to their designated members!`);
-          fetchColdLeads();
+          fetchInternProjects();
+        fetchProducts();
         }
       } catch (err) {
         alert("Failed to parse CSV: " + err.message);
@@ -556,7 +508,8 @@ const TeamDashboard = () => {
       alert("Call feedback saved successfully!");
       setSelectedLead(null);
       setLeadRemarks('');
-      fetchColdLeads();
+      fetchInternProjects();
+        fetchProducts();
     }
   };
 
@@ -569,7 +522,8 @@ const TeamDashboard = () => {
       if (error) {
         alert("Error deleting lead: " + error.message);
       } else {
-        fetchColdLeads();
+        fetchInternProjects();
+        fetchProducts();
       }
     }
   };
@@ -591,7 +545,8 @@ const TeamDashboard = () => {
       alert("Error updating phone number: " + error.message);
     } else {
       alert("Phone number updated!");
-      fetchColdLeads();
+      fetchInternProjects();
+        fetchProducts();
     }
   };
 
@@ -606,7 +561,8 @@ const TeamDashboard = () => {
         alert("Error clearing approached leads: " + error.message);
       } else {
         alert("Approached leads cleared successfully!");
-        fetchColdLeads();
+        fetchInternProjects();
+        fetchProducts();
       }
     }
   };
@@ -622,7 +578,8 @@ const TeamDashboard = () => {
         alert("Error clearing lead sheet: " + error.message);
       } else {
         alert("Lead sheet cleared completely!");
-        fetchColdLeads();
+        fetchInternProjects();
+        fetchProducts();
       }
     }
   };
@@ -636,7 +593,6 @@ const TeamDashboard = () => {
       if (error) {
         alert("Error deleting task: " + error.message);
       } else {
-        fetchTeamTasks();
       }
     }
   };
@@ -825,12 +781,20 @@ const TeamDashboard = () => {
     e.preventDefault();
     if (!partnerName || !partnerLogoUrl || !partnerDescription || !partnerCategory) return;
     setIsSubmittingPartner(true);
-    const { error } = await supabase.from('partnered_companies').insert([{ name: partnerName, logo_url: partnerLogoUrl, description: partnerDescription, category: partnerCategory }]);
+    let error;
+    if (editingPartner) {
+        const res = await supabase.from('partnered_companies').update({ name: partnerName, logo_url: partnerLogoUrl, description: partnerDescription, category: partnerCategory }).eq('id', editingPartner.id);
+        error = res.error;
+    } else {
+        const res = await supabase.from('partnered_companies').insert([{ name: partnerName, logo_url: partnerLogoUrl, description: partnerDescription, category: partnerCategory }]);
+        error = res.error;
+    }
     setIsSubmittingPartner(false);
     if (error) {
-      alert("Error adding partner: " + error.message);
+      alert("Error saving partner: " + error.message);
     } else {
-      alert("Partner added successfully!");
+      alert(editingPartner ? "Partner updated successfully!" : "Partner added successfully!");
+      setEditingPartner(null);
       setPartnerName('');
       setPartnerLogoUrl('');
       setPartnerDescription('');
@@ -894,99 +858,6 @@ const TeamDashboard = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const isCeo = ['ceo', 'managing director', 'admin'].includes(teamMemberData?.role?.toLowerCase()) || teamMemberData?.email === 'ceo@dakhedusolutions.in';
-  
-  const myLeads = coldLeads.filter(lead => {
-    if (isCeo) {
-      if (selectedAssigneeFilter !== 'All') {
-        return (lead.assigned_to || '').toLowerCase() === selectedAssigneeFilter.toLowerCase();
-      }
-      return true;
-    }
-    const leadAssignee = (lead.assigned_to || '').toLowerCase();
-    const memberName = (teamMemberData.full_name || '').toLowerCase();
-    const memberEmail = (teamMemberData.email || '').toLowerCase();
-    return leadAssignee === memberName || 
-           leadAssignee === memberEmail || 
-           (leadAssignee && memberName && (leadAssignee.includes(memberName) || memberName.includes(leadAssignee)));
-  });
-
-  const isColdCallingEligible = isCeo || 
-    ['cold caller', 'telecaller', 'sales', 'marketing', 'bd', 'business development', 'developer', 'managing director', 'director', 'manager', 'management', 'executive', 'operational executive', 'operational excutive'].includes(teamMemberData?.role?.toLowerCase()) ||
-    (teamMemberData?.role || '').toLowerCase().includes('caller') ||
-    (teamMemberData?.role || '').toLowerCase().includes('sales') ||
-    (teamMemberData?.role || '').toLowerCase().includes('director') ||
-    (teamMemberData?.role || '').toLowerCase().includes('manager') ||
-    (teamMemberData?.role || '').toLowerCase().includes('executive') ||
-    (teamMemberData?.role || '').toLowerCase().includes('excutive') ||
-    myLeads.length > 0;
-
-  const todayStart = new Date();
-  todayStart.setHours(0,0,0,0);
-  
-  const callsMadeToday = myLeads.filter(lead => {
-    if (lead.status !== 'Approached') return false;
-    if (!lead.approached_at || !lead.approached_by) return false;
-    
-    const isByUser = lead.approached_by === teamMemberData.full_name || lead.approached_by === teamMemberData.email;
-    const isToday = new Date(lead.approached_at) >= todayStart;
-    
-    return isByUser && isToday;
-  }).length;
-
-  const totalLeadsCount = myLeads.length;
-  const pendingLeadsCount = myLeads.filter(l => l.status === 'Pending').length;
-  const approachedLeadsCount = myLeads.filter(l => l.status === 'Approached').length;
-
-  const getActiveStatus = (lastActiveAt) => {
-    if (!lastActiveAt) return { label: 'Never Active', color: 'bg-gray-50 text-gray-400 border-gray-150', dotColor: 'bg-gray-300' };
-    const lastActive = new Date(lastActiveAt);
-    const diffMs = new Date() - lastActive;
-    if (diffMs < 120000) { // 2 minutes
-      return { label: 'Online Now', color: 'bg-green-50 text-green-700 border-green-200', dotColor: 'bg-green-500', isOnline: true };
-    }
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 60) {
-      return { label: `${diffMins} mins ago`, color: 'bg-slate-50 text-slate-600 border-slate-200', dotColor: 'bg-slate-400' };
-    }
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) {
-      return { label: `${diffHours} hrs ago`, color: 'bg-slate-50 text-slate-600 border-slate-200', dotColor: 'bg-slate-400' };
-    }
-    return { label: 'Offline', color: 'bg-gray-50 text-gray-400 border-gray-100', dotColor: 'bg-gray-300' };
-  };
-
-  const formatSeconds = (totalSeconds) => {
-    if (!totalSeconds || isNaN(totalSeconds)) return '0 mins';
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    if (h > 0) return `${h}h ${m}m`;
-    return `${m} mins`;
-  };
-
-  const getTimeAgo = (dateStr) => {
-    if (!dateStr) return { label: 'Never', color: 'bg-gray-100 text-gray-500', dotColor: 'bg-gray-400' };
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMins = Math.floor((now - date) / 60000);
-    
-    if (diffMins < 5) {
-      return { label: 'Online now', color: 'bg-emerald-50 text-emerald-600 border-emerald-200', dotColor: 'bg-emerald-500 animate-pulse' };
-    }
-    if (diffMins < 60) {
-      return { label: `${diffMins} mins ago`, color: 'bg-emerald-50 text-emerald-600 border-emerald-200', dotColor: 'bg-emerald-500' };
-    }
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) {
-      return { label: `${diffHours} hrs ago`, color: 'bg-slate-50 text-slate-600 border-slate-200', dotColor: 'bg-slate-400' };
-    }
-    return { label: 'Offline', color: 'bg-gray-50 text-gray-400 border-gray-100', dotColor: 'bg-gray-300' };
-  };
-
-  const leadsToDisplay = coldLeadsFilter === 'History'
-    ? myLeads.filter(l => l.status === 'Approached')
-    : myLeads.filter(l => l.status === coldLeadsFilter);
-
   return (
     <div className="h-screen w-screen overflow-hidden flex bg-slate-950 text-slate-100 font-sans">
       {/* Sidebar */}
@@ -994,7 +865,7 @@ const TeamDashboard = () => {
         <div>
           {/* Brand header */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center font-black text-base text-white shadow-md shadow-purple-500/25">T</div>
+            <img src="/companylogo.jpg" alt="DAKH Logo" className="w-10 h-10 object-contain rounded bg-white p-1 shadow-md shadow-purple-500/25" />
             <div>
               <h1 className="font-black text-sm tracking-wider uppercase text-white leading-none">Team Portal</h1>
               <span className="text-[9px] text-purple-400 font-bold tracking-widest uppercase">DAKH Edu Solutions</span>
@@ -1003,17 +874,30 @@ const TeamDashboard = () => {
 
           {/* Navigation links */}
           <div className="space-y-2.5 overflow-y-auto scrollbar-hide max-h-[calc(100vh-220px)]">
+
             <button 
-              onClick={() => setActiveTab('analytics')}
+              onClick={() => setActiveTab('intern-projects')}
               className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
-                activeTab === 'analytics' 
+                activeTab === 'intern-projects' 
                   ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 border border-purple-500' 
                   : 'text-gray-400 bg-slate-900/30 hover:bg-slate-900/80 border border-slate-800/20 hover:text-slate-200'
               }`}
             >
-              <TrendingUp className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'analytics' ? 'text-white' : 'text-gray-500'}`} />
-              Analytics Overview
+              <FileBadge className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'intern-projects' ? 'text-white' : 'text-gray-500'}`} />
+              Intern Projects
             </button>
+            <button 
+              onClick={() => setActiveTab('products')}
+              className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+                activeTab === 'products' 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 border border-purple-500' 
+                  : 'text-gray-400 bg-slate-900/30 hover:bg-slate-900/80 border border-slate-800/20 hover:text-slate-200'
+              }`}
+            >
+              <Briefcase className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'products' ? 'text-white' : 'text-gray-500'}`} />
+              Products & Services
+            </button>
+
             <button 
               onClick={() => setActiveTab('registrations')}
               className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
@@ -1059,17 +943,6 @@ const TeamDashboard = () => {
               Intern Management
             </button>
             <button 
-              onClick={() => setActiveTab('lms')}
-              className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
-                activeTab === 'lms' 
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 border border-purple-500' 
-                  : 'text-gray-400 bg-slate-900/30 hover:bg-slate-900/80 border border-slate-800/20 hover:text-slate-200'
-              }`}
-            >
-              <BookOpen className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'lms' ? 'text-white' : 'text-gray-500'}`} />
-              LMS Modules
-            </button>
-            <button 
               onClick={() => setActiveTab('advertisement')}
               className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
                 activeTab === 'advertisement' 
@@ -1102,30 +975,6 @@ const TeamDashboard = () => {
               <Handshake className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'partners' ? 'text-white' : 'text-gray-500'}`} />
               Partners
             </button>
-            <button 
-              onClick={() => setActiveTab('tasks')}
-              className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
-                activeTab === 'tasks' 
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 border border-purple-500' 
-                  : 'text-gray-400 bg-slate-900/30 hover:bg-slate-900/80 border border-slate-800/20 hover:text-slate-200'
-              }`}
-            >
-              <ListTodo className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'tasks' ? 'text-white' : 'text-gray-500'}`} />
-              Weekly Tasks
-            </button>
-            {isColdCallingEligible && (
-              <button 
-                onClick={() => setActiveTab('coldcalling')}
-                className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
-                  activeTab === 'coldcalling' 
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 border border-purple-500' 
-                    : 'text-gray-400 bg-slate-900/30 hover:bg-slate-900/80 border border-slate-800/20 hover:text-slate-200'
-                }`}
-              >
-                <Phone className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'coldcalling' ? 'text-white' : 'text-gray-500'}`} />
-                Cold Calling
-              </button>
-            )}
           </div>
         </div>
 
@@ -1166,397 +1015,79 @@ const TeamDashboard = () => {
         {/* Scrollable Tabs Wrapper */}
         <main className="flex-grow overflow-y-auto p-8">
           
-          {activeTab === 'analytics' && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="space-y-6">
-              {/* Header */}
+
+          {activeTab === 'intern-projects' && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900">Analytics & Insights</h2>
-                  <p className="text-gray-500 font-medium mt-1">Real-time metrics, performance analytics, and database breakdown statistics.</p>
-                </div>
-                <button 
-                  onClick={() => {
-                    fetchRegistrations();
-                    fetchColdLeads();
-                    fetchTeamTasks();
-                    fetchTeamMembers();
-                  }} 
-                  className="px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2 cursor-pointer"
-                >
-                  <Loader2 className="w-4 h-4 animate-spin-slow" /> Refresh All Stats
-                </button>
-              </div>
-
-              {/* Stats Summary Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Registrations Admissions */}
-                <div className="bg-gradient-to-br from-indigo-50/40 to-purple-50/40 border border-indigo-100 p-5 rounded-2xl shadow-sm">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Registrations Admissions</span>
-                  <h3 className="text-2xl font-black text-indigo-700 mt-2">{registrations.filter(r => r.status === 'Approved').length} <span className="text-xs text-gray-400 font-bold">/ {registrations.length}</span></h3>
-                  <span className="text-[10px] font-bold text-indigo-600/80 bg-indigo-50 px-2 py-0.5 rounded inline-block mt-2">Approved Candidates</span>
-                </div>
-
-                {/* Lead Contacts */}
-                <div className="bg-gradient-to-br from-amber-50/40 to-orange-50/40 border border-amber-100 p-5 rounded-2xl shadow-sm">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Cold Leads Base</span>
-                  <h3 className="text-2xl font-black text-amber-700 mt-2">{coldLeads.length} <span className="text-xs text-gray-400 font-bold">/ {coldLeads.filter(l => l.status === 'Pending').length} pending</span></h3>
-                  <span className="text-[10px] font-bold text-amber-600/80 bg-amber-50 px-2 py-0.5 rounded inline-block mt-2">Active CRM Sheets</span>
-                </div>
-
-                {/* Call Approaches */}
-                <div className="bg-gradient-to-br from-emerald-50/40 to-teal-50/40 border border-emerald-100 p-5 rounded-2xl shadow-sm">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Total Approached Calls</span>
-                  <h3 className="text-2xl font-black text-emerald-700 mt-2">{coldLeads.filter(l => l.status === 'Approached').length}</h3>
-                  <span className="text-[10px] font-bold text-emerald-600/80 bg-emerald-50 px-2 py-0.5 rounded inline-block mt-2">Outbound Contacts Logged</span>
-                </div>
-
-                {/* Tasks Performance */}
-                <div className="bg-gradient-to-br from-purple-50/40 to-pink-50/40 border border-purple-100 p-5 rounded-2xl shadow-sm">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Weekly Task Rate</span>
-                  <h3 className="text-2xl font-black text-purple-700 mt-2">
-                    {tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'Completed').length / tasks.length) * 100) : 0}%
-                  </h3>
-                  <span className="text-[10px] font-bold text-purple-600/80 bg-purple-50 px-2 py-0.5 rounded inline-block mt-2">
-                    {tasks.filter(t => t.status === 'Completed').length} / {tasks.length} Completed
-                  </span>
+                  <h2 className="text-2xl font-black text-gray-900">Intern Projects</h2>
+                  <p className="text-gray-500 font-medium mt-1">Manage intern project showcase items.</p>
                 </div>
               </div>
+              
+              {/* Form to add/edit project */}
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">{editingIp ? 'Edit Project' : 'Add New Project'}</h3>
+                <form className="space-y-4" onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsSubmittingIp(true);
+                  if (editingIp) {
+                    const { error } = await supabase.from('intern_projects').update({
+                      title: ipTitle, description: ipDesc, vercel_link: ipVercelLink, github_link: ipGithubLink, linkedin_image_link: ipLinkedinLink
+                    }).eq('id', editingIp.id);
+                    if (!error) {
+                       setEditingIp(null);
+                       setIpTitle(''); setIpDesc(''); setIpVercelLink(''); setIpGithubLink(''); setIpLinkedinLink('');
+                       fetchInternProjects();
+                    } else alert(error.message);
+                  } else {
+                    const { error } = await supabase.from('intern_projects').insert([{
+                      title: ipTitle, description: ipDesc, vercel_link: ipVercelLink, github_link: ipGithubLink, linkedin_image_link: ipLinkedinLink
+                    }]);
+                    if (!error) {
+                       setIpTitle(''); setIpDesc(''); setIpVercelLink(''); setIpGithubLink(''); setIpLinkedinLink('');
+                       fetchInternProjects();
+                    } else alert(error.message);
+                  }
+                  setIsSubmittingIp(false);
+                }}>
+                  <input type="text" placeholder="Title" required value={ipTitle} onChange={e => setIpTitle(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white placeholder-gray-500 font-bold" />
+                  <textarea placeholder="Description" value={ipDesc} onChange={e => setIpDesc(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white placeholder-gray-500 font-bold" />
+                  <input type="url" placeholder="Vercel Link" required value={ipVercelLink} onChange={e => setIpVercelLink(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white placeholder-gray-500 font-bold" />
+                  <input type="url" placeholder="GitHub Link" required value={ipGithubLink} onChange={e => setIpGithubLink(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white placeholder-gray-500 font-bold" />
+                  <input type="url" placeholder="LinkedIn Image URL" required value={ipLinkedinLink} onChange={e => setIpLinkedinLink(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white placeholder-gray-500 font-bold" />
+                  <button type="submit" disabled={isSubmittingIp} className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl">{isSubmittingIp ? 'Saving...' : 'Save Project'}</button>
+                  {editingIp && <button type="button" onClick={() => { setEditingIp(null); setIpTitle(''); setIpDesc(''); setIpVercelLink(''); setIpGithubLink(''); setIpLinkedinLink(''); }} className="ml-4 px-6 py-3 bg-gray-200 text-gray-800 font-bold rounded-xl">Cancel</button>}
+                </form>
+              </div>
 
-              {/* Graphics Breakdown Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* Lead Status breakdown */}
-                <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between min-h-[300px]">
-                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <PieChart className="w-4.5 h-4.5 text-amber-500" /> Leads Response Distribution
-                  </h4>
-                  {(() => {
-                    const total = coldLeads.length;
-                    const approached = coldLeads.filter(l => l.status === 'Approached').length;
-                    const pending = coldLeads.filter(l => l.status === 'Pending').length;
-                    const size = 160;
-                    const r = 50;
-                    const circ = 2 * Math.PI * r;
-                    const pctApproached = total > 0 ? (approached / total) * 100 : 0;
-                    const pctPending = total > 0 ? (pending / total) * 100 : 0;
-                    
-                    const strokeDasharrayPending = `${(circ * pctPending) / 100} ${circ}`;
-                    const strokeDashoffsetPending = -((circ * pctApproached) / 100);
-                    const strokeDasharrayApproached = `${(circ * pctApproached) / 100} ${circ}`;
-                    const strokeDashoffsetApproached = 0;
-                    
-                    return (
-                      <div className="flex flex-col sm:flex-row items-center justify-around gap-6">
-                        <div className="relative">
-                          <svg width={size} height={size} viewBox="0 0 120 120" className="transform -rotate-90">
-                            <circle cx="60" cy="60" r={r} fill="transparent" stroke="#f8fafc" strokeWidth="12" />
-                            {pctPending > 0 && (
-                              <circle 
-                                cx="60" 
-                                cy="60" 
-                                r={r} 
-                                fill="transparent" 
-                                stroke="#f59e0b" 
-                                strokeWidth="12" 
-                                strokeDasharray={strokeDasharrayPending}
-                                strokeDashoffset={strokeDashoffsetPending}
-                                strokeLinecap="round"
-                              />
-                            )}
-                            {pctApproached > 0 && (
-                              <circle 
-                                cx="60" 
-                                cy="60" 
-                                r={r} 
-                                fill="transparent" 
-                                stroke="#10b981" 
-                                strokeWidth="12" 
-                                strokeDasharray={strokeDasharrayApproached}
-                                strokeDashoffset={strokeDashoffsetApproached}
-                                strokeLinecap="round"
-                              />
-                            )}
-                          </svg>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span className="text-2xl font-black text-slate-800">
-                              {total > 0 ? Math.round(pctApproached) : 0}%
-                            </span>
-                            <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">Contacted</span>
-                          </div>
-                        </div>
-                        <div className="space-y-3 font-semibold text-xs text-gray-600 w-full max-w-[180px]">
-                          <div className="flex justify-between items-center bg-slate-50 border border-slate-100 p-2.5 rounded-xl">
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
-                              <span>Approached</span>
-                            </div>
-                            <span className="font-bold text-slate-800">{approached}</span>
-                          </div>
-                          <div className="flex justify-between items-center bg-slate-50 border border-slate-100 p-2.5 rounded-xl">
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span>
-                              <span>Pending</span>
-                            </div>
-                            <span className="font-bold text-slate-800">{pending}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Outbound Caller Leaderboard */}
-                <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between min-h-[300px]">
-                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-4.5 h-4.5 text-purple-600" /> Outbound Call Activity
-                  </h4>
-                  {(() => {
-                    const callerActivity = {};
-                    coldLeads.forEach(l => {
-                      if (l.status === 'Approached' && l.approached_by) {
-                        const caller = l.approached_by;
-                        callerActivity[caller] = (callerActivity[caller] || 0) + 1;
-                      }
-                    });
-                    const sortedCallers = Object.entries(callerActivity)
-                      .map(([name, count]) => ({ name, count }))
-                      .sort((a, b) => b.count - a.count)
-                      .slice(0, 4);
-
-                    if (sortedCallers.length === 0) {
-                      return <p className="text-xs text-gray-400 italic py-12 text-center my-auto">No logged outbound calls yet.</p>;
-                    }
-
-                    const maxCalls = Math.max(...sortedCallers.map(c => c.count));
-
-                    return (
-                      <div className="space-y-4 my-auto">
-                        {sortedCallers.map((caller, idx) => {
-                          const percent = maxCalls > 0 ? (caller.count / maxCalls) * 100 : 0;
-                          return (
-                            <div key={idx} className="space-y-1">
-                              <div className="flex justify-between text-xs font-bold text-slate-700">
-                                <span className="truncate max-w-[180px]">{caller.name}</span>
-                                <span>{caller.count} calls</span>
-                              </div>
-                              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                                <div 
-                                  className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full transition-all duration-1000"
-                                  style={{ width: `${percent}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Popular Domains Registrations */}
-                <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between min-h-[300px]">
-                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <BarChart2 className="w-4.5 h-4.5 text-indigo-500" /> Popular Course Domains
-                  </h4>
-                  {(() => {
-                    const domainCounts = {};
-                    registrations.forEach(r => {
-                      const domain = r.domain || 'Unspecified';
-                      domainCounts[domain] = (domainCounts[domain] || 0) + 1;
-                    });
-                    const sortedDomains = Object.entries(domainCounts)
-                      .map(([name, count]) => ({ name, count }))
-                      .sort((a, b) => b.count - a.count)
-                      .slice(0, 5);
-
-                    if (sortedDomains.length === 0) {
-                      return <p className="text-xs text-gray-400 italic py-12 text-center my-auto">No candidate domains recorded yet.</p>;
-                    }
-
-                    const maxCount = Math.max(...sortedDomains.map(d => d.count));
-
-                    return (
-                      <div className="flex items-end justify-between h-40 pt-4 border-b border-slate-100">
-                        {sortedDomains.map((dom, idx) => {
-                          const heightPercent = maxCount > 0 ? (dom.count / maxCount) * 100 : 0;
-                          return (
-                            <div key={idx} className="flex flex-col items-center flex-1 group">
-                              <div className="relative w-7 bg-indigo-50 border border-indigo-100 hover:border-purple-400 rounded-t-md transition-all duration-700 overflow-hidden" style={{ height: `${Math.max(12, heightPercent)}%` }}>
-                                <div className="absolute inset-0 bg-gradient-to-t from-indigo-500 to-purple-500 opacity-90 group-hover:opacity-100 transition-opacity" />
-                                <span className="absolute top-1 left-0 right-0 text-[9px] text-white font-extrabold text-center">{dom.count}</span>
-                              </div>
-                              <span className="text-[9px] font-bold text-gray-500 mt-2 truncate w-14 text-center" title={dom.name}>
-                                {dom.name}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Tasks Progress Rings */}
-                <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between min-h-[300px]">
-                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <CheckSquare className="w-4.5 h-4.5 text-emerald-600" /> Weekly Tasks Progress
-                  </h4>
-                  {(() => {
-                    const total = tasks.length;
-                    const todo = tasks.filter(t => t.status === 'To Do').length;
-                    const progress = tasks.filter(t => t.status === 'In Progress').length;
-                    const completed = tasks.filter(t => t.status === 'Completed').length;
-
-                    if (total === 0) {
-                      return <p className="text-xs text-gray-400 italic py-12 text-center my-auto">No weekly tasks generated yet.</p>;
-                    }
-
-                    return (
-                      <div className="grid grid-cols-3 gap-2 py-2 my-auto">
-                        {/* To Do Ring */}
-                        {(() => {
-                          const pct = Math.round((todo / total) * 100);
-                          const circ = 2 * Math.PI * 22; // 138.23
-                          const offset = circ - (circ * pct) / 100;
-                          return (
-                            <div className="flex flex-col items-center">
-                              <div className="relative">
-                                <svg width="60" height="60" viewBox="0 0 50 50" className="transform -rotate-90">
-                                  <circle cx="25" cy="25" r="22" fill="transparent" stroke="#f8fafc" strokeWidth="4" />
-                                  <circle cx="25" cy="25" r="22" fill="transparent" stroke="#ef4444" strokeWidth="4" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-slate-800">
-                                  {pct}%
-                                </div>
-                              </div>
-                              <span className="text-[9px] font-black text-gray-400 mt-2 uppercase tracking-wide">To Do</span>
-                              <span className="text-[10px] font-bold text-slate-800 mt-0.5">{todo} tasks</span>
-                            </div>
-                          );
-                        })()}
-
-                        {/* In Progress Ring */}
-                        {(() => {
-                          const pct = Math.round((progress / total) * 100);
-                          const circ = 2 * Math.PI * 22; // 138.23
-                          const offset = circ - (circ * pct) / 100;
-                          return (
-                            <div className="flex flex-col items-center">
-                              <div className="relative">
-                                <svg width="60" height="60" viewBox="0 0 50 50" className="transform -rotate-90">
-                                  <circle cx="25" cy="25" r="22" fill="transparent" stroke="#f8fafc" strokeWidth="4" />
-                                  <circle cx="25" cy="25" r="22" fill="transparent" stroke="#3b82f6" strokeWidth="4" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-slate-800">
-                                  {pct}%
-                                </div>
-                              </div>
-                              <span className="text-[9px] font-black text-gray-400 mt-2 uppercase tracking-wide">In Progress</span>
-                              <span className="text-[10px] font-bold text-slate-800 mt-0.5">{progress} tasks</span>
-                            </div>
-                          );
-                        })()}
-
-                        {/* Completed Ring */}
-                        {(() => {
-                          const pct = Math.round((completed / total) * 100);
-                          const circ = 2 * Math.PI * 22; // 138.23
-                          const offset = circ - (circ * pct) / 100;
-                          return (
-                            <div className="flex flex-col items-center">
-                              <div className="relative">
-                                <svg width="60" height="60" viewBox="0 0 50 50" className="transform -rotate-90">
-                                  <circle cx="25" cy="25" r="22" fill="transparent" stroke="#f8fafc" strokeWidth="4" />
-                                  <circle cx="25" cy="25" r="22" fill="transparent" stroke="#10b981" strokeWidth="4" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-slate-800">
-                                  {pct}%
-                                </div>
-                              </div>
-                              <span className="text-[9px] font-black text-gray-400 mt-2 uppercase tracking-wide">Completed</span>
-                              <span className="text-[10px] font-bold text-slate-800 mt-0.5">{completed} tasks</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Team Productivity & Activity Tracker */}
-                <div className="col-span-1 md:col-span-2 bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between min-h-[350px]">
-                  <div>
-                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-2">
-                      <Users className="w-4.5 h-4.5 text-purple-600" /> Team Activity & Productivity Tracker
-                    </h4>
-                    <p className="text-xs text-gray-500 font-medium mb-6">Real-time status tracking of which team members are working (active), low-performing, or inactive this week, along with their tracked session working hours.</p>
+              {/* List of projects */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {internProjects.map(proj => (
+                  <div key={proj.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                    <div>
+                      <h4 className="font-bold text-lg">{proj.title}</h4>
+                      <p className="text-gray-500 text-sm mt-1">{proj.description}</p>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <button onClick={() => {
+                        setEditingIp(proj);
+                        setIpTitle(proj.title);
+                        setIpDesc(proj.description || '');
+                        setIpVercelLink(proj.vercel_link);
+                        setIpGithubLink(proj.github_link);
+                        setIpLinkedinLink(proj.linkedin_image_link);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }} className="text-blue-600 font-bold text-sm">Edit</button>
+                      <button onClick={async () => {
+                        if(window.confirm('Delete this project?')) {
+                          await supabase.from('intern_projects').delete().eq('id', proj.id);
+                          fetchInternProjects();
+                        }
+                      }} className="text-red-600 font-bold text-sm">Delete</button>
+                    </div>
                   </div>
-
-                  <div className="space-y-6">
-                    {teamMembers.map(member => {
-                      const weeklyTarget = member.weekly_call_target || 50;
-                      const dailyTarget = Math.ceil(weeklyTarget / 5);
-                      
-                      // Count total approached leads by this member
-                      const memberCalls = coldLeads.filter(l => 
-                        l.status === 'Approached' && 
-                        (l.approached_by === member.full_name || l.approached_by === member.email)
-                      ).length;
-
-                      const progressPercent = Math.min(100, Math.round((memberCalls / weeklyTarget) * 100));
-
-                      // Determine active status (Online/Offline) based on last_active_at
-                      const activeInfo = getActiveStatus(member.last_active_at);
-
-                      return (
-                        <div key={member.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-slate-100 pb-5 last:border-0 last:pb-0">
-                          {/* Name and Role */}
-                          <div className="space-y-1">
-                            <span className="font-bold text-slate-800 text-sm block">{member.full_name}</span>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{member.role || 'Team Member'}</span>
-                            
-                            {/* Live Status Badge */}
-                            <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full border uppercase tracking-wider mt-1 ${activeInfo.color}`}>
-                              <span className={`w-1 h-1 rounded-full ${activeInfo.dotColor} ${activeInfo.isOnline ? 'animate-ping' : ''}`}></span>
-                              {activeInfo.label}
-                            </span>
-                          </div>
-
-                          {/* Tracked Working Hours */}
-                          <div className="space-y-1 text-slate-700">
-                            <span className="block text-[9px] uppercase text-gray-400 font-extrabold tracking-wide">Tracked Work Hours</span>
-                            <div className="text-xs font-bold space-y-0.5">
-                              <div>Today: <span className="text-purple-700 font-black">{formatSeconds(member.today_work_seconds)}</span></div>
-                              <div>Weekly: <span className="text-indigo-700 font-black">{formatSeconds(member.weekly_work_seconds)}</span></div>
-                            </div>
-                          </div>
-
-                          {/* Progress toward goal */}
-                          <div className="space-y-1 md:col-span-2">
-                            <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-                              <span>Weekly Calls: {memberCalls} / {weeklyTarget} approached</span>
-                              <span className="text-purple-600 font-black">{progressPercent}%</span>
-                            </div>
-                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex">
-                              <div 
-                                className={`h-full rounded-full transition-all duration-1000 ${
-                                  memberCalls >= 10 
-                                    ? 'bg-gradient-to-r from-green-400 to-emerald-500' 
-                                    : memberCalls > 0 
-                                    ? 'bg-gradient-to-r from-amber-400 to-orange-500' 
-                                    : 'bg-gradient-to-r from-rose-400 to-red-500'
-                                }`}
-                                style={{ width: `${progressPercent}%` }}
-                              />
-                            </div>
-                            <span className="text-[9px] text-gray-400 font-semibold block">Calculated Daily Target: {dailyTarget} calls/day</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
+                ))}
               </div>
             </motion.div>
           )}
@@ -2018,987 +1549,77 @@ const TeamDashboard = () => {
             </motion.div>
           )}
 
-          {activeTab === 'lms' && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-6xl mx-auto">
-              <AdminLMSManager />
-            </motion.div>
-          )}
 
-          {activeTab === 'tasks' && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
-              <div className="flex justify-between items-center mb-6">
+          {activeTab === 'products' && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900">Weekly Tasks Board</h2>
-                  <p className="text-gray-500 font-medium mt-1">Add, track, and complete weekly tasks for the team.</p>
+                  <h2 className="text-2xl font-black text-gray-900">Products & Services</h2>
+                  <p className="text-gray-500 font-medium mt-1">Manage our products and services.</p>
                 </div>
-                <button onClick={fetchTeamTasks} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2 cursor-pointer">
-                  <Loader2 className="w-4 h-4" /> Refresh
-                </button>
               </div>
-
-              {/* Pending Task Approvals Panel for CEO */}
-              {(() => {
-                const isCeo = ['ceo', 'managing director', 'admin'].includes(teamMemberData?.role?.toLowerCase()) || teamMemberData?.email === 'ceo@dakhedusolutions.in';
-                const pendingTasks = tasks.filter(t => t.status === 'Pending Approval');
-                if (isCeo && pendingTasks.length > 0) {
-                  return (
-                    <div className="bg-amber-50/40 border border-amber-200 p-6 rounded-2xl mb-8">
-                      <h3 className="text-sm font-bold text-amber-900 mb-4 flex items-center gap-2 uppercase tracking-wider">
-                        <Clock className="w-5 h-5 text-amber-600 animate-pulse" /> Pending Task Approvals ({pendingTasks.length})
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {pendingTasks.map(task => (
-                          <div key={task.id} className="bg-white border border-amber-200 p-4 rounded-xl shadow-sm flex flex-col justify-between">
-                            <div>
-                              <div className="flex justify-between items-start gap-2">
-                                <h4 className="font-bold text-slate-900 text-sm leading-snug">{task.title}</h4>
-                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 uppercase tracking-widest shrink-0">
-                                  Review
-                                </span>
-                              </div>
-                              {task.description && <p className="text-gray-500 text-xs mt-2 leading-relaxed">{task.description}</p>}
-                              
-                              <div className="mt-4 pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-[10px] text-gray-500 font-bold">
-                                <div>
-                                  <span className="block text-[8px] uppercase text-gray-400 font-extrabold">Assignee</span>
-                                  <span className="text-slate-800 truncate block">{task.assigned_to || 'Unassigned'}</span>
-                                </div>
-                                <div>
-                                  <span className="block text-[8px] uppercase text-gray-400 font-extrabold">Creator</span>
-                                  <span className="text-slate-700 truncate block">{task.created_by}</span>
-                                </div>
-                                <div>
-                                  <span className="block text-[8px] uppercase text-gray-400 font-extrabold">Due Date</span>
-                                  <span className="text-slate-800 block">{task.due_date ? new Date(task.due_date).toLocaleDateString() : 'N/A'}</span>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100">
-                              <button 
-                                onClick={() => handleApproveTask(task.id)}
-                                className="flex-grow py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors text-xs cursor-pointer flex items-center justify-center gap-1.5"
-                              >
-                                <CheckSquare size={13} /> Approve
-                              </button>
-                              <button 
-                                onClick={() => handleRejectTask(task.id)}
-                                className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-lg border border-rose-100 transition-colors text-xs cursor-pointer"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-
-              {/* Form to add new task */}
-              <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl mb-8">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <CheckSquare className="w-5 h-5 text-purple-600" /> Add Weekly Task
-                </h3>
-                <form onSubmit={handleAddTask} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Task Title</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={taskTitle}
-                      onChange={(e) => setTaskTitle(e.target.value)}
-                      placeholder="e.g. Review registration payment UTRs"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Assign To</label>
-                    <select 
-                      value={taskAssignedTo}
-                      onChange={(e) => setTaskAssignedTo(e.target.value)}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                    >
-                      <option value="">Select Member</option>
-                      {teamMembers.map(m => (
-                        <option key={m.id} value={m.full_name}>{m.full_name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Description (Optional)</label>
-                    <textarea 
-                      rows={2}
-                      value={taskDesc}
-                      onChange={(e) => setTaskDesc(e.target.value)}
-                      placeholder="Enter task instructions..."
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950 resize-none"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 md:col-span-1">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Due Date</label>
-                      <input 
-                        type="date" 
-                        value={taskDueDate}
-                        onChange={(e) => setTaskDueDate(e.target.value)}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Priority</label>
-                      <select 
-                        value={taskPriority}
-                        onChange={(e) => setTaskPriority(e.target.value)}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                      >
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="md:col-span-3 pt-2">
-                    <button 
-                      type="submit" 
-                      disabled={isSubmittingTask}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <Plus className="w-4 h-4" /> {isSubmittingTask ? 'Adding...' : 'Create Weekly Task'}
-                    </button>
-                  </div>
+              
+              {/* Form to add/edit product */}
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">{editingProd ? 'Edit Product' : 'Add New Product'}</h3>
+                <form className="space-y-4" onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsSubmittingProd(true);
+                  if (editingProd) {
+                    const { error } = await supabase.from('products').update({
+                      title: prodTitle, description: prodDesc, image_url: prodImageUrl
+                    }).eq('id', editingProd.id);
+                    if (!error) {
+                       setEditingProd(null);
+                       setProdTitle(''); setProdDesc(''); setProdImageUrl('');
+                       fetchProducts();
+                    } else alert(error.message);
+                  } else {
+                    const { error } = await supabase.from('products').insert([{
+                      title: prodTitle, description: prodDesc, image_url: prodImageUrl
+                    }]);
+                    if (!error) {
+                       setProdTitle(''); setProdDesc(''); setProdImageUrl('');
+                       fetchProducts();
+                    } else alert(error.message);
+                  }
+                  setIsSubmittingProd(false);
+                }}>
+                  <input type="text" placeholder="Title" required value={prodTitle} onChange={e => setProdTitle(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white placeholder-gray-500 font-bold" />
+                  <textarea placeholder="Description" required value={prodDesc} onChange={e => setProdDesc(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white placeholder-gray-500 font-bold" />
+                  <input type="url" placeholder="Image URL" required value={prodImageUrl} onChange={e => setProdImageUrl(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white placeholder-gray-500 font-bold" />
+                  <button type="submit" disabled={isSubmittingProd} className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl">{isSubmittingProd ? 'Saving...' : 'Save Product'}</button>
+                  {editingProd && <button type="button" onClick={() => { setEditingProd(null); setProdTitle(''); setProdDesc(''); setProdImageUrl(''); }} className="ml-4 px-6 py-3 bg-gray-200 text-gray-800 font-bold rounded-xl">Cancel</button>}
                 </form>
               </div>
 
-              {/* Tasks Columns Kanban */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* TO DO COLUMN */}
-                <div className="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl flex flex-col min-h-[300px]">
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200">
-                    <h4 className="font-black text-gray-800 text-sm tracking-wider uppercase flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span> To Do
-                    </h4>
-                    <span className="bg-white border border-slate-200 text-slate-600 font-bold px-2 py-0.5 rounded-md text-xs">
-                      {tasks.filter(t => t.status === 'To Do').length}
-                    </span>
+              {/* List of products */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {products.map(prod => (
+                  <div key={prod.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                    <div>
+                      <img src={prod.image_url} alt={prod.title} className="w-full h-32 object-cover rounded-xl mb-3" />
+                      <h4 className="font-bold text-lg">{prod.title}</h4>
+                      <p className="text-gray-500 text-sm mt-1">{prod.description}</p>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <button onClick={() => {
+                        setEditingProd(prod);
+                        setProdTitle(prod.title);
+                        setProdDesc(prod.description);
+                        setProdImageUrl(prod.image_url);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }} className="text-blue-600 font-bold text-sm">Edit</button>
+                      <button onClick={async () => {
+                        if(window.confirm('Delete this product?')) {
+                          await supabase.from('products').delete().eq('id', prod.id);
+                          fetchProducts();
+                        }
+                      }} className="text-red-600 font-bold text-sm">Delete</button>
+                    </div>
                   </div>
-                  <div className="space-y-3 flex-grow overflow-y-auto max-h-[500px] scrollbar-hide">
-                    {tasks.filter(t => t.status === 'To Do').length === 0 ? (
-                      <p className="text-gray-400 text-xs font-semibold py-8 text-center italic">No tasks in queue</p>
-                    ) : (
-                      tasks.filter(t => t.status === 'To Do').map(task => (
-                        <div key={task.id} className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow transition-shadow relative group">
-                          <button 
-                            onClick={() => handleDeleteTask(task.id)}
-                            className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                            title="Delete Task"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <div className="pr-6">
-                            <h5 className="font-bold text-gray-900 text-sm mb-1 leading-snug">{task.title}</h5>
-                            {task.description && <p className="text-gray-500 text-xs mb-3 line-clamp-3 leading-relaxed">{task.description}</p>}
-                          </div>
-                          <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 text-xs">
-                            <div>
-                              <span className="text-[10px] font-bold text-gray-400 block uppercase">Assigned To</span>
-                              <span className="font-bold text-gray-700">{task.assigned_to || 'Unassigned'}</span>
-                            </div>
-                            {task.due_date && (
-                              <div className="text-right">
-                                <span className="text-[10px] font-bold text-gray-400 block uppercase">Due Date</span>
-                                <span className="font-bold text-gray-700">{new Date(task.due_date).toLocaleDateString()}</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center justify-between mt-3 pt-2">
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
-                              task.priority === 'High' ? 'bg-red-50 text-red-600 border-red-100' :
-                              task.priority === 'Medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
-                              'bg-blue-50 text-blue-600 border-blue-100'
-                            }`}>
-                              {task.priority} Priority
-                            </span>
-                            <select 
-                              value={task.status}
-                              onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value)}
-                              className="text-xs font-bold border-none bg-purple-50 text-purple-700 px-2 py-1 rounded-lg cursor-pointer focus:ring-1 focus:ring-purple-300"
-                            >
-                              <option value="To Do">To Do</option>
-                              <option value="In Progress">In Progress</option>
-                              <option value="Completed">Completed</option>
-                            </select>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* IN PROGRESS COLUMN */}
-                <div className="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl flex flex-col min-h-[300px]">
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200">
-                    <h4 className="font-black text-gray-800 text-sm tracking-wider uppercase flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-400"></span> In Progress
-                    </h4>
-                    <span className="bg-white border border-slate-200 text-slate-600 font-bold px-2 py-0.5 rounded-md text-xs">
-                      {tasks.filter(t => t.status === 'In Progress').length}
-                    </span>
-                  </div>
-                  <div className="space-y-3 flex-grow overflow-y-auto max-h-[500px] scrollbar-hide">
-                    {tasks.filter(t => t.status === 'In Progress').length === 0 ? (
-                      <p className="text-gray-400 text-xs font-semibold py-8 text-center italic">No tasks in progress</p>
-                    ) : (
-                      tasks.filter(t => t.status === 'In Progress').map(task => (
-                        <div key={task.id} className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow transition-shadow relative group">
-                          <button 
-                            onClick={() => handleDeleteTask(task.id)}
-                            className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                            title="Delete Task"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <div className="pr-6">
-                            <h5 className="font-bold text-gray-900 text-sm mb-1 leading-snug">{task.title}</h5>
-                            {task.description && <p className="text-gray-500 text-xs mb-3 line-clamp-3 leading-relaxed">{task.description}</p>}
-                          </div>
-                          <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 text-xs">
-                            <div>
-                              <span className="text-[10px] font-bold text-gray-400 block uppercase">Assigned To</span>
-                              <span className="font-bold text-gray-700">{task.assigned_to || 'Unassigned'}</span>
-                            </div>
-                            {task.due_date && (
-                              <div className="text-right">
-                                <span className="text-[10px] font-bold text-gray-400 block uppercase">Due Date</span>
-                                <span className="font-bold text-gray-700">{new Date(task.due_date).toLocaleDateString()}</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center justify-between mt-3 pt-2">
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
-                              task.priority === 'High' ? 'bg-red-50 text-red-600 border-red-100' :
-                              task.priority === 'Medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
-                              'bg-blue-50 text-blue-600 border-blue-100'
-                            }`}>
-                              {task.priority} Priority
-                            </span>
-                            <select 
-                              value={task.status}
-                              onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value)}
-                              className="text-xs font-bold border-none bg-purple-50 text-purple-700 px-2 py-1 rounded-lg cursor-pointer focus:ring-1 focus:ring-purple-300"
-                            >
-                              <option value="To Do">To Do</option>
-                              <option value="In Progress">In Progress</option>
-                              <option value="Completed">Completed</option>
-                            </select>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* COMPLETED COLUMN */}
-                <div className="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl flex flex-col min-h-[300px]">
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200">
-                    <h4 className="font-black text-gray-800 text-sm tracking-wider uppercase flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span> Completed
-                    </h4>
-                    <span className="bg-white border border-slate-200 text-slate-600 font-bold px-2 py-0.5 rounded-md text-xs">
-                      {tasks.filter(t => t.status === 'Completed').length}
-                    </span>
-                  </div>
-                  <div className="space-y-3 flex-grow overflow-y-auto max-h-[500px] scrollbar-hide">
-                    {tasks.filter(t => t.status === 'Completed').length === 0 ? (
-                      <p className="text-gray-400 text-xs font-semibold py-8 text-center italic">No completed tasks yet</p>
-                    ) : (
-                      tasks.filter(t => t.status === 'Completed').map(task => (
-                        <div key={task.id} className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow transition-shadow relative group opacity-85">
-                          <button 
-                            onClick={() => handleDeleteTask(task.id)}
-                            className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                            title="Delete Task"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <div className="pr-6">
-                            <h5 className="font-bold text-gray-900 text-sm mb-1 leading-snug line-through text-gray-500">{task.title}</h5>
-                            {task.description && <p className="text-gray-400 text-xs mb-3 line-clamp-3 leading-relaxed">{task.description}</p>}
-                          </div>
-                          <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 text-xs">
-                            <div>
-                              <span className="text-[10px] font-bold text-gray-400 block uppercase">Assigned To</span>
-                              <span className="font-bold text-gray-700">{task.assigned_to || 'Unassigned'}</span>
-                            </div>
-                            {task.due_date && (
-                              <div className="text-right">
-                                <span className="text-[10px] font-bold text-gray-400 block uppercase">Due Date</span>
-                                <span className="font-bold text-gray-700">{new Date(task.due_date).toLocaleDateString()}</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center justify-between mt-3 pt-2">
-                            <span className="text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider bg-green-50 text-green-700 border-green-100">
-                              Done
-                            </span>
-                            <select 
-                              value={task.status}
-                              onChange={(e) => handleUpdateTaskStatus(task.id, e.target.value)}
-                              className="text-xs font-bold border-none bg-purple-50 text-purple-700 px-2 py-1 rounded-lg cursor-pointer focus:ring-1 focus:ring-purple-300"
-                            >
-                              <option value="To Do">To Do</option>
-                              <option value="In Progress">In Progress</option>
-                              <option value="Completed">Completed</option>
-                            </select>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
+                ))}
               </div>
-            </motion.div>
-          )}
-
-          {activeTab === 'coldcalling' && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="space-y-6">
-              {/* Header */}
-              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <div>
-                  <h2 className="text-2xl font-black text-gray-900">Cold Calling Workspace</h2>
-                  <p className="text-gray-500 font-medium mt-1">Manage outbound calls, update client responses, and monitor daily progress.</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-                  {isCeo && (
-                    <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm">
-                      <span className="text-xs text-gray-500 font-bold">Sheet Assignee:</span>
-                      <select 
-                        value={selectedAssigneeFilter} 
-                        onChange={(e) => setSelectedAssigneeFilter(e.target.value)}
-                        className="text-xs font-bold border-none bg-transparent text-purple-700 cursor-pointer focus:ring-0 p-0 focus:outline-none"
-                      >
-                        <option value="All">All Sheets</option>
-                        {teamMembers.map(m => (
-                          <option key={m.id} value={m.full_name}>{m.full_name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                  <button 
-                    onClick={fetchColdLeads} 
-                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2 cursor-pointer"
-                  >
-                    <Loader2 className="w-4 h-4" /> Refresh Leads
-                  </button>
-                </div>
-              </div>
-
-              {/* Stats & Progress Tracker Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* Statistics Cards */}
-                <div className="lg:col-span-2 grid grid-cols-3 gap-4">
-                  <div className="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Total Leads</span>
-                    <h3 className="text-2xl font-black text-slate-800 mt-2">{totalLeadsCount}</h3>
-                    <span className="text-xs text-gray-500 mt-1 block">In current list</span>
-                  </div>
-                  <div className="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Approached</span>
-                    <h3 className="text-2xl font-black text-emerald-600 mt-2">{approachedLeadsCount}</h3>
-                    <span className="text-xs text-emerald-600 mt-1 block">Calls completed</span>
-                  </div>
-                  <div className="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Pending Calls</span>
-                    <h3 className="text-2xl font-black text-amber-600 mt-2">{pendingLeadsCount}</h3>
-                    <span className="text-xs text-amber-500 mt-1 block">Needs contact</span>
-                  </div>
-                </div>
-
-                {/* Daily Calls Target Progress Card */}
-                <div className="bg-gradient-to-br from-purple-900 to-[#0f172a] text-white p-5 rounded-2xl shadow-md flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">Your Daily Target</span>
-                      <span className="text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full">
-                        {Math.ceil((teamMemberData?.weekly_call_target || 50) / 5)} Calls / Day
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-baseline">
-                      <h4 className="text-2xl font-black">
-                        {callsMadeToday} <span className="text-xs text-slate-400">/ {Math.ceil((teamMemberData?.weekly_call_target || 50) / 5)} completed</span>
-                      </h4>
-                      <span className="text-xs font-bold text-purple-300">
-                        {Math.min(100, Math.round((callsMadeToday / Math.ceil((teamMemberData?.weekly_call_target || 50) / 5)) * 100))}%
-                      </span>
-                    </div>
-                    
-                    {/* Progress Bar */}
-                    <div className="w-full bg-white/10 h-2.5 rounded-full mt-3 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full transition-all duration-500" 
-                        style={{ width: `${Math.min(100, (callsMadeToday / Math.ceil((teamMemberData?.weekly_call_target || 50) / 5)) * 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  {/* Inline Weekly Goal Editor */}
-                  <form onSubmit={handleSaveWeeklyTarget} className="mt-4 flex gap-2 items-center bg-white/5 border border-white/10 p-2 rounded-xl">
-                    <input 
-                      type="number"
-                      min="1"
-                      required
-                      placeholder="Goal"
-                      value={weeklyTargetInput}
-                      onChange={(e) => setWeeklyTargetInput(e.target.value)}
-                      className="w-16 px-2 py-1 text-xs rounded-lg border border-purple-500/30 bg-purple-950/40 text-white font-bold focus:outline-none focus:ring-1 focus:ring-purple-400"
-                    />
-                    <span className="text-[10px] text-purple-200 font-bold whitespace-nowrap">weekly goal</span>
-                    <button 
-                      type="submit"
-                      disabled={isSavingWeeklyTarget}
-                      className="ml-auto px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-[10px] transition-colors cursor-pointer"
-                    >
-                      {isSavingWeeklyTarget ? 'Saving...' : 'Update'}
-                    </button>
-                  </form>
-                </div>
-
-              </div>
-
-              {/* CEO Admin Controls */}
-              {isCeo && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 bg-slate-50 border border-slate-200/80 p-6 rounded-3xl">
-                  
-                  {/* CSV Upload & Manual Lead Inputs */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                      <Plus className="w-4 h-4 text-purple-600 animate-pulse" /> Share Leads (CEO only)
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* CSV File Input */}
-                      <div className="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-                        <div>
-                          <label className="block text-[10px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Assign Sheet To (Required)</label>
-                          <select 
-                            value={selectedAssignee}
-                            onChange={(e) => setSelectedAssignee(e.target.value)}
-                            required
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-slate-800 font-semibold mb-4"
-                          >
-                            <option value="">Choose Team Member</option>
-                            {teamMembers.map(m => (
-                              <option key={m.id} value={m.full_name}>{m.full_name} ({m.role})</option>
-                            ))}
-                          </select>
-
-                          <label className="block text-[10px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Upload CSV Sheet</label>
-                          <div className="relative border-2 border-dashed border-purple-100 hover:border-purple-300 bg-purple-50/20 hover:bg-purple-50/40 rounded-xl p-4 transition-all flex flex-col items-center justify-center cursor-pointer text-center group">
-                            <input 
-                              type="file" 
-                              accept=".csv"
-                              onChange={handleCSVUpload}
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                            />
-                            <TrendingUp className="w-5 h-5 text-purple-500 group-hover:scale-110 transition-transform mb-1.5" />
-                            <span className="text-[11px] font-black text-purple-700">Choose CSV File</span>
-                            <span className="text-[9px] text-gray-400 font-bold mt-1">Excel layout A-K Columns</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Sheet Cleanup Tools */}
-                      <div className="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-                        <div>
-                          <label className="block text-[10px] font-black text-slate-500 mb-2 uppercase tracking-wider">Sheet Cleanup Tools</label>
-                          <p className="text-[10px] text-gray-400 font-semibold mb-4 leading-relaxed">Admin controls to delete approached/completed calls or reset the database sheet.</p>
-                        </div>
-                        <div className="flex flex-col gap-2.5">
-                          <button 
-                            type="button"
-                            onClick={handleDeleteApproachedLeads}
-                            className="w-full text-center py-2 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold border border-slate-200 rounded-xl text-xs transition-colors cursor-pointer"
-                          >
-                            Delete Completed Calls
-                          </button>
-                          <button 
-                            type="button"
-                            onClick={handleClearAllLeads}
-                            className="w-full text-center py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-100 rounded-xl text-xs transition-colors cursor-pointer"
-                          >
-                            Wipe Entire Lead Sheet
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Add Manual Lead Form */}
-                  <form onSubmit={handleAddColdLead} className="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow space-y-4">
-                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                      <Plus className="w-4 h-4 text-emerald-600 animate-pulse" /> Add Lead Manually
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <input 
-                        type="text" 
-                        placeholder="Business Name" 
-                        required
-                        value={leadName}
-                        onChange={(e) => setLeadName(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Phone (+91...)" 
-                        required
-                        value={leadPhone}
-                        onChange={(e) => setLeadPhone(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Category" 
-                        value={leadCategory}
-                        onChange={(e) => setLeadCategory(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Address" 
-                        value={leadLocation}
-                        onChange={(e) => setLeadLocation(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Rating (e.g. 4.9)" 
-                        value={leadRating}
-                        onChange={(e) => setLeadRating(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Reviews count (e.g. 63)" 
-                        value={leadReviews}
-                        onChange={(e) => setLeadReviews(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Website (No website...)" 
-                        value={leadWebsite}
-                        onChange={(e) => setLeadWebsite(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                      />
-                      <select 
-                        value={leadPriority}
-                        onChange={(e) => setLeadPriority(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 font-bold text-xs"
-                      >
-                        <option value="High">Priority: High</option>
-                        <option value="Medium">Priority: Medium</option>
-                        <option value="Low">Priority: Low</option>
-                      </select>
-                      <select 
-                        value={leadCallOrNot}
-                        onChange={(e) => setLeadCallOrNot(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 font-bold text-xs"
-                      >
-                        <option value="Yes - Call">Call: Yes</option>
-                        <option value="No - Don't Call">Call: No</option>
-                      </select>
-                      <input 
-                        type="text" 
-                        placeholder="Website Type Needed" 
-                        value={leadWebsiteType}
-                        onChange={(e) => setLeadWebsiteType(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Price Range (e.g. ₹4,999 - 9,999)" 
-                        value={leadSuggestedPrice}
-                        onChange={(e) => setLeadSuggestedPrice(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 font-semibold"
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Key Hook / Pain Point" 
-                        value={leadKeyHook}
-                        onChange={(e) => setLeadKeyHook(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 col-span-2 font-semibold"
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Google Maps Link" 
-                        value={leadGoogleMaps}
-                        onChange={(e) => setLeadGoogleMaps(e.target.value)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 col-span-2 font-semibold"
-                      />
-                    </div>
-                    <button 
-                      type="submit" 
-                      disabled={isSubmittingLead}
-                      className="w-full bg-[#0f172a] hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <Plus className="w-4 h-4" /> {isSubmittingLead ? 'Adding...' : 'Add Lead'}
-                    </button>
-                  </form>
-                </div>
-              )}
-
-              {/* Leads List Workspace */}
-              <div className="space-y-4">
-                
-                {/* Leads Filter Navigation */}
-                <div className="flex gap-2 border-b border-gray-200 pb-2 select-none">
-                  <button 
-                    onClick={() => setColdLeadsFilter('Pending')}
-                    className={`px-4 py-2 font-bold text-sm border-b-2 transition-all cursor-pointer ${
-                      coldLeadsFilter === 'Pending' 
-                        ? 'border-purple-600 text-purple-600' 
-                        : 'border-transparent text-gray-500 hover:text-gray-800'
-                    }`}
-                  >
-                    Pending Calls ({myLeads.filter(l => l.status === 'Pending').length})
-                  </button>
-                  <button 
-                    onClick={() => setColdLeadsFilter('Approached')}
-                    className={`px-4 py-2 font-bold text-sm border-b-2 transition-all cursor-pointer ${
-                      coldLeadsFilter === 'Approached' 
-                        ? 'border-purple-600 text-purple-600' 
-                        : 'border-transparent text-gray-500 hover:text-gray-800'
-                    }`}
-                  >
-                    Approached / Logged ({myLeads.filter(l => l.status === 'Approached').length})
-                  </button>
-                  <button 
-                    onClick={() => setColdLeadsFilter('History')}
-                    className={`px-4 py-2 font-bold text-sm border-b-2 transition-all cursor-pointer ${
-                      coldLeadsFilter === 'History' 
-                        ? 'border-purple-600 text-purple-600' 
-                        : 'border-transparent text-gray-500 hover:text-gray-800'
-                    }`}
-                  >
-                    Overall History ({coldLeads.filter(l => l.status === 'Approached').length})
-                  </button>
-                </div>
-
-                {/* Table representation */}
-                <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm bg-white">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-900 text-slate-100 border-b border-gray-200 uppercase tracking-wider">
-                        <th className="p-3.5 font-black whitespace-nowrap">Client Name</th>
-                        <th className="p-3.5 font-black whitespace-nowrap">Phone Number</th>
-                        {coldLeadsFilter === 'Pending' && <th className="p-3.5 font-black text-center whitespace-nowrap">Actions</th>}
-                        <th className="p-3.5 font-black whitespace-nowrap">Category</th>
-                        <th className="p-3.5 font-black whitespace-nowrap">Rating/Reviews</th>
-                        <th className="p-3.5 font-black whitespace-nowrap">Website Status</th>
-                        {coldLeadsFilter === 'History' && (
-                          <th className="p-3.5 font-black whitespace-nowrap">Pain Point / Maps</th>
-                        )}
-                        {coldLeadsFilter !== 'History' && (
-                          <>
-                            <th className="p-3.5 font-black whitespace-nowrap">Priority</th>
-                            <th className="p-3.5 font-black whitespace-nowrap">Web Needed</th>
-                            <th className="p-3.5 font-black whitespace-nowrap">Suggested Price</th>
-                          </>
-                        )}
-                        {(isCeo || coldLeadsFilter === 'History') && <th className="p-3.5 font-black whitespace-nowrap">Assigned/Called By</th>}
-                        {(coldLeadsFilter === 'Approached' || coldLeadsFilter === 'History') && (
-                          <>
-                            <th className="p-3.5 font-black whitespace-nowrap">Call Feedback</th>
-                          </>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 text-sm">
-                      {leadsToDisplay.length === 0 ? (
-                        <tr>
-                          <td colSpan={coldLeadsFilter === 'Approached' ? (isCeo ? 11 : 10) : coldLeadsFilter === 'History' ? 8 : (isCeo ? 10 : 9)} className="p-12 text-center text-gray-500 font-medium">
-                            <AlertCircle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                            No cold calling leads found under this filter.
-                          </td>
-                        </tr>
-                      ) : (
-                        leadsToDisplay.map(lead => (
-                          <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors text-xs">
-                            <td className="p-3.5 font-bold text-slate-900 whitespace-nowrap">{lead.client_name}</td>
-                            <td className="p-3.5 font-mono font-bold text-slate-800 whitespace-nowrap">
-                              <div className="flex items-center gap-1">
-                                {lead.phone_number}
-                                <a 
-                                  href={`tel:${lead.phone_number}`}
-                                  className="p-1 hover:bg-slate-100 rounded text-indigo-600 transition-colors"
-                                  title="Call Number"
-                                >
-                                  <Phone size={12} />
-                                </a>
-                              </div>
-                            </td>
-                            {coldLeadsFilter === 'Pending' && (
-                              <td className="p-3.5 text-center whitespace-nowrap">
-                                <div className="flex justify-center items-center gap-1.5">
-                                  <button 
-                                    onClick={() => setSelectedLead(lead)}
-                                    className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold border border-emerald-100 rounded-lg text-xs transition-colors cursor-pointer flex items-center gap-1"
-                                  >
-                                    <CheckSquare size={12} /> Log Call
-                                  </button>
-                                  
-                                  {isCeo && (
-                                    <>
-                                      <button 
-                                        onClick={() => handleUpdateColdLeadNumber(lead)}
-                                        className="p-1.5 hover:bg-slate-100 rounded text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
-                                        title="Edit Phone Number"
-                                      >
-                                        <Plus className="w-3.5 h-3.5 rotate-45" />
-                                      </button>
-                                      <button 
-                                        onClick={() => handleDeleteColdLead(lead.id)}
-                                        className="p-1.5 hover:bg-red-50 rounded text-red-600 transition-colors cursor-pointer"
-                                        title="Delete Lead"
-                                      >
-                                        <Trash2 size={13} />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </td>
-                            )}
-                            <td className="p-3.5 text-slate-600 whitespace-nowrap">{lead.business_type || 'N/A'}</td>
-                            <td className="p-3.5 text-slate-700 whitespace-nowrap">
-                              {lead.rating ? (
-                                <div className="flex items-center gap-1 font-semibold">
-                                  <span className="text-amber-500 font-bold">★</span>
-                                  <span>{lead.rating}</span>
-                                  {lead.reviews && <span className="text-gray-400 font-medium">({lead.reviews})</span>}
-                                </div>
-                              ) : (
-                                <span className="text-gray-400 font-medium">-</span>
-                              )}
-                            </td>
-                            <td className="p-3.5 text-slate-600 whitespace-nowrap max-w-[150px] truncate" title={lead.website}>
-                              {lead.website && lead.website.toLowerCase() !== 'no website' && !lead.website.toLowerCase().includes('no') ? (
-                                <a 
-                                  href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} 
-                                  target="_blank" 
-                                  rel="noreferrer"
-                                  className="text-purple-600 hover:underline font-semibold inline-flex items-center gap-1"
-                                >
-                                  {lead.website} <ExternalLink size={10} />
-                                </a>
-                              ) : (
-                                <span className="text-gray-400 font-semibold">No Website</span>
-                              )}
-                            </td>
-                            {coldLeadsFilter === 'History' && (
-                              <td className="p-3.5 whitespace-nowrap">
-                                <div className="max-w-[150px] truncate text-slate-700 font-bold" title={lead.key_hook_pain_point || 'No Pain Point'}>
-                                  {lead.key_hook_pain_point || 'N/A'}
-                                </div>
-                                {lead.google_maps_link && (
-                                  <a 
-                                    href={lead.google_maps_link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-[10px] text-indigo-600 hover:underline inline-flex items-center gap-0.5 mt-0.5 font-bold"
-                                  >
-                                    <MapIcon size={10} /> Maps
-                                  </a>
-                                )}
-                              </td>
-                            )}
-                            {coldLeadsFilter !== 'History' && (
-                              <>
-                                <td className="p-3.5 whitespace-nowrap">
-                                  <span className={`inline-block text-[9px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-wider ${
-                                    lead.priority === 'High' ? 'bg-red-50 text-red-700 border-red-100' :
-                                    lead.priority === 'Medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
-                                    'bg-green-50 text-green-700 border-green-100'
-                                  }`}>
-                                    {lead.priority || 'Medium'}
-                                  </span>
-                                </td>
-                                <td className="p-3.5 text-slate-600 font-medium whitespace-nowrap max-w-[150px] truncate" title={lead.website_type_needed}>{lead.website_type_needed || 'N/A'}</td>
-                                <td className="p-3.5 whitespace-nowrap">
-                                  <span className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50/50 px-2 py-0.5 rounded border border-indigo-100/50">
-                                    {lead.suggested_price || 'N/A'}
-                                  </span>
-                                </td>
-                              </>
-                            )}
-                            {(isCeo || coldLeadsFilter === 'History') && (
-                              <td className="p-3.5 text-xs font-bold text-purple-700 bg-purple-50/30 whitespace-nowrap">
-                                {lead.approached_by || lead.assigned_to || 'N/A'}
-                              </td>
-                            )}
-                            {(coldLeadsFilter === 'Approached' || coldLeadsFilter === 'History') && (
-                              <>
-                                <td className="p-3.5 text-xs text-slate-600 font-medium max-w-[200px] truncate" title={lead.remarks}>
-                                  {lead.remarks}
-                                </td>
-                              </>
-                            )}
-
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-              </div>
-
-              {/* Log Call Feedback Dialog Modal */}
-              <AnimatePresence>
-                {selectedLead && (
-                  <>
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      onClick={() => setSelectedLead(null)}
-                      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 cursor-pointer"
-                    />
-                     <motion.div 
-                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="fixed top-[5%] md:top-[10%] left-[50%] translate-x-[-50%] w-full max-w-lg bg-white border border-gray-100 shadow-2xl rounded-3xl p-6 z-[60] text-slate-800 max-h-[90vh] md:max-h-[80vh] overflow-y-auto"
-                    >
-                      <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
-                        <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-emerald-600" /> Log Call Outcome
-                        </h3>
-                        <button 
-                          onClick={() => setSelectedLead(null)} 
-                          className="p-1 rounded hover:bg-slate-100 text-gray-400 hover:text-gray-700 cursor-pointer"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-
-                      <div className="mb-3">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Client Contact</span>
-                        <h4 className="font-bold text-slate-900 mt-0.5">{selectedLead.client_name} ({selectedLead.phone_number})</h4>
-                      </div>
-
-                      {/* Pitch Helper Card / Lead Statistics */}
-                      <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 space-y-3 mb-4 text-xs">
-                        <h5 className="font-bold text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-200/60 pb-1.5">
-                          💼 Pitch Assistance Card
-                        </h5>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                          <div>
-                            <span className="block text-[9px] uppercase text-gray-400 font-extrabold">Category</span>
-                            <span className="text-slate-800 font-semibold block mt-0.5">{selectedLead.business_type || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="block text-[9px] uppercase text-gray-400 font-extrabold">Rating & Reviews</span>
-                            <span className="text-slate-800 font-semibold flex items-center gap-1 mt-0.5">
-                              {selectedLead.rating ? `★ ${selectedLead.rating}` : 'N/A'} 
-                              {selectedLead.reviews ? `(${selectedLead.reviews} reviews)` : ''}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="block text-[9px] uppercase text-gray-400 font-extrabold">Current Website</span>
-                            {selectedLead.website && selectedLead.website.toLowerCase() !== 'no website' && !selectedLead.website.toLowerCase().includes('no') ? (
-                              <a 
-                                href={selectedLead.website.startsWith('http') ? selectedLead.website : `https://${selectedLead.website}`} 
-                                target="_blank" 
-                                rel="noreferrer"
-                                className="text-purple-600 hover:underline font-semibold flex items-center gap-1 mt-0.5"
-                              >
-                                {selectedLead.website} <ExternalLink size={10} />
-                              </a>
-                            ) : (
-                              <span className="text-gray-500 font-semibold block mt-0.5">No Website</span>
-                            )}
-                          </div>
-                          <div>
-                            <span className="block text-[9px] uppercase text-gray-400 font-extrabold">Suggested Solution</span>
-                            <span className="text-slate-800 font-semibold block mt-0.5">{selectedLead.website_type_needed || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="block text-[9px] uppercase text-gray-400 font-extrabold">Suggested Budget</span>
-                            <span className="font-mono font-bold text-indigo-700 bg-indigo-50/50 px-1.5 py-0.5 rounded border border-indigo-100/50 inline-block mt-0.5">
-                              {selectedLead.suggested_price || 'N/A'}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="block text-[9px] uppercase text-gray-400 font-extrabold">Lead Priority</span>
-                            <span className={`inline-block font-extrabold text-[9px] px-2 py-0.5 rounded border uppercase tracking-wider mt-0.5 ${
-                              selectedLead.priority === 'High' ? 'bg-red-50 text-red-700 border-red-200' :
-                              selectedLead.priority === 'Medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                              'bg-green-50 text-green-700 border-green-200'
-                            }`}>
-                              {selectedLead.priority || 'Medium'}
-                            </span>
-                          </div>
-                          {selectedLead.key_hook_pain_point && (
-                            <div className="col-span-2">
-                              <span className="block text-[9px] uppercase text-gray-400 font-extrabold">Key Hook / Pain Point</span>
-                              <span className="text-slate-800 font-semibold block mt-0.5 whitespace-pre-wrap">{selectedLead.key_hook_pain_point}</span>
-                            </div>
-                          )}
-                          {selectedLead.google_maps_link && (
-                            <div className="col-span-2">
-                              <span className="block text-[9px] uppercase text-gray-400 font-extrabold">Google Maps Link</span>
-                              <a 
-                                href={selectedLead.google_maps_link}
-                                target="_blank" 
-                                rel="noreferrer"
-                                className="text-indigo-600 hover:underline font-semibold flex items-center gap-1 mt-0.5"
-                              >
-                                <MapIcon size={12} /> Open in Google Maps <ExternalLink size={10} />
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <form onSubmit={handleSaveCallFeedback} className="space-y-4">
-                        <div>
-                          <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Call Feedback / Remarks</label>
-                          <textarea 
-                            rows={3}
-                            required
-                            placeholder="e.g. Discussed website packages. They want a portfolio website. Scheduled a follow-up call on Monday."
-                            value={leadRemarks}
-                            onChange={(e) => setLeadRemarks(e.target.value)}
-                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 resize-none font-medium"
-                          />
-                        </div>
-
-                        <div className="flex gap-2 pt-2">
-                          <button 
-                            type="button" 
-                            onClick={() => setSelectedLead(null)}
-                            className="w-1/3 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                          <button 
-                            type="submit" 
-                            disabled={isSavingFeedback}
-                            className="flex-grow py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-                          >
-                            {isSavingFeedback ? <Loader2 size={14} className="animate-spin" /> : 'Save Call & Log'}
-                          </button>
-                        </div>
-                      </form>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
             </motion.div>
           )}
 
@@ -3153,7 +1774,7 @@ const TeamDashboard = () => {
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="max-w-2xl mx-auto space-y-6">
               <div className="bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm">
                 <div className="mb-8">
-                  <h2 className="text-2xl font-black text-gray-900">Add New Partner</h2>
+                  <h2 className="text-2xl font-black text-gray-900">{editingPartner ? 'Edit Partner' : 'Add New Partner'}</h2>
                   <p className="text-gray-500 font-medium mt-1">Add an organization to the "Our Partnered Companies" section.</p>
                 </div>
 
@@ -3166,7 +1787,7 @@ const TeamDashboard = () => {
                       value={partnerName}
                       onChange={(e) => setPartnerName(e.target.value)}
                       placeholder="e.g. Otrumai Foundation"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-500"
                     />
                   </div>
                   <div>
@@ -3177,7 +1798,7 @@ const TeamDashboard = () => {
                       value={partnerDescription}
                       onChange={(e) => setPartnerDescription(e.target.value)}
                       placeholder="A short description about the partnership."
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 resize-none"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white resize-none text-gray-900 placeholder-gray-500"
                     ></textarea>
                   </div>
                   <div>
@@ -3188,7 +1809,7 @@ const TeamDashboard = () => {
                       value={partnerLogoUrl}
                       onChange={(e) => setPartnerLogoUrl(e.target.value)}
                       placeholder="https://example.com/logo.png"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-500"
                     />
                   </div>
                   <div>
@@ -3196,7 +1817,7 @@ const TeamDashboard = () => {
                     <select 
                       value={partnerCategory}
                       onChange={(e) => setPartnerCategory(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 font-medium"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white font-medium text-gray-900"
                     >
                       <option value="Community">Community (Teal)</option>
                       <option value="Tech Partner">Tech Partner (Gray)</option>
@@ -3210,13 +1831,30 @@ const TeamDashboard = () => {
                       <img src={partnerLogoUrl} alt="Preview" className="max-w-full max-h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
                     </div>
                   )}
-                  <button 
-                    type="submit" 
-                    disabled={isSubmittingPartner}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
-                  >
-                    {isSubmittingPartner ? 'Adding Partner...' : 'Add Partner'}
-                  </button>
+                  <div className="flex gap-4">
+                    <button 
+                      type="submit" 
+                      disabled={isSubmittingPartner}
+                      className="flex-grow bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      {isSubmittingPartner ? 'Saving...' : (editingPartner ? 'Save Partner' : 'Add Partner')}
+                    </button>
+                    {editingPartner && (
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setEditingPartner(null);
+                          setPartnerName('');
+                          setPartnerLogoUrl('');
+                          setPartnerDescription('');
+                          setPartnerCategory('Community');
+                        }}
+                        className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-all cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
                 </form>
 
                 <div className="mt-12">
@@ -3244,6 +1882,19 @@ const TeamDashboard = () => {
                             <h4 className="font-bold text-gray-900 text-base mb-1">{partner.name}</h4>
                             <p className="text-sm text-gray-500 line-clamp-2">{partner.description}</p>
                           </div>
+                          <button 
+                            onClick={() => {
+                              setEditingPartner(partner);
+                              setPartnerName(partner.name);
+                              setPartnerLogoUrl(partner.logo_url);
+                              setPartnerDescription(partner.description);
+                              setPartnerCategory(partner.category || 'Community');
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="absolute top-2 right-12 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                          >
+                            Edit
+                          </button>
                           <button 
                             onClick={() => handleDeletePartner(partner.id)}
                             className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
@@ -3512,105 +2163,6 @@ const TeamDashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* 1000+ leads goals configuration modal */}
-      <AnimatePresence>
-        {showTargetSetupModal && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 cursor-pointer"
-              onClick={() => {
-                setShowTargetSetupModal(false);
-                if (teamMemberData) {
-                  sessionStorage.setItem(`dismissed_goal_prompt_${teamMemberData.id}`, 'true');
-                }
-              }}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="fixed top-[25%] left-[50%] translate-x-[-50%] w-full max-w-md bg-white border border-slate-100 shadow-2xl rounded-3xl p-6 z-[110] text-slate-800 space-y-4"
-            >
-              <div className="text-center space-y-2">
-                <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto text-xl font-bold">
-                  🚀
-                </div>
-                <h3 className="text-lg font-black text-slate-900">Set Weekly Cold Calling Goal</h3>
-                <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-                  We currently have a large database of <span className="text-purple-600 font-black">{coldLeads.length} leads</span>.
-                  What is your working goal for this week? How many client approaches are you going to do?
-                </p>
-              </div>
-
-              <form 
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!weeklyTargetInput || isNaN(weeklyTargetInput) || parseInt(weeklyTargetInput) <= 0) {
-                    alert("Please enter a valid weekly target count.");
-                    return;
-                  }
-                  setIsSavingWeeklyTarget(true);
-                  const { error } = await supabase
-                    .from('team_members')
-                    .update({ weekly_call_target: parseInt(weeklyTargetInput) })
-                    .eq('id', teamMemberData.id);
-                  setIsSavingWeeklyTarget(false);
-                  if (error) {
-                    alert("Error saving weekly target: " + error.message);
-                  } else {
-                    alert("Weekly call target set successfully!");
-                    setTeamMemberData(prev => ({ ...prev, weekly_call_target: parseInt(weeklyTargetInput) }));
-                    setShowTargetSetupModal(false);
-                    sessionStorage.setItem(`dismissed_goal_prompt_${teamMemberData.id}`, 'true');
-                  }
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 mb-1.5 uppercase tracking-wider text-center">Weekly Approaches Target</label>
-                  <input 
-                    type="number"
-                    min="1"
-                    required
-                    placeholder="e.g. 100"
-                    value={weeklyTargetInput}
-                    onChange={(e) => setWeeklyTargetInput(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-center font-bold text-slate-800 text-base"
-                  />
-                  <p className="text-[10px] text-center text-slate-400 font-semibold mt-1.5">
-                    This will automatically calculate a daily target of <span className="text-slate-700 font-bold">{Math.ceil((parseInt(weeklyTargetInput) || 50) / 5)} calls</span> per day.
-                  </p>
-                </div>
-
-                <div className="flex gap-2">
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setShowTargetSetupModal(false);
-                      if (teamMemberData) {
-                        sessionStorage.setItem(`dismissed_goal_prompt_${teamMemberData.id}`, 'true');
-                      }
-                    }}
-                    className="w-1/3 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-xl text-xs transition-colors cursor-pointer"
-                  >
-                    Skip
-                  </button>
-                  <button 
-                    type="submit"
-                    disabled={isSavingWeeklyTarget}
-                    className="flex-grow py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-1"
-                  >
-                    {isSavingWeeklyTarget ? 'Saving...' : 'Set Working Goal'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
