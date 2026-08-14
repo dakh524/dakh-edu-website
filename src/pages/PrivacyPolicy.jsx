@@ -24,10 +24,71 @@ const PrivacyPolicy = () => {
             <p className="text-gray-600 leading-relaxed mt-4">
               This Privacy Policy covers www.dakhedusolutions.in, our client-facing software/development services, our student community programs, and any mobile/web applications we build and operate — for ourselves or on behalf of our clients (together, the "Services"). By using our Services, you agree to the practices described here. If you do not agree, please do not use the Services.
             </p>
+            <p className="text-gray-600 leading-relaxed mt-4 font-semibold">
+              This Privacy Policy also specifically applies to Sairam Hub, a mobile application developed and published by DHIVAKAR and associated with DAKH Edu Solutions. Sairam Hub's Android application package name is com.sairamhub.myapp.
+            </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Who This Policy Covers</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Sairam Hub — App Information</h2>
+            <div className="bg-purple-50 p-6 rounded-xl border border-purple-100">
+              <ul className="space-y-2 text-gray-700">
+                <li><strong>App Name:</strong> Sairam Hub</li>
+                <li><strong>Android Package Name:</strong> com.sairamhub.myapp</li>
+                <li><strong>Developer:</strong> DHIVAKAR</li>
+                <li><strong>Organization/Business:</strong> DAKH Edu Solutions</li>
+                <li><strong>Website:</strong> <a href="https://www.dakhedusolutions.in/" className="text-purple-600 hover:underline">https://www.dakhedusolutions.in/</a></li>
+              </ul>
+              <p className="text-gray-600 leading-relaxed mt-4">
+                Sairam Hub is an educational and student resource application intended to provide students with access to academic resources, announcements, notes, question papers, study materials, and links to educational resources where applicable.
+              </p>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Sairam Hub — Information We Collect</h2>
+            <p className="text-gray-600 leading-relaxed">
+              Sairam Hub does not intentionally collect personal information unless a particular feature requires it. The current application does not require user accounts, and therefore does not collect names, passwords, phone numbers, resumes, or payment information. It primarily serves as a portal to access external educational resources.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">4. How Sairam Hub Uses Information</h2>
+            <p className="text-gray-600 leading-relaxed mb-4">Any information processed by the Sairam Hub app is used only for legitimate app functionality such as:</p>
+            <ul className="list-disc pl-6 space-y-2 text-gray-600">
+              <li>Providing educational resources</li>
+              <li>Displaying announcements or academic content</li>
+              <li>Opening educational resources hosted on external services</li>
+              <li>Maintaining and improving app functionality</li>
+              <li>Diagnosing technical issues if crash or diagnostic data is collected</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Third-Party Links (Sairam Hub)</h2>
+            <p className="text-gray-600 leading-relaxed">
+              Sairam Hub may contain links to third-party websites or services, such as Google Drive, Google Sheets, or other external platforms. When you open an external link, you are subject to that third party's privacy policy and terms. Sairam Hub does not control the privacy practices of those external services.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Data Sharing — Sairam Hub</h2>
+            <p className="text-gray-600 leading-relaxed">
+              Sairam Hub does not sell users' personal information. Because the app does not collect personal information, there is no personal data shared with third parties.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Sairam Hub App Permissions</h2>
+            <p className="text-gray-600 leading-relaxed">
+              The Sairam Hub application requests only the permissions necessary for its functionality, such as basic internet access to load educational links, announcements, and resources. Users may withdraw any device-level permissions anytime via their device settings.
+            </p>
+          </section>
+
+          <div className="my-10 border-t border-gray-200"></div>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Who This Policy Covers (General Services)</h2>
             <p className="text-gray-600 leading-relaxed mb-4">This policy applies to:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-600">
               <li>Visitors and users of www.dakhedusolutions.in</li>
@@ -38,9 +99,9 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Information We Collect</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Information We Collect (General Services)</h2>
             
-            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">3.1 Information You Provide</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">9.1 Information You Provide</h3>
             <ul className="list-disc pl-6 space-y-2 text-gray-600">
               <li>Name, email address, phone number</li>
               <li>Educational/professional details (qualification, institution, resume/CV, skills) for community, training, and placement services</li>
@@ -51,21 +112,21 @@ const PrivacyPolicy = () => {
               <li>Messages, feedback, or support queries</li>
             </ul>
 
-            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">3.2 Information Collected Automatically</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">9.2 Information Collected Automatically</h3>
             <ul className="list-disc pl-6 space-y-2 text-gray-600">
               <li>Device information (device model, OS, browser type, unique identifiers)</li>
               <li>Log data (IP address, access times, pages/screens visited, app crashes)</li>
               <li>Usage data (course/community engagement, features used, session duration)</li>
             </ul>
 
-            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">3.3 Client Project Data</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">9.3 Client Project Data</h3>
             <p className="text-gray-600 leading-relaxed">
               When we develop or manage software, apps, or websites for a client, we may process end-user data strictly as instructed by that client (e.g., their students, customers, or employees). In such cases, the client remains the data controller, and we act as a processor/developer under their direction.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">4. How We Use Information</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">10. How We Use Information (General Services)</h2>
             <ul className="list-disc pl-6 space-y-2 text-gray-600">
               <li>To build, deliver, and maintain software/apps/websites for our clients</li>
               <li>To run our student community — courses, mentorship, events, and skill-building programs</li>
@@ -79,7 +140,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Sharing of Information</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Sharing of Information (General Services)</h2>
             <p className="text-gray-600 leading-relaxed mb-4">We do not sell personal information. We may share it with:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-600">
               <li>Placement/hiring partners, only with your consent, for job or internship opportunities</li>
@@ -91,7 +152,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Third-Party Services</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">12. Third-Party Services (General Services)</h2>
             <p className="text-gray-600 leading-relaxed mb-4">Our website, community platform, and client apps may use:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-600">
               <li><strong>Analytics</strong> (e.g., Google Analytics/Firebase) to understand usage</li>
@@ -103,28 +164,28 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Children's Privacy</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">13. Children's Privacy</h2>
             <p className="text-gray-600 leading-relaxed">
               Where our community or client apps are used by students under 18, we collect their information only with appropriate consent from a parent, guardian, or the enrolling institution, and only as necessary for educational or community purposes. Parents/guardians may contact us to review, correct, or request deletion of their child's data.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Data Security</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">14. Data Security</h2>
             <p className="text-gray-600 leading-relaxed">
               We use reasonable technical and organizational safeguards (encryption in transit, access controls, restricted internal access) to protect your information, including client project data. No system is 100% secure, so we cannot guarantee absolute protection.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Data Retention</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">15. Data Retention</h2>
             <p className="text-gray-600 leading-relaxed">
               We retain personal data only as long as necessary to provide our Services or fulfil a client project, or as required by law, after which it is deleted or anonymized.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Your Rights</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">16. Your Rights</h2>
             <p className="text-gray-600 leading-relaxed mb-4">You may:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-600">
               <li>Access, correct, or update your information</li>
@@ -132,26 +193,22 @@ const PrivacyPolicy = () => {
               <li>Withdraw consent for marketing communications</li>
               <li>Request details on how your data is used</li>
             </ul>
-            <p className="text-gray-600 leading-relaxed mt-4">To exercise these rights, contact us using the details in Section 13.</p>
+            <p className="text-gray-600 leading-relaxed mt-4">To exercise these rights, contact us using the details in Section 18.</p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Cookies (Website)</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">17. Cookies (Website)</h2>
             <p className="text-gray-600 leading-relaxed">
               Our website uses cookies to remember preferences, keep you logged in, and understand site traffic. You can disable cookies in your browser settings, though this may affect site functionality.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">12. App Permissions (For Play Store Apps)</h2>
-            <p className="text-gray-600 leading-relaxed">
-              Where DAKH Edu Solutions publishes apps on Google Play — for ourselves or for clients — we request only the permissions necessary for core functionality (e.g., storage for uploading documents, camera for photo/document scanning). Users may withdraw permissions anytime via device settings.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">13. Contact Us</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">18. Contact Us</h2>
             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+              <h3 className="font-bold text-gray-900 mb-2">Sairam Hub Support</h3>
+              <p className="text-gray-600 mb-6">Sairam Hub is developed/published by DHIVAKAR and associated with DAKH Edu Solutions.</p>
+              
               <h3 className="font-bold text-gray-900 mb-4">DAKH Edu Solutions</h3>
               <ul className="space-y-3 text-gray-600">
                 <li><strong>Website:</strong> <a href="https://www.dakhedusolutions.in/" className="text-purple-600 hover:underline">https://www.dakhedusolutions.in/</a></li>
@@ -163,7 +220,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">14. Changes to This Policy</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">19. Changes to This Policy</h2>
             <p className="text-gray-600 leading-relaxed">
               We may update this Privacy Policy periodically. Material changes will be posted on our website with an updated "Last Updated" date. Continued use of our Services after changes means you accept the revised policy.
             </p>
