@@ -10,9 +10,23 @@ const PrivacyPolicy = () => {
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-4xl md:text-5xl font-black mb-6 text-gray-900 tracking-tight">Privacy Policy</h1>
-        <div className="text-gray-500 font-medium mb-12">
+        <div className="text-gray-500 font-medium mb-8">
           <p><strong>DAKH Edu Solutions | Learn. Build. Earn.</strong></p>
           <p>Website: <a href="https://www.dakhedusolutions.in/" className="text-purple-600 hover:underline">https://www.dakhedusolutions.in/</a></p>
+        </div>
+
+        <div className="bg-purple-50 p-6 rounded-xl border border-purple-200 mb-12 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Sairam Hub — App-Specific Privacy Notice</h2>
+          <ul className="space-y-2 text-gray-800 mb-6 text-lg">
+            <li><strong>App Name:</strong> Sairam Hub</li>
+            <li><strong>Android Package Name:</strong> com.sairamhub.myapp</li>
+            <li><strong>Developer:</strong> DHIVAKAR</li>
+            <li><strong>Organization:</strong> DAKH Edu Solutions</li>
+            <li><strong>Official Website:</strong> <a href="https://www.dakhedusolutions.in/" className="text-purple-600 hover:underline">https://www.dakhedusolutions.in/</a></li>
+          </ul>
+          <p className="text-gray-800 font-medium leading-relaxed">
+            This Privacy Policy applies to Sairam Hub, an Android application developed and published by DHIVAKAR and associated with DAKH Edu Solutions. The Android package name of the application is com.sairamhub.myapp.
+          </p>
         </div>
 
         <div className="space-y-12">
@@ -25,63 +39,48 @@ const PrivacyPolicy = () => {
               This Privacy Policy covers www.dakhedusolutions.in, our client-facing software/development services, our student community programs, and any mobile/web applications we build and operate — for ourselves or on behalf of our clients (together, the "Services"). By using our Services, you agree to the practices described here. If you do not agree, please do not use the Services.
             </p>
             <p className="text-gray-600 leading-relaxed mt-4 font-semibold">
-              This Privacy Policy also specifically applies to Sairam Hub, a mobile application developed and published by DHIVAKAR and associated with DAKH Edu Solutions. Sairam Hub's Android application package name is com.sairamhub.myapp.
+              As explicitly stated above, this Privacy Policy also specifically covers the Sairam Hub application (com.sairamhub.myapp), connecting its developer DHIVAKAR to DAKH Edu Solutions.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Sairam Hub — App Information</h2>
-            <div className="bg-purple-50 p-6 rounded-xl border border-purple-100">
-              <ul className="space-y-2 text-gray-700">
-                <li><strong>App Name:</strong> Sairam Hub</li>
-                <li><strong>Android Package Name:</strong> com.sairamhub.myapp</li>
-                <li><strong>Developer:</strong> DHIVAKAR</li>
-                <li><strong>Organization/Business:</strong> DAKH Edu Solutions</li>
-                <li><strong>Website:</strong> <a href="https://www.dakhedusolutions.in/" className="text-purple-600 hover:underline">https://www.dakhedusolutions.in/</a></li>
-              </ul>
-              <p className="text-gray-600 leading-relaxed mt-4">
-                Sairam Hub is an educational and student resource application intended to provide students with access to academic resources, announcements, notes, question papers, study materials, and links to educational resources where applicable.
-              </p>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Sairam Hub — Information We Collect</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Sairam Hub — Information We Collect</h2>
             <p className="text-gray-600 leading-relaxed">
-              Sairam Hub does not intentionally collect personal information unless a particular feature requires it. The current application does not require user accounts, and therefore does not collect names, passwords, phone numbers, resumes, or payment information. It primarily serves as a portal to access external educational resources.
+              Sairam Hub does not intentionally collect personal information unless a particular feature requires it. The current application does not require user accounts or registration. Therefore, it does not collect names, phone numbers, passwords, payment information, location, contacts, camera data, microphone data, photos, advertising IDs, or analytics data. It primarily serves as a portal to access external educational resources.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">4. How Sairam Hub Uses Information</h2>
-            <p className="text-gray-600 leading-relaxed mb-4">Any information processed by the Sairam Hub app is used only for legitimate app functionality such as:</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">3. How Sairam Hub Uses Information</h2>
+            <p className="text-gray-600 leading-relaxed mb-4">Any information processed by the Sairam Hub app is used solely for legitimate app functionality such as:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-600">
               <li>Providing educational resources</li>
-              <li>Displaying announcements or academic content</li>
-              <li>Opening educational resources hosted on external services</li>
-              <li>Maintaining and improving app functionality</li>
-              <li>Diagnosing technical issues if crash or diagnostic data is collected</li>
+              <li>Displaying academic content</li>
+              <li>Displaying announcements</li>
+              <li>Opening external educational resources</li>
+              <li>Maintaining app functionality</li>
+              <li>Diagnosing crashes or technical problems</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Third-Party Links (Sairam Hub)</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">4. Third-Party Services and External Links</h2>
             <p className="text-gray-600 leading-relaxed">
-              Sairam Hub may contain links to third-party websites or services, such as Google Drive, Google Sheets, or other external platforms. When you open an external link, you are subject to that third party's privacy policy and terms. Sairam Hub does not control the privacy practices of those external services.
+              Sairam Hub may provide access to external services such as Google Drive and Google Sheets to open educational links. These external services have their own privacy policies and terms of service. Sairam Hub does not control the privacy practices of those external services.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Data Sharing — Sairam Hub</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Sairam Hub Data Sharing</h2>
             <p className="text-gray-600 leading-relaxed">
-              Sairam Hub does not sell users' personal information. Because the app does not collect personal information, there is no personal data shared with third parties.
+              Sairam Hub does not collect personal information and therefore does not share or sell any personal information with third parties. We do not share information with placement companies, payment processors, or advertisers through this application.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Sairam Hub App Permissions</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Sairam Hub — App Permissions</h2>
             <p className="text-gray-600 leading-relaxed">
-              The Sairam Hub application requests only the permissions necessary for its functionality, such as basic internet access to load educational links, announcements, and resources. Users may withdraw any device-level permissions anytime via their device settings.
+              The Sairam Hub application requests only the permissions necessary for its functionality, specifically basic Internet access to load external educational links and resources. The application does not request sensitive permissions such as location, contacts, camera, or microphone access.
             </p>
           </section>
 
