@@ -457,7 +457,7 @@ const Internship = () => {
             Hands-on internships in 10+ domains. Real projects, certificates, and performance stipends.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button onClick={() => handleApplyClick('Internship Program', '449')} className="px-10 py-4 bg-[var(--color-brand-primary)] text-white font-black rounded-full text-lg shadow-[0_0_30px_rgba(147,51,234,0.4)] hover:scale-105 transition-transform w-full sm:w-auto">
+            <button onClick={() => handleApplyClick('Internship Program', '499')} className="px-10 py-4 bg-[var(--color-brand-primary)] text-white font-black rounded-full text-lg shadow-[0_0_30px_rgba(147,51,234,0.4)] hover:scale-105 transition-transform w-full sm:w-auto">
               Apply Now
             </button>
             <button onClick={() => window.location.href='/student/login'} className="px-10 py-4 bg-white text-purple-600 font-black rounded-full text-lg shadow-md border-2 border-purple-100 hover:border-purple-600 hover:scale-105 transition-all w-full sm:w-auto flex items-center justify-center gap-2">
@@ -591,7 +591,7 @@ const Internship = () => {
                         </ul>
                       </div>
 
-                      <button onClick={() => handleApplyClick(`${domain} Internship`, '449')} className="mt-auto w-full py-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-[var(--color-brand-primary)] hover:shadow-lg hover:shadow-purple-500/30 transition-all relative z-10 overflow-hidden group/btn flex items-center justify-center gap-2">
+                      <button onClick={() => handleApplyClick(`${domain} Internship`, '499')} className="mt-auto w-full py-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-[var(--color-brand-primary)] hover:shadow-lg hover:shadow-purple-500/30 transition-all relative z-10 overflow-hidden group/btn flex items-center justify-center gap-2">
                         Apply Now <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
                       </button>
                     </div>
@@ -704,11 +704,11 @@ const Internship = () => {
                   <h3 className="font-black text-gray-900 text-2xl mb-2">15 Days Sprint</h3>
                   <p className="text-[var(--color-brand-text-secondary)] mb-8 font-medium">Perfect for a short, intense learning sprint.</p>
 
-                  <div className="text-5xl font-black text-gray-900 mb-2">₹229</div>
+                  <div className="text-5xl font-black text-gray-900 mb-2">₹399</div>
                   <div className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-8">per person</div>
                 </div>
 
-                <button onClick={() => handleApplyClick('15 Days Sprint', '229')} className="w-full py-4 rounded-2xl bg-blue-50 text-blue-600 font-bold hover:bg-blue-600 hover:text-white transition-colors">
+                <button onClick={() => handleApplyClick('15 Days Sprint', '399')} className="w-full py-4 rounded-2xl bg-blue-50 text-blue-600 font-bold hover:bg-blue-600 hover:text-white transition-colors">
                   Select 15 Days
                 </button>
               </div>
@@ -729,11 +729,11 @@ const Internship = () => {
                   <h3 className="font-black text-white text-2xl mb-2">30 Days Mastery</h3>
                   <p className="text-gray-400 mb-8 font-medium">Deep dive into tech stacks and build a capstone project.</p>
 
-                  <div className="text-5xl font-black mb-2">₹449</div>
+                  <div className="text-5xl font-black mb-2">₹499</div>
                   <div className="text-sm text-gray-400 font-bold uppercase tracking-wider mb-8">per person</div>
                 </div>
 
-                <button onClick={() => handleApplyClick('30 Days Mastery', '449')} className="w-full py-4 rounded-2xl bg-gradient-primary text-white font-bold hover:shadow-lg transition-all active:scale-95 shadow-[0_0_20px_rgba(147,51,234,0.4)]">
+                <button onClick={() => handleApplyClick('30 Days Mastery', '499')} className="w-full py-4 rounded-2xl bg-gradient-primary text-white font-bold hover:shadow-lg transition-all active:scale-95 shadow-[0_0_20px_rgba(147,51,234,0.4)]">
                   Select 30 Days
                 </button>
               </div>

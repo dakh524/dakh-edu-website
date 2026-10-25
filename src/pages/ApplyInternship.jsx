@@ -62,13 +62,13 @@ const ApplyInternship = () => {
   const navigate = useNavigate();
   
   const initialPlanName = searchParams.get('plan') || 'Internship Program';
-  const initialPlanPrice = searchParams.get('price') || '449';
+  const initialPlanPrice = searchParams.get('price') || '499';
 
   const AVAILABLE_PLANS = [
     { name: 'Project Based Intern', price: '149' },
-    { name: '15 Days Sprint', price: '229' },
-    { name: '30 Days Mastery', price: '449' },
-    { name: 'Internship Program', price: '449' },
+    { name: '15 Days Sprint', price: '399' },
+    { name: '30 Days Mastery', price: '499' },
+    { name: 'Internship Program', price: '499' },
     { name: 'Team Sprint', price: '2001' }
   ];
 
