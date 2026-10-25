@@ -456,7 +456,7 @@ const ApplyInternship = () => {
                       className="w-5 h-5 accent-purple-600"
                     />
                     <label htmlFor="paymentCompleted" className="font-bold text-gray-800 cursor-pointer text-sm">
-                      I confirm that I have completed the payment of ₹{selectedPlanDetails.price} via the QR code or UPI ID.
+                      I confirm that I have completed the payment of ₹{finalPrice} via the QR code or UPI ID.
                     </label>
                   </div>
 
