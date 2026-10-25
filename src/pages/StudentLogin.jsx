@@ -23,7 +23,32 @@ const StudentLogin = () => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback check against students table
+        const cleanEmail = email.trim().toLowerCase();
+        const { data: studentMatch, error: matchError } = await supabase
+          .from('students')
+          .select('*, registrations(plan_name)')
+          .ilike('email', cleanEmail)
+          .eq('password', password.trim())
+          .single();
+
+        if (studentMatch && !matchError) {
+          if (studentMatch.status === 'Suspended') {
+            throw new Error('Your internship access has been revoked or expired. Please contact support.');
+          }
+
+          if (studentMatch.end_date && new Date() > new Date(studentMatch.end_date)) {
+            throw new Error('Your internship access has automatically expired. Please contact DAKH Edu Solutions.');
+          }
+
+          localStorage.setItem('student_session', JSON.stringify(studentMatch));
+          navigate('/student/dashboard');
+          return;
+        }
+
+        throw error;
+      }
       
       if (data.session) {
         // Check if student is suspended
@@ -48,6 +73,7 @@ const StudentLogin = () => {
           throw new Error('Your internship access has automatically expired. Please contact DAKH Edu Solutions.');
         }
 
+        localStorage.setItem('student_session', JSON.stringify({ ...studentData, auth_id: data.session.user.id }));
         navigate('/student/dashboard');
       }
     } catch (err) {

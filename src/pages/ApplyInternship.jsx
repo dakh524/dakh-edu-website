@@ -157,7 +157,8 @@ const ApplyInternship = () => {
           full_name: formData.fullName,
           email: formData.email,
           intern_number: internNumber,
-          domain: formData.domain
+          domain: formData.domain,
+          password: randomPassword
         }]);
         
         setCredentials({

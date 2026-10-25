@@ -295,20 +295,44 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
+        let studentData = null;
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          navigate('/student/login');
-          return;
+        
+        if (session) {
+          const { data, error } = await supabase
+            .from('students')
+            .select('*, registrations(plan_name)')
+            .eq('auth_id', session.user.id)
+            .single();
+          if (!error && data) {
+            studentData = data;
+          }
         }
 
-        const { data: studentData, error: studentError } = await supabase
-          .from('students')
-          .select('*, registrations(plan_name)')
-          .eq('auth_id', session.user.id)
-          .single();
+        if (!studentData) {
+          const savedSession = localStorage.getItem('student_session');
+          if (savedSession) {
+            try {
+              const parsed = JSON.parse(savedSession);
+              if (parsed?.id) {
+                const { data } = await supabase
+                  .from('students')
+                  .select('*, registrations(plan_name)')
+                  .eq('id', parsed.id)
+                  .single();
+                if (data && data.status !== 'Suspended') {
+                  studentData = data;
+                }
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        }
 
-        if (studentError || !studentData) {
+        if (!studentData) {
           await supabase.auth.signOut();
+          localStorage.removeItem('student_session');
           navigate('/student/login');
           return;
         } 
@@ -370,6 +394,7 @@ const StudentDashboard = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem('student_session');
     navigate('/student/login');
   };
 
