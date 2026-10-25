@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Globe, Building } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -27,66 +28,68 @@ const CHENNAI_COLLEGES = [
   "Vels University"
 ];
 
+const ACTIVE_INTERNSHIPS = [
+  "Vibe Coding",
+  "Web Development",
+  "Generative AI",
+  "Full Stack Development"
+];
+
+const RELATED_DOMAINS = [
+  "AI & Machine Learning",
+  "App Development",
+  "UI/UX Design",
+  "Data Science",
+  "Python Full Stack"
+];
+
 const DOMAINS_LIST = [
-  // IT / CSE
-  "Web Development", "App Development", "AI & Machine Learning", "UI/UX Design", 
-  "Python Full Stack", "MERN Stack", "Cyber Security", "Data Science", "DevOps", 
-  "Blockchain Development", "Game Development", "AR/VR Development", "Cloud Computing", 
-  "Edge Computing", "Bioinformatics", "Computer Vision", "Natural Language Processing (NLP)", 
-  "Software Testing (QA)", "3D Animation & Modeling", "MEAN Stack", 
-  "React Native", "Flutter", "iOS Development", "Android Development", 
-  "Networking", "Ethical Hacking", "Digital Marketing", 
-  "Product Management", "Graphic Design", "Video Editing", "System Administration", 
-  "IT Support", "Information Security", "Quantum Computing", "5G Technologies", 
-  "Cloud Security", "Front-End Development", "Back-End Development", 
-  "Database Administration", "Machine Learning Engineering", "Data Analytics", 
-  "Business Intelligence", "API Development", "Microservices Architecture", 
-  "C/C++ Programming", "Java Full Stack", "Generative AI", "Vibe Coding", "Machine Learning",
-  // Mechanical
-  "AutoCAD & 3D Modeling", "HVAC Design", "Manufacturing & Production",
-  "Automotive Design", "Computational Fluid Dynamics (CFD)", "Finite Element Analysis (FEA)",
-  "Robotics & Automation", "Mechatronics",
-  // Civil
-  "Structural Engineering", "Construction Management", "AutoCAD Civil 3D",
-  "Urban Planning", "Geotechnical Engineering", "Transportation Engineering",
-  "Surveying & Mapping", "Environmental Engineering",
-  // ECE / EEE
-  "VLSI Design", "Embedded Systems", "Power Systems", "Control Systems",
-  "Digital Signal Processing (DSP)", "Antenna Design", "Electric Vehicles (EV) Technology",
-  "Renewable Energy Systems", "Microcontrollers & PLCs", "PCB Design", "IoT",
+  ...ACTIVE_INTERNSHIPS,
+  ...RELATED_DOMAINS,
   "Other"
-].sort();
+];
 
 const ApplyInternship = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
-  const initialPlanName = searchParams.get('plan') || 'Internship Program';
-  const initialPlanPrice = searchParams.get('price') || '499';
+  const rawPlanParam = searchParams.get('plan') || 'Internship Program';
+  const rawPriceParam = searchParams.get('price') || '499';
+  const rawModeParam = searchParams.get('mode');
 
-  const AVAILABLE_PLANS = [
-    { name: 'Project Based Intern', price: '149' },
-    { name: '15 Days Sprint', price: '399' },
-    { name: '30 Days Mastery', price: '499' },
-    { name: 'Internship Program', price: '499' },
-    { name: 'Team Sprint', price: '2001' }
+  // Clean plan name from any "(Online)" or "(Offline)" suffix if passed in URL
+  const cleanPlanName = rawPlanParam.replace(/\s*\((Online|Offline)\)/i, '').trim();
+  const initialMode = (rawModeParam && rawModeParam.toLowerCase() === 'offline') ? 'Offline' : 'Online';
+
+  const [mode, setMode] = useState(initialMode);
+  const [selectedPlanName, setSelectedPlanName] = useState(cleanPlanName);
+
+  const BASE_PLANS = [
+    { name: 'Project Based Intern', basePrice: 149 },
+    { name: '15 Days Sprint', basePrice: 399 },
+    { name: '30 Days Mastery', basePrice: 499 },
+    { name: 'Internship Program', basePrice: 499 },
+    { name: 'Team Sprint', basePrice: 2001 }
   ];
 
-  const allPlans = [...AVAILABLE_PLANS];
-  if (!allPlans.find(p => p.name === initialPlanName)) {
-    allPlans.push({ name: initialPlanName, price: initialPlanPrice });
+  const allBasePlans = [...BASE_PLANS];
+  if (!allBasePlans.find(p => p.name.toLowerCase() === cleanPlanName.toLowerCase())) {
+    allBasePlans.push({
+      name: cleanPlanName,
+      basePrice: parseInt(rawPriceParam, 10) || 499
+    });
   }
 
-  const [selectedPlanDetails, setSelectedPlanDetails] = useState({
-    name: initialPlanName,
-    price: initialPlanPrice
-  });
+  const currentPlan = allBasePlans.find(p => p.name.toLowerCase() === selectedPlanName.toLowerCase()) || allBasePlans[3];
+  const isOffline = mode === 'Offline';
+  const finalPrice = isOffline ? currentPlan.basePrice * 2 : currentPlan.basePrice;
+  const finalPlanName = `${currentPlan.name} (${mode})`;
 
-  const handlePlanChange = (e) => {
-    const selectedName = e.target.value;
-    const plan = allPlans.find(p => p.name === selectedName);
-    if (plan) {
-      setSelectedPlanDetails(plan);
+  const handlePlanSelectChange = (e) => {
+    const [pName, pMode] = e.target.value.split('__');
+    setSelectedPlanName(pName);
+    if (pMode) {
+      setMode(pMode);
     }
   };
 
@@ -136,8 +139,8 @@ const ApplyInternship = () => {
         department: formData.department,
         year_of_study: formData.year,
         domain: formData.domain,
-        plan_name: selectedPlanDetails.name,
-        plan_price: selectedPlanDetails.price,
+        plan_name: finalPlanName,
+        plan_price: finalPrice.toString(),
         referral_code: formData.referral,
         utr_number: formData.utr,
         payment_completed: formData.paymentCompleted
@@ -169,7 +172,7 @@ const ApplyInternship = () => {
       }
 
       // NEW: Open WhatsApp link
-      const whatsappMessage = `Hi, I have applied for the Internship.\n\nName: ${formData.fullName}\nCollege: ${formData.college}\nDepartment: ${formData.department}\nYear: ${formData.year}\nDomain: ${formData.domain}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nTransaction ID: ${formData.utr}`;
+      const whatsappMessage = `Hi, I have applied for the Internship.\n\nName: ${formData.fullName}\nCollege: ${formData.college}\nDepartment: ${formData.department}\nYear: ${formData.year}\nDomain: ${formData.domain}\nPlan: ${finalPlanName}\nMode: ${mode}\nAmount Paid: ₹${finalPrice}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nTransaction ID: ${formData.utr}`;
       const whatsappUrl = `https://wa.me/918667399640?text=${encodeURIComponent(whatsappMessage)}`;
       window.open(whatsappUrl, '_blank');
 
@@ -190,7 +193,7 @@ const ApplyInternship = () => {
   );
 
   // Generate UPI QR Code URL
-  const upiUrl = `upi://pay?pa=dhivakar.9640@waaxis&pn=Mr%20DHIVAKAR%20B&am=${selectedPlanDetails.price}&cu=INR`;
+  const upiUrl = `upi://pay?pa=dhivakar.9640@waaxis&pn=Mr%20DHIVAKAR%20B&am=${finalPrice}&cu=INR`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUrl)}`;
 
   return (
@@ -254,22 +257,80 @@ const ApplyInternship = () => {
               </div>
               
               <div className="p-6 md:p-8">
-                <div className="mb-6 bg-purple-50 p-4 rounded-xl border border-purple-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="w-full md:w-auto flex-grow">
-                    <label htmlFor="planSelect" className="text-sm font-bold text-purple-600 uppercase tracking-wider block mb-1">Select Plan</label>
+                <div className="mb-6 bg-purple-50 p-5 rounded-2xl border border-purple-100 flex flex-col gap-4">
+                  {/* Mode Selector and Price Header */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-purple-100/80 pb-4">
+                    <div>
+                      <span className="text-xs font-bold text-purple-700 uppercase tracking-wider block mb-1.5">Internship Mode</span>
+                      <div className="inline-flex p-1 bg-white border-2 border-purple-200 rounded-xl shadow-xs gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setMode('Online')}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+                            mode === 'Online'
+                              ? 'bg-purple-600 text-white shadow-sm'
+                              : 'text-gray-600 hover:text-purple-600'
+                          }`}
+                        >
+                          <Globe className="w-3.5 h-3.5" />
+                          Online
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMode('Offline')}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+                            mode === 'Offline'
+                              ? 'bg-amber-500 text-gray-950 shadow-sm'
+                              : 'text-gray-600 hover:text-amber-600'
+                          }`}
+                        >
+                          <Building className="w-3.5 h-3.5" />
+                          Offline (2x Fee)
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-start sm:items-end">
+                      <span className="text-xs font-bold uppercase tracking-wider text-purple-700">
+                        {isOffline ? 'Offline Fee (2x Rate)' : 'Online Fee (Standard)'}
+                      </span>
+                      <div className="text-3xl sm:text-4xl font-black text-gray-900 flex items-center gap-1">
+                        <span>₹</span>{finalPrice}
+                      </div>
+                      {isOffline && (
+                        <span className="text-[11px] font-bold text-amber-900 bg-amber-200 px-2 py-0.5 rounded-full mt-1">
+                          Offline 2x Double Fee Applied
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Select Plan Dropdown */}
+                  <div>
+                    <label htmlFor="planSelect" className="text-xs font-bold text-purple-600 uppercase tracking-wider block mb-1.5">
+                      Select Plan & Mode
+                    </label>
                     <select 
                       id="planSelect"
-                      value={selectedPlanDetails.name}
-                      onChange={handlePlanChange}
-                      className="w-full md:w-80 border-2 border-purple-200 rounded-xl p-2 text-gray-900 font-bold focus:border-purple-500 focus:outline-none bg-white"
+                      value={`${currentPlan.name}__${mode}`}
+                      onChange={handlePlanSelectChange}
+                      className="w-full border-2 border-purple-200 rounded-xl p-3 text-gray-900 font-bold focus:border-purple-500 focus:outline-none bg-white shadow-xs"
                     >
-                      {allPlans.map((plan, idx) => (
-                        <option key={idx} value={plan.name}>{plan.name} (₹{plan.price})</option>
-                      ))}
+                      <optgroup label="🌐 Online Internship (Standard Fee)">
+                        {allBasePlans.map((plan) => (
+                          <option key={`online-${plan.name}`} value={`${plan.name}__Online`}>
+                            {plan.name} (Online - ₹{plan.basePrice})
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="🏢 Offline Internship (Double Amount / 2x Fee)">
+                        {allBasePlans.map((plan) => (
+                          <option key={`offline-${plan.name}`} value={`${plan.name}__Offline`}>
+                            {plan.name} (Offline - ₹{plan.basePrice * 2})
+                          </option>
+                        ))}
+                      </optgroup>
                     </select>
-                  </div>
-                  <div className="text-3xl font-black text-gray-900 flex-shrink-0">
-                    ₹{selectedPlanDetails.price}
                   </div>
                 </div>
 
@@ -342,15 +403,32 @@ const ApplyInternship = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <select required name="domain" value={formData.domain} onChange={handleChange} className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none bg-white">
                       <option value="" disabled>Select Domain</option>
-                      {DOMAINS_LIST.map((dom, i) => (
-                        <option key={i} value={dom}>{dom}</option>
-                      ))}
+                      <optgroup label="🔥 Top Active Internships">
+                        {ACTIVE_INTERNSHIPS.map((dom) => (
+                          <option key={dom} value={dom}>{dom}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="📌 Project Based Internships">
+                        {RELATED_DOMAINS.map((dom) => (
+                          <option key={dom} value={dom}>{dom}</option>
+                        ))}
+                        <option value="Other">Other (Project Based)</option>
+                      </optgroup>
                     </select>
                     <input type="text" name="referral" placeholder="Referral Code (Optional)" value={formData.referral} onChange={handleChange} className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none" />
                   </div>
 
                   <div className="bg-[#ffce00] p-6 rounded-2xl flex flex-col items-center justify-center text-center mt-4 shadow-sm">
-                    <div className="font-black text-lg tracking-wider mb-4">PAY INTERNSHIP FEE</div>
+                    <div className="font-black text-lg tracking-wider mb-2">PAY INTERNSHIP FEE</div>
+                    {isOffline ? (
+                      <div className="mb-3 px-3 py-1 bg-black text-amber-300 font-black text-xs rounded-full uppercase tracking-wider">
+                        🏢 Offline Mode (Double Payment Applied)
+                      </div>
+                    ) : (
+                      <div className="mb-3 px-3 py-1 bg-white/70 text-gray-900 font-bold text-xs rounded-full uppercase tracking-wider">
+                        🌐 Online Mode
+                      </div>
+                    )}
                     <div className="bg-white p-3 rounded-xl shadow-md mb-4">
                       <img src={qrCodeUrl} alt="UPI QR Code" className="w-40 h-40 object-contain" />
                     </div>
@@ -360,9 +438,9 @@ const ApplyInternship = () => {
                     <div className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-1">UPI ID</div>
                     <div className="text-lg font-bold text-gray-900 mb-6 bg-white/50 px-4 py-1 rounded-full">dhivakar.9640@waaxis</div>
                     
-                    <div className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-1">Selected Fee</div>
+                    <div className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-1">Selected Fee ({mode})</div>
                     <div className="text-5xl font-black text-gray-900 flex items-center gap-1">
-                      <span>₹</span>{selectedPlanDetails.price}
+                      <span>₹</span>{finalPrice}
                     </div>
                   </div>
 

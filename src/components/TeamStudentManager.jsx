@@ -31,7 +31,18 @@ const TeamStudentManager = () => {
   const [editPasswordInput, setEditPasswordInput] = useState('');
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   
-  const domains = ['Web Development', 'UI/UX Design', 'App Development', 'Data Science', 'Vibe Coding', 'Machine Learning', 'Full Stack Development'];
+  const domains = [
+    'Vibe Coding',
+    'Web Development',
+    'Generative AI',
+    'Full Stack Development',
+    'AI & Machine Learning',
+    'App Development',
+    'UI/UX Design',
+    'Data Science',
+    'Python Full Stack',
+    'Other'
+  ];
 
   useEffect(() => {
     fetchStudents();

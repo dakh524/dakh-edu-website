@@ -1605,12 +1605,15 @@ const AdminDashboard = () => {
                       className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
                     />
                     <datalist id="admin-cert-domains">
-                      <option value="Web Development" />
-                      <option value="UI/UX Design" />
-                      <option value="App Development" />
-                      <option value="Data Science" />
                       <option value="Vibe Coding" />
-                      <option value="Machine Learning" />
+                      <option value="Web Development" />
+                      <option value="Generative AI" />
+                      <option value="Full Stack Development" />
+                      <option value="AI & Machine Learning" />
+                      <option value="App Development" />
+                      <option value="UI/UX Design" />
+                      <option value="Data Science" />
+                      <option value="Python Full Stack" />
                     </datalist>
                   </div>
                   <div className="md:col-span-2">
