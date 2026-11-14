@@ -198,7 +198,6 @@ const About = () => {
   const [showBlogModal, setShowBlogModal] = useState(false);
   const [products, setProducts] = useState([]);
   const [blogs, setBlogs] = useState([]);
-  const [events, setEvents] = useState([]);
   const [blogForm, setBlogForm] = useState({ author_name: '', title: '', content: '' });
   const [isSubmittingBlog, setIsSubmittingBlog] = useState(false);
   const containerRef = useRef(null);
@@ -212,13 +211,19 @@ const About = () => {
       const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (data) setProducts(data);
     };
-    const fetchEvents = async () => {
-      const { data } = await supabase.from('events').select('*').order('created_at', { ascending: false });
-      if (data) setEvents(data);
-    };
     fetchBlogs();
     fetchProducts();
-    fetchEvents();
+  }, []);
+
+  useEffect(() => {
+    const scriptId = 'elfsight-platform-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://elfsightcdn.com/platform.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
   }, []);
 
   const handleSubmitBlog = async (e) => {
@@ -397,52 +402,19 @@ const About = () => {
         </section>
 
 
-        {/* EVENTS GALLERY SECTION */}
+        {/* ACTIVITIES SECTION */}
         <section className="py-20 px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <ScrollReveal>
               <div className="inline-block mb-3 px-4 py-1.5 rounded-full bg-purple-100 text-purple-700 font-black text-xs uppercase tracking-widest border border-purple-200">
-                ✨ CAMPUS &amp; COMMUNITY
+                CAMPUS &amp; COMMUNITY
               </div>
-              <h2 className="font-black text-5xl md:text-6xl text-gray-900 mb-4">Our <span className="text-gradient">Events</span></h2>
-              <p className="text-xl text-[var(--color-brand-text-secondary)] font-medium">Moments from our hackathons, meetups, workshops, and student tech showcases.</p>
+              <h2 className="font-black text-5xl md:text-6xl text-gray-900 mb-4">Our <span className="text-gradient">Activities</span></h2>
+              <p className="text-xl text-[var(--color-brand-text-secondary)] font-medium">A glimpse into the learning, building, and community moments at DAKH.</p>
             </ScrollReveal>
           </div>
-          {events.length === 0 ? (
-            <div className="text-center p-12 bg-gray-50 rounded-3xl border border-gray-100">
-              <p className="text-gray-500 font-medium">No events published yet.</p>
-            </div>
-          ) : (
-            <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
-              {events.map((event, i) => (
-                <ScrollReveal key={event.id || i} delay={i * 0.08}>
-                  <div className="break-inside-avoid bg-white/60 backdrop-blur-3xl border border-white/80 p-3 rounded-[2rem] shadow-[0_8px_32px_rgba(31,38,135,0.06)] hover:shadow-[0_20px_40px_rgba(147,51,234,0.18)] transition-all duration-500 group relative hover:-translate-y-1">
-                    <div className="rounded-[1.5rem] overflow-hidden relative bg-gray-100 shadow-inner">
-                      <img 
-                        src={event.image_url || `/events/event-${(i % 9) + 1}.jpg`} 
-                        alt={event.title || 'DAKH Event'} 
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = `/events/event-${(i % 9) + 1}.jpg`;
-                        }}
-                        className="w-full h-auto object-cover transform group-hover:scale-[1.03] transition-transform duration-700" 
-                      />
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-gray-950/95 via-gray-950/60 to-transparent pt-16 pb-5 px-5 translate-y-1 group-hover:translate-y-0 opacity-95 group-hover:opacity-100 transition-all duration-300">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-purple-300 bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded-full inline-block mb-1.5 backdrop-blur-sm">
-                          DAKH Event
-                        </span>
-                        <h3 className="text-white font-extrabold text-lg leading-snug tracking-tight">
-                          {event.title || `Tech Event ${i + 1}`}
-                        </h3>
-                      </div>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
-          )}
+          <div className="elfsight-app-8c61d959-dd25-469f-b95c-64ff351f205b" data-elfsight-app-lazy></div>
         </section>
-
         {/* PRODUCTS & SERVICES SECTION */}
         <section className="py-20 px-6 lg:px-8 max-w-7xl mx-auto border-t border-gray-100">
           <div className="text-center mb-16">
