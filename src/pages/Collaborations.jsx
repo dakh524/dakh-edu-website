@@ -53,14 +53,6 @@ const Collaborations = () => {
       .from('.hero-desc', { y: 20, opacity: 0, duration: 0.6, ease: 'power3.out' }, '-=0.6')
       .from('.hero-stat', { y: 20, opacity: 0, duration: 0.6, stagger: 0.15, ease: 'back.out(1.5)' }, '-=0.4');
 
-    const mapTl = gsap.timeline({
-      scrollTrigger: { trigger: '.node-map-section', start: 'top 60%' }
-    });
-
-    mapTl.from('.center-node', { scale: 0, opacity: 0, duration: 0.8, ease: 'elastic.out(1, 0.5)' })
-         .from('.orbit-svg-path', { opacity: 0, duration: 1, ease: 'power2.out', stagger: 0.1 }, '-=0.4')
-         .from('.wyntrix-node', { scale: 0, opacity: 0, duration: 0.6, ease: 'back.out(1.5)', stagger: 0.1 }, '-=0.6');
-
     gsap.from('.why-card', {
       scrollTrigger: { trigger: '.why-section', start: 'top 75%' },
       y: 50, opacity: 0, duration: 0.8, stagger: 0.2, ease: 'power3.out'

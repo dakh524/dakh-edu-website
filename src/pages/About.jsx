@@ -198,6 +198,7 @@ const About = () => {
   const [showBlogModal, setShowBlogModal] = useState(false);
   const [products, setProducts] = useState([]);
   const [blogs, setBlogs] = useState([]);
+  const [events, setEvents] = useState([]);
   const [blogForm, setBlogForm] = useState({ author_name: '', title: '', content: '' });
   const [isSubmittingBlog, setIsSubmittingBlog] = useState(false);
   const containerRef = useRef(null);
@@ -211,8 +212,13 @@ const About = () => {
       const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (data) setProducts(data);
     };
+    const fetchEvents = async () => {
+      const { data } = await supabase.from('events').select('*').order('created_at', { ascending: false });
+      if (data) setEvents(data);
+    };
     fetchBlogs();
     fetchProducts();
+    fetchEvents();
   }, []);
 
   const handleSubmitBlog = async (e) => {
