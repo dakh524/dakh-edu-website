@@ -181,16 +181,36 @@ const iconMap = {
 
 const InternProjectCard = ({ project }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div className="card bg-white rounded-[2rem] overflow-hidden border border-gray-150 shadow-sm hover:shadow-xl transition-all group h-full flex flex-col">
       <div 
-        className="aspect-video w-full overflow-hidden relative bg-gray-100 cursor-pointer" 
+        className="aspect-video w-full overflow-hidden relative bg-gradient-to-br from-purple-900/10 via-purple-500/10 to-indigo-900/10 cursor-pointer flex items-center justify-center" 
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <img src={project.linkedin_image_link} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        {!imgError && project.linkedin_image_link ? (
+          <img 
+            src={project.linkedin_image_link} 
+            alt={project.title} 
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-800 p-6 flex flex-col justify-between text-white relative overflow-hidden group-hover:scale-105 transition-transform duration-500">
+            <div className="flex justify-between items-center z-10">
+              <span className="text-[11px] font-black uppercase tracking-wider bg-white/20 px-3 py-1 rounded-full backdrop-blur-md">
+                Student Project
+              </span>
+              <Laptop size={20} className="text-yellow-300" />
+            </div>
+            <div className="z-10">
+              <h4 className="font-bold text-lg text-white line-clamp-2">{project.title}</h4>
+            </div>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-          <h3 className="text-white font-bold text-xl">{project.title}</h3>
+          <h3 className="text-white font-bold text-xl drop-shadow">{project.title}</h3>
         </div>
       </div>
       <div className="p-6 flex flex-col flex-grow justify-between gap-6">
@@ -457,7 +477,7 @@ const Internship = () => {
             Hands-on internships in 10+ domains. Real projects, certificates, and performance stipends.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button onClick={() => handleApplyClick('Internship Program', '499')} className="px-10 py-4 bg-[var(--color-brand-primary)] text-white font-black rounded-full text-lg shadow-[0_0_30px_rgba(147,51,234,0.4)] hover:scale-105 transition-transform w-full sm:w-auto">
+            <button onClick={() => handleApplyClick('Internship Program', '399')} className="px-10 py-4 bg-[var(--color-brand-primary)] text-white font-black rounded-full text-lg shadow-[0_0_30px_rgba(147,51,234,0.4)] hover:scale-105 transition-transform w-full sm:w-auto">
               Apply Now
             </button>
             <button onClick={() => window.location.href='/student/login'} className="px-10 py-4 bg-white text-purple-600 font-black rounded-full text-lg shadow-md border-2 border-purple-100 hover:border-purple-600 hover:scale-105 transition-all w-full sm:w-auto flex items-center justify-center gap-2">
@@ -591,7 +611,7 @@ const Internship = () => {
                         </ul>
                       </div>
 
-                      <button onClick={() => handleApplyClick(`${domain} Internship`, '499')} className="mt-auto w-full py-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-[var(--color-brand-primary)] hover:shadow-lg hover:shadow-purple-500/30 transition-all relative z-10 overflow-hidden group/btn flex items-center justify-center gap-2">
+                      <button onClick={() => handleApplyClick(`${domain} Internship`, '399')} className="mt-auto w-full py-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-[var(--color-brand-primary)] hover:shadow-lg hover:shadow-purple-500/30 transition-all relative z-10 overflow-hidden group/btn flex items-center justify-center gap-2">
                         Apply Now <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
                       </button>
                     </div>
@@ -729,11 +749,14 @@ const Internship = () => {
                   <h3 className="font-black text-white text-2xl mb-2">30 Days Mastery</h3>
                   <p className="text-gray-400 mb-8 font-medium">Deep dive into tech stacks and build a capstone project.</p>
 
-                  <div className="text-5xl font-black mb-2">₹499</div>
-                  <div className="text-sm text-gray-400 font-bold uppercase tracking-wider mb-8">per person</div>
+                  <div className="text-5xl font-black mb-2 flex items-baseline justify-center gap-3">
+                    <span className="text-2xl text-gray-400 line-through">₹499</span>
+                    <span>₹399</span>
+                  </div>
+                  <div className="text-xs text-yellow-400 font-bold uppercase tracking-wider mb-8">Special Offer / per person</div>
                 </div>
 
-                <button onClick={() => handleApplyClick('30 Days Mastery', '499')} className="w-full py-4 rounded-2xl bg-gradient-primary text-white font-bold hover:shadow-lg transition-all active:scale-95 shadow-[0_0_20px_rgba(147,51,234,0.4)]">
+                <button onClick={() => handleApplyClick('30 Days Mastery', '399')} className="w-full py-4 rounded-2xl bg-gradient-primary text-white font-bold hover:shadow-lg transition-all active:scale-95 shadow-[0_0_20px_rgba(147,51,234,0.4)]">
                   Select 30 Days
                 </button>
               </div>
@@ -794,13 +817,27 @@ const Internship = () => {
         </div>
       </section>
 
-      {/* Intern Projects Section */}
-      {internProjects.length > 0 && (
-        <section className="py-24 px-6 lg:px-8 bg-white relative overflow-hidden border-t border-gray-100">
-          <div className="max-w-6xl mx-auto relative z-10">
-            <ScrollReveal>
-              <h2 className="font-bold text-3xl md:text-4xl text-center mb-16 text-gray-900">Our Intern Works</h2>
-            </ScrollReveal>
+      {/* Intern Projects By Students Section */}
+      <section id="intern-projects" className="py-24 px-6 lg:px-8 bg-slate-50/70 relative overflow-hidden border-t border-gray-200/70">
+        <div className="max-w-6xl mx-auto relative z-10">
+          <ScrollReveal>
+            <div className="text-center mb-16">
+              <div className="inline-block mb-3 px-4 py-1.5 rounded-full bg-purple-100 text-purple-700 font-black text-xs uppercase tracking-widest border border-purple-200">
+                ✨ STUDENT WORK
+              </div>
+              <h2 className="font-extrabold text-4xl md:text-5xl text-center mb-4 text-gray-900 tracking-tight">
+                INTERN PROJECT <span className="text-gradient">BY STUDENTS</span>
+              </h2>
+              <p className="text-gray-600 font-medium text-lg max-w-2xl mx-auto">
+                Explore real web apps and live projects built by students during their DAKH internships.
+              </p>
+            </div>
+          </ScrollReveal>
+          {internProjects.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-3xl border border-gray-200 p-8 shadow-sm">
+              <p className="text-gray-500 font-medium">Loading intern projects...</p>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {internProjects.map((project, index) => (
                 <ScrollReveal delay={index * 0.1} key={project.id}>
@@ -808,9 +845,9 @@ const Internship = () => {
                 </ScrollReveal>
               ))}
             </div>
-          </div>
-        </section>
-      )}
+          )}
+        </div>
+      </section>
 
       {/* 6. Internship Roadmap */}
       <section className="py-24 px-6 lg:px-8 bg-white relative overflow-hidden">

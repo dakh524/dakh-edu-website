@@ -54,7 +54,7 @@ const ApplyInternship = () => {
   const navigate = useNavigate();
   
   const rawPlanParam = searchParams.get('plan') || 'Internship Program';
-  const rawPriceParam = searchParams.get('price') || '499';
+  const rawPriceParam = searchParams.get('price') || '399';
   const rawModeParam = searchParams.get('mode');
 
   // Clean plan name from any "(Online)" or "(Offline)" suffix if passed in URL
@@ -62,36 +62,10 @@ const ApplyInternship = () => {
   const initialMode = (rawModeParam && rawModeParam.toLowerCase() === 'offline') ? 'Offline' : 'Online';
 
   const [mode, setMode] = useState(initialMode);
-  const [selectedPlanName, setSelectedPlanName] = useState(cleanPlanName);
-
-  const BASE_PLANS = [
-    { name: 'Project Based Intern', basePrice: 149 },
-    { name: '15 Days Sprint', basePrice: 399 },
-    { name: '30 Days Mastery', basePrice: 499 },
-    { name: 'Internship Program', basePrice: 499 },
-    { name: 'Team Sprint', basePrice: 2001 }
-  ];
-
-  const allBasePlans = [...BASE_PLANS];
-  if (!allBasePlans.find(p => p.name.toLowerCase() === cleanPlanName.toLowerCase())) {
-    allBasePlans.push({
-      name: cleanPlanName,
-      basePrice: parseInt(rawPriceParam, 10) || 499
-    });
-  }
-
-  const currentPlan = allBasePlans.find(p => p.name.toLowerCase() === selectedPlanName.toLowerCase()) || allBasePlans[3];
   const isOffline = mode === 'Offline';
-  const finalPrice = isOffline ? currentPlan.basePrice * 2 : currentPlan.basePrice;
-  const finalPlanName = `${currentPlan.name} (${mode})`;
-
-  const handlePlanSelectChange = (e) => {
-    const [pName, pMode] = e.target.value.split('__');
-    setSelectedPlanName(pName);
-    if (pMode) {
-      setMode(pMode);
-    }
-  };
+  // Special Offer: Flat ₹399 for all internships (both Online and Offline)
+  const finalPrice = 399;
+  const finalPlanName = `${cleanPlanName || 'Internship Program'} (${mode})`;
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -257,80 +231,58 @@ const ApplyInternship = () => {
               </div>
               
               <div className="p-6 md:p-8">
-                <div className="mb-6 bg-purple-50 p-5 rounded-2xl border border-purple-100 flex flex-col gap-4">
-                  {/* Mode Selector and Price Header */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-purple-100/80 pb-4">
-                    <div>
-                      <span className="text-xs font-bold text-purple-700 uppercase tracking-wider block mb-1.5">Internship Mode</span>
-                      <div className="inline-flex p-1 bg-white border-2 border-purple-200 rounded-xl shadow-xs gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setMode('Online')}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
-                            mode === 'Online'
-                              ? 'bg-purple-600 text-white shadow-sm'
-                              : 'text-gray-600 hover:text-purple-600'
-                          }`}
-                        >
-                          <Globe className="w-3.5 h-3.5" />
-                          Online
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setMode('Offline')}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
-                            mode === 'Offline'
-                              ? 'bg-amber-500 text-gray-950 shadow-sm'
-                              : 'text-gray-600 hover:text-amber-600'
-                          }`}
-                        >
-                          <Building className="w-3.5 h-3.5" />
-                          Offline (2x Fee)
-                        </button>
-                      </div>
+                <div className="mb-6 bg-purple-50 p-5 md:p-6 rounded-2xl border border-purple-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                  {/* Mode Selector */}
+                  <div>
+                    <span className="text-xs font-bold text-purple-700 uppercase tracking-wider block mb-2">Select Internship Mode</span>
+                    <div className="inline-flex p-1 bg-white border-2 border-purple-200 rounded-xl shadow-xs gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setMode('Online')}
+                        className={`px-4 py-2 rounded-lg text-sm font-black transition-all flex items-center gap-2 ${
+                          mode === 'Online'
+                            ? 'bg-purple-600 text-white shadow-sm'
+                            : 'text-gray-600 hover:text-purple-600'
+                        }`}
+                      >
+                        <Globe className="w-4 h-4" />
+                        Online
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMode('Offline')}
+                        className={`px-4 py-2 rounded-lg text-sm font-black transition-all flex items-center gap-2 ${
+                          mode === 'Offline'
+                            ? 'bg-purple-600 text-white shadow-sm'
+                            : 'text-gray-600 hover:text-purple-600'
+                        }`}
+                      >
+                        <Building className="w-4 h-4" />
+                        Offline
+                      </button>
                     </div>
-
-                    <div className="flex flex-col items-start sm:items-end">
-                      <span className="text-xs font-bold uppercase tracking-wider text-purple-700">
-                        {isOffline ? 'Offline Fee (2x Rate)' : 'Online Fee (Standard)'}
-                      </span>
-                      <div className="text-3xl sm:text-4xl font-black text-gray-900 flex items-center gap-1">
-                        <span>₹</span>{finalPrice}
-                      </div>
-                      {isOffline && (
-                        <span className="text-[11px] font-bold text-amber-900 bg-amber-200 px-2 py-0.5 rounded-full mt-1">
-                          Offline 2x Double Fee Applied
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-xs text-gray-500 font-semibold block mt-2">
+                      Selected: <strong className="text-purple-700 font-bold">{cleanPlanName || 'Internship Program'} ({mode})</strong>
+                    </span>
                   </div>
 
-                  {/* Select Plan Dropdown */}
-                  <div>
-                    <label htmlFor="planSelect" className="text-xs font-bold text-purple-600 uppercase tracking-wider block mb-1.5">
-                      Select Plan & Mode
-                    </label>
-                    <select 
-                      id="planSelect"
-                      value={`${currentPlan.name}__${mode}`}
-                      onChange={handlePlanSelectChange}
-                      className="w-full border-2 border-purple-200 rounded-xl p-3 text-gray-900 font-bold focus:border-purple-500 focus:outline-none bg-white shadow-xs"
-                    >
-                      <optgroup label="🌐 Online Internship (Standard Fee)">
-                        {allBasePlans.map((plan) => (
-                          <option key={`online-${plan.name}`} value={`${plan.name}__Online`}>
-                            {plan.name} (Online - ₹{plan.basePrice})
-                          </option>
-                        ))}
-                      </optgroup>
-                      <optgroup label="🏢 Offline Internship (Double Amount / 2x Fee)">
-                        {allBasePlans.map((plan) => (
-                          <option key={`offline-${plan.name}`} value={`${plan.name}__Offline`}>
-                            {plan.name} (Offline - ₹{plan.basePrice * 2})
-                          </option>
-                        ))}
-                      </optgroup>
-                    </select>
+                  {/* Special Offer Price Box */}
+                  <div className="flex flex-col items-start sm:items-end">
+                    <span className="text-xs font-bold uppercase tracking-wider text-purple-700 flex items-center gap-1.5 mb-1">
+                      Fee (Special Offer)
+                      <span className="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                        Special Offer
+                      </span>
+                    </span>
+                    <div className="text-3xl sm:text-4xl font-black text-gray-900 flex items-center gap-2">
+                      <span className="text-lg sm:text-xl text-gray-400 line-through font-semibold">₹499</span>
+                      <div className="flex items-center gap-1 text-purple-700">
+                        <span>₹</span>399
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full mt-1.5">
+                      Flat ₹399 for {mode} Mode (No Extra Fee)
+                    </span>
                   </div>
                 </div>
 
@@ -420,15 +372,10 @@ const ApplyInternship = () => {
 
                   <div className="bg-[#ffce00] p-6 rounded-2xl flex flex-col items-center justify-center text-center mt-4 shadow-sm">
                     <div className="font-black text-lg tracking-wider mb-2">PAY INTERNSHIP FEE</div>
-                    {isOffline ? (
-                      <div className="mb-3 px-3 py-1 bg-black text-amber-300 font-black text-xs rounded-full uppercase tracking-wider">
-                        🏢 Offline Mode (Double Payment Applied)
-                      </div>
-                    ) : (
-                      <div className="mb-3 px-3 py-1 bg-white/70 text-gray-900 font-bold text-xs rounded-full uppercase tracking-wider">
-                        🌐 Online Mode
-                      </div>
-                    )}
+                    <div className="mb-3 px-3.5 py-1 bg-white/80 text-gray-900 font-bold text-xs rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1.5">
+                      <span>{isOffline ? '🏢' : '🌐'}</span>
+                      <span>{mode} Mode • Special Offer ₹399</span>
+                    </div>
                     <div className="bg-white p-3 rounded-xl shadow-md mb-4">
                       <img src={qrCodeUrl} alt="UPI QR Code" className="w-40 h-40 object-contain" />
                     </div>

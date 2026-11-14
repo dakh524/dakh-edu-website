@@ -383,7 +383,7 @@ const Services = () => {
             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] max-w-[800px] max-h-[800px] bg-gradient-to-tr from-purple-600/40 to-amber-500/20 rounded-full blur-[120px] pointer-events-none opacity-60"
           />
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 via-transparent to-pink-500/10 pointer-events-none"></div>
           
           <div className="relative z-10 max-w-6xl mx-auto px-6 flex flex-col items-center">
              <motion.div 

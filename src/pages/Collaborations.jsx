@@ -15,6 +15,20 @@ const DEFAULT_PARTNERS = [
   { id: 'default-4', name: "Skill Carve", description: "Shaping future-ready professionals through structured skill development programs and industry mentorship.", logo_url: "/partners/skillcarve.png", category: "EdTech" }
 ];
 
+const getPartnerFallbackLogo = (name = '') => {
+  const n = name.toLowerCase();
+  if (n.includes('code sapiens') || n.includes('sapiens')) return '/partners/codesapiens.png';
+  if (n.includes('peopleschool')) return '/partners/peopleschool.png';
+  if (n.includes('next step') || n.includes('nextstep')) return '/partners/nextstep.png';
+  if (n.includes('eagles eye') || n.includes('eagle')) return '/partners/eagleseye.png';
+  if (n.includes('neri tech') || n.includes('neri')) return '/partners/neritech.png';
+  if (n.includes('km')) return '/partners/kmunitech.png';
+  if (n.includes('otrumai')) return '/partners/otrumai.png';
+  if (n.includes('pk placement')) return '/partners/pkplacement.png';
+  if (n.includes('skill carve')) return '/partners/skillcarve.png';
+  return null;
+};
+
 const Collaborations = () => {
   const containerRef = useRef(null);
   const [partners, setPartners] = useState(DEFAULT_PARTNERS);
@@ -229,11 +243,18 @@ const Collaborations = () => {
                       className={`group relative bg-gradient-to-br ${styles.color} border-2 border-gray-100 ${styles.border} rounded-3xl p-7 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl flex flex-col gap-4 overflow-hidden`}
                     >
                       <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none rounded-3xl"></div>
-                      <div className="relative w-full h-24 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden group-hover:shadow-md transition-shadow">
+                      <div className="relative w-full h-24 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden group-hover:shadow-md transition-shadow p-2">
                         <img
-                          src={p.logo_url}
+                          src={p.logo_url || getPartnerFallbackLogo(p.name)}
                           alt={`${p.name} logo`}
-                          className="max-h-16 max-w-[80%] object-contain"
+                          onError={(e) => {
+                            const fallback = getPartnerFallbackLogo(p.name);
+                            if (fallback && e.currentTarget.src !== fallback) {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = fallback;
+                            }
+                          }}
+                          className="max-h-16 max-w-[85%] object-contain"
                         />
                       </div>
                       <div className="relative">

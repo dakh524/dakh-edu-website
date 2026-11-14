@@ -186,9 +186,16 @@ const ScrollTimeline = () => {
   );
 };
 
+const getProductFallbackImage = (title = '') => {
+  const t = title.toUpperCase();
+  if (t.includes('TEDDI') || t.includes('KIDZ') || t.includes('SCHOOL')) return '/products/teddikidz.png';
+  if (t.includes('CV') || t.includes('SHELL') || t.includes('RESUME')) return '/products/cvshell.png';
+  if (t.includes('ZOVIO') || t.includes('MONEY') || t.includes('EXPENSE')) return '/products/zovio.png';
+  return '/products/cvshell.png';
+};
+
 const About = () => {
   const [showBlogModal, setShowBlogModal] = useState(false);
-  const [events, setEvents] = useState([]);
   const [products, setProducts] = useState([]);
   const [blogs, setBlogs] = useState([]);
   const [blogForm, setBlogForm] = useState({ author_name: '', title: '', content: '' });
@@ -196,10 +203,6 @@ const About = () => {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      const { data } = await supabase.from('events').select('*').order('created_at', { ascending: false });
-      if (data) setEvents(data);
-    };
     const fetchBlogs = async () => {
       const { data } = await supabase.from('blogs').select('*').order('created_at', { ascending: false });
       if (data) setBlogs(data);
@@ -208,7 +211,6 @@ const About = () => {
       const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (data) setProducts(data);
     };
-    fetchEvents();
     fetchBlogs();
     fetchProducts();
   }, []);
@@ -388,75 +390,16 @@ const About = () => {
           </div>
         </section>
 
-        {/* TEAM / FOUNDERS SECTION */}
-        <section className="py-32 px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-20">
-            <ScrollReveal>
-              <div className="inline-block mb-4 px-4 py-2 rounded-full bg-blue-50 text-blue-600 font-black text-sm tracking-widest uppercase border border-blue-100">
-                THE TEAM
-              </div>
-              <h2 className="font-black text-5xl md:text-6xl text-gray-900 mb-6">Meet the <span className="text-gradient">Founders</span></h2>
-            </ScrollReveal>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            <TeamCard 
-              name="Dhivakar Balakrishnan" 
-              role="CEO & Founder" 
-              image="/team/dhivakar.png" 
-              linkedin="https://www.linkedin.com/in/dhivakar-balakrishnan-378450284/"
-              description="Driving the vision and strategy at DAKH, committed to bridging the gap between academia and industry."
-              delay={0.1} 
-            />
-            <TeamCard 
-              name="Joshva D" 
-              role="Managing Director" 
-              image="/team/joshva.png" 
-              linkedin="https://www.linkedin.com/in/joshva-d-b491662b9/"
-              description="Overseeing core operations and ensuring our educational initiatives deliver maximum impact."
-              delay={0.2} 
-            />
-            <TeamCard 
-              name="Narmadha S D" 
-              role="Business Development Officer" 
-              image="/team/narmadha.png" 
-              linkedin="https://www.linkedin.com/in/narmadha-s-d-6716753aa/"
-              description="Spearheading strategic partnerships and growth, connecting our student builders with real-world opportunities."
-              delay={0.3} 
-            />
-            <TeamCard 
-              name="Aswin S" 
-              role="Operations & Marketing Executive" 
-              image="/team/ashwin.jpg" 
-              linkedin="https://www.linkedin.com/in/aswin-s-445545328/?skipRedirect=true"
-              description="Orchestrating our marketing campaigns and streamlining day-to-day operations to scale our reach."
-              delay={0.4} 
-            />
-            <TeamCard 
-              name="Pardhavika Gopisetty" 
-              role="HR Manager" 
-              image="/team/pardhavika.jpeg" 
-              linkedin="https://www.linkedin.com/in/pardhavika-gopisetty-7b9842295/"
-              description="Fostering a culture of fearless building and managing our incredible community of talented students."
-              delay={0.5} 
-            />
-            <TeamCard 
-              name="Seetha Eswari S" 
-              role="Operations Team" 
-              image="/team/seetha.jpeg" 
-              linkedin="https://www.linkedin.com/in/seetha-eswari-s-846a1037a/"
-              description="Ensuring smooth operational workflows and supporting our mission to empower student builders."
-              delay={0.6} 
-            />
-          </div>
-        </section>
 
         {/* EVENTS GALLERY SECTION */}
         <section className="py-20 px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <ScrollReveal>
+              <div className="inline-block mb-3 px-4 py-1.5 rounded-full bg-purple-100 text-purple-700 font-black text-xs uppercase tracking-widest border border-purple-200">
+                ✨ CAMPUS &amp; COMMUNITY
+              </div>
               <h2 className="font-black text-5xl md:text-6xl text-gray-900 mb-4">Our <span className="text-gradient">Events</span></h2>
-              <p className="text-xl text-[var(--color-brand-text-secondary)] font-medium">Moments from our hackathons, meetups, and workshops.</p>
+              <p className="text-xl text-[var(--color-brand-text-secondary)] font-medium">Moments from our hackathons, meetups, workshops, and student tech showcases.</p>
             </ScrollReveal>
           </div>
           {events.length === 0 ? (
@@ -466,22 +409,26 @@ const About = () => {
           ) : (
             <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
               {events.map((event, i) => (
-                <ScrollReveal key={event.id} delay={i * 0.1}>
-                  <div className="break-inside-avoid bg-white/40 backdrop-blur-3xl border border-white/60 p-3 rounded-[2rem] shadow-[0_8px_32px_rgba(31,38,135,0.05)] hover:shadow-[0_20px_40px_rgba(147,51,234,0.15)] transition-all duration-500 group relative">
-                    <div className="rounded-[1.5rem] overflow-hidden relative bg-gray-50/50 shadow-inner">
+                <ScrollReveal key={event.id || i} delay={i * 0.08}>
+                  <div className="break-inside-avoid bg-white/60 backdrop-blur-3xl border border-white/80 p-3 rounded-[2rem] shadow-[0_8px_32px_rgba(31,38,135,0.06)] hover:shadow-[0_20px_40px_rgba(147,51,234,0.18)] transition-all duration-500 group relative hover:-translate-y-1">
+                    <div className="rounded-[1.5rem] overflow-hidden relative bg-gray-100 shadow-inner">
                       <img 
-                        src={event.image_url} 
-                        alt={event.title || 'Event'} 
-                        className="w-full h-auto object-cover transform group-hover:scale-[1.03] transition-transform duration-700" 
+                        src={event.image_url || `/events/event-${(i % 9) + 1}.jpg`} 
+                        alt={event.title || 'DAKH Event'} 
                         onError={(e) => {
-                          e.target.style.opacity = '0';
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = `/events/event-${(i % 9) + 1}.jpg`;
                         }}
+                        className="w-full h-auto object-cover transform group-hover:scale-[1.03] transition-transform duration-700" 
                       />
-                      {event.title && (
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-gray-900/95 via-gray-900/60 to-transparent pt-16 pb-6 px-6 translate-y-2 group-hover:translate-y-0 opacity-90 group-hover:opacity-100 transition-all duration-500">
-                          <h3 className="text-white font-extrabold text-xl leading-snug tracking-tight">{event.title}</h3>
-                        </div>
-                      )}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-gray-950/95 via-gray-950/60 to-transparent pt-16 pb-5 px-5 translate-y-1 group-hover:translate-y-0 opacity-95 group-hover:opacity-100 transition-all duration-300">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-purple-300 bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded-full inline-block mb-1.5 backdrop-blur-sm">
+                          DAKH Event
+                        </span>
+                        <h3 className="text-white font-extrabold text-lg leading-snug tracking-tight">
+                          {event.title || `Tech Event ${i + 1}`}
+                        </h3>
+                      </div>
                     </div>
                   </div>
                 </ScrollReveal>
@@ -508,14 +455,15 @@ const About = () => {
               {products.map((product, i) => (
                 <ScrollReveal key={product.id} delay={i * 0.1}>
                   <div className="bg-white rounded-[2rem] overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col group border border-gray-100 h-full">
-                    <div className="relative aspect-video w-full bg-gradient-to-br from-purple-100 to-indigo-100 overflow-hidden">
+                    <div className="relative aspect-video w-full bg-slate-900 overflow-hidden">
                       <img 
-                        src={product.image_url} 
+                        src={product.image_url || getProductFallbackImage(product.title)} 
                         alt={product.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         onError={(e) => {
-                          e.target.style.opacity = '0';
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = getProductFallbackImage(product.title);
                         }}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                       />
                     </div>
                     <div className="p-8 bg-white flex flex-col flex-grow text-center">

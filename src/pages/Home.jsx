@@ -14,25 +14,25 @@ const COLLEGES = [
   { name: "Sri Sairam Engg College", region: "Chennai, TN", logo: "https://sairam.edu.in/wp-content/uploads/2023/10/sairam-sec-logo.png" },
   { name: "Panimalar Engg College", region: "Chennai, TN", logo: "https://panimalar.ac.in/assets/images/pec-logo.png" },
   { name: "Chennai Inst of Tech", region: "Chennai, TN", logo: "https://www.citchennai.edu.in/images/dynamic/logos/01.svg" },
-  { name: "Rajalakshmi Engg College", region: "Chennai, TN", logo: "https://logo.clearbit.com/rajalakshmi.org" },
+  { name: "Rajalakshmi Engg College", region: "Chennai, TN", logo: "https://www.google.com/s2/favicons?domain=rajalakshmi.org&sz=128" },
   { name: "Easwari Engg College", region: "Chennai, TN", logo: "https://srmeaswari.ac.in/wp-content/uploads/2022/12/cropped-headerlogo_blafavck-1.png" },
   { name: "Hindustan University", region: "Chennai, TN", logo: "https://hindustanuniv.ac.in/assets/image/new-logo.svg" },
-  { name: "VIT Vellore", region: "Tamil Nadu", logo: "https://logo.clearbit.com/vit.ac.in" },
-  { name: "SRM University", region: "Tamil Nadu", logo: "https://logo.clearbit.com/srmist.edu.in" },
-  { name: "Anna University", region: "Tamil Nadu", logo: "https://logo.clearbit.com/annauniv.edu" },
+  { name: "VIT Vellore", region: "Tamil Nadu", logo: "https://www.google.com/s2/favicons?domain=vit.ac.in&sz=128" },
+  { name: "SRM University", region: "Tamil Nadu", logo: "https://www.google.com/s2/favicons?domain=srmist.edu.in&sz=128" },
+  { name: "Anna University", region: "Tamil Nadu", logo: "https://www.google.com/s2/favicons?domain=annauniv.edu&sz=128" },
   
   // Puducherry
-  { name: "Pondicherry Univ", region: "Puducherry", logo: "https://logo.clearbit.com/pondiuni.edu.in" },
+  { name: "Pondicherry Univ", region: "Puducherry", logo: "https://www.google.com/s2/favicons?domain=pondiuni.edu.in&sz=128" },
   
   // Kerala
-  { name: "NIT Calicut", region: "Kerala", logo: "https://logo.clearbit.com/nitc.ac.in" },
+  { name: "NIT Calicut", region: "Kerala", logo: "https://www.google.com/s2/favicons?domain=nitc.ac.in&sz=128" },
   
   // Karnataka
-  { name: "IISc Bangalore", region: "Karnataka", logo: "https://logo.clearbit.com/iisc.ac.in" },
+  { name: "IISc Bangalore", region: "Karnataka", logo: "https://www.google.com/s2/favicons?domain=iisc.ac.in&sz=128" },
   
   // North India
-  { name: "IIT Delhi", region: "North India", logo: "https://logo.clearbit.com/iitd.ac.in" },
-  { name: "BITS Pilani", region: "North India", logo: "https://logo.clearbit.com/bits-pilani.ac.in" }
+  { name: "IIT Delhi", region: "North India", logo: "https://www.google.com/s2/favicons?domain=iitd.ac.in&sz=128" },
+  { name: "BITS Pilani", region: "North India", logo: "https://www.google.com/s2/favicons?domain=bits-pilani.ac.in&sz=128" }
 ];
 
 const SPARKLES = [
@@ -71,7 +71,10 @@ const CollegeLogo = ({ college }) => {
 
 const Home = () => {
   const [wordIndex, setWordIndex] = useState(0);
-  const [advertisement, setAdvertisement] = useState(null);
+  const [advertisement, setAdvertisement] = useState({
+    image_url: '/internship-offer.png',
+    link_url: '/apply-internship'
+  });
 
   useEffect(() => {
     const fetchAdvertisement = async () => {
@@ -456,25 +459,37 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ADVERTISEMENT SECTION */}
+      {/* ADVERTISEMENT / SPECIAL OFFER SECTION */}
       {advertisement && (
         <section className="py-16 px-6 lg:px-8 max-w-5xl mx-auto border-t border-gray-100">
           <div className="text-center mb-8">
             <ScrollReveal>
-              <h2 className="text-sm font-black tracking-widest text-gray-400 uppercase">Sponsored</h2>
+              <span className="inline-block px-4 py-1.5 rounded-full bg-purple-50 text-purple-700 font-black text-xs uppercase tracking-widest border border-purple-200 mb-2">
+                🔥 SPECIAL OFFER ANNOUNCEMENT
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">Internship Offer Is Live</h2>
             </ScrollReveal>
           </div>
           <ScrollReveal>
-            {advertisement.link_url ? (
-              <a href={advertisement.link_url} target="_blank" rel="noreferrer" className="block w-full aspect-video rounded-[2rem] overflow-hidden shadow-2xl hover:shadow-[0_20px_50px_rgba(147,51,234,0.15)] transition-shadow duration-300 group relative">
-                <img src={advertisement.image_url} alt="Advertisement" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700" />
-                <div className="absolute inset-0 border-2 border-transparent group-hover:border-purple-500/30 rounded-[2rem] transition-colors duration-300 pointer-events-none"></div>
-              </a>
-            ) : (
-              <div className="block w-full aspect-video rounded-[2rem] overflow-hidden shadow-xl">
-                <img src={advertisement.image_url} alt="Advertisement" className="w-full h-full object-cover" />
+            <a 
+              href={advertisement.link_url || '/apply-internship'} 
+              className="block w-full aspect-video rounded-[2rem] overflow-hidden shadow-2xl hover:shadow-[0_20px_50px_rgba(147,51,234,0.25)] transition-all duration-300 group relative border-2 border-purple-100 hover:border-purple-500/50 hover:scale-[1.01]"
+            >
+              <img 
+                src={advertisement.image_url || '/internship-offer.png'} 
+                alt="Internship Special Offer ₹399" 
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/internship-offer.png';
+                }}
+                className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-end p-8">
+                <span className="bg-purple-600 text-white font-black px-6 py-3 rounded-full text-sm shadow-xl flex items-center gap-2">
+                  Claim ₹399 Offer &amp; Apply Now →
+                </span>
               </div>
-            )}
+            </a>
           </ScrollReveal>
         </section>
       )}
