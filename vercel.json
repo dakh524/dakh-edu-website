@@ -1,7 +1,17 @@
 {
+  "crons": [
+    {
+      "path": "/api/process-email-outbox",
+      "schedule": "* * * * *"
+    }
+  ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

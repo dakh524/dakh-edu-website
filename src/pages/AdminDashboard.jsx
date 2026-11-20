@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink, GraduationCap } from 'lucide-react';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import AdminLMSManager from '../components/AdminLMSManager';
@@ -659,6 +659,67 @@ const AdminDashboard = () => {
       setFreelancers(freelancers.map((f) => f.id === id ? { ...f, status: newStatus } : f));
     } else {
       alert("Failed to update status: " + error.message);
+    }
+  };
+
+  const [approvingId, setApprovingId] = useState(null);
+
+  const handleApproveRegistration = async (student) => {
+    let internNum = student.intern_number;
+    if (!internNum) {
+      internNum = window.prompt(`Assign Intern ID for ${student.full_name}:`, "DES/INT/2026/001");
+      if (!internNum) return; // User cancelled
+    }
+
+    // Prompt to confirm or adjust confirmed dates for custom requests if needed
+    let confirmedDuration = student.internship_duration || '30 Days';
+    let confirmedStart = student.start_date || '';
+    let confirmedEnd = student.end_date || '';
+
+    if (student.is_custom_schedule) {
+      const confirmSchedule = window.confirm(`Student requested custom schedule: ${confirmedDuration} (${confirmedStart} to ${confirmedEnd}).\n\nClick OK to approve this schedule for the official offer letter.`);
+      if (!confirmSchedule) return;
+    }
+
+    if (!window.confirm(`Approve registration for ${student.full_name} and queue official Offer Letter email?`)) {
+      return;
+    }
+
+    setApprovingId(student.id);
+
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession?.access_token) {
+        alert("Authentication error: Please log in again.");
+        return;
+      }
+
+      const res = await fetch('/api/approve-registration', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession.access_token}`
+        },
+        body: JSON.stringify({
+          registrationId: student.id,
+          manualInternNumber: internNum,
+          confirmedDuration,
+          confirmedStartDate: confirmedStart,
+          confirmedEndDate: confirmedEnd
+        })
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || 'Failed to approve registration');
+      }
+
+      alert("Registration approved! Offer letter email and portal credentials queued.");
+      fetchRegistrations();
+    } catch (err) {
+      alert("Error approving registration: " + err.message);
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -1451,8 +1512,10 @@ const AdminDashboard = () => {
                       <th className="p-4 font-black">Student Name</th>
                       <th className="p-4 font-black">College</th>
                       <th className="p-4 font-black">Plan & Domain</th>
+                      <th className="p-4 font-black">Requested Schedule</th>
                       <th className="p-4 font-black">Contact</th>
                       <th className="p-4 font-black">UTR</th>
+                      <th className="p-4 font-black">Payment Status</th>
                       <th className="p-4 font-black text-right">Actions</th>
                     </tr>
                   </thead>
@@ -1472,12 +1535,43 @@ const AdminDashboard = () => {
                             <div className="text-xs text-gray-500 font-medium">{reg.domain}</div>
                           </td>
                           <td className="p-4">
+                            <div className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-purple-600" />
+                              {reg.internship_duration || '30 Days'}
+                            </div>
+                            <div className="text-[11px] text-gray-500 mt-0.5">
+                              {reg.start_date && reg.end_date ? `${reg.start_date} – ${reg.end_date}` : 'Batch Schedule'}
+                            </div>
+                            {reg.is_custom_schedule && (
+                              <span className="inline-block mt-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                                Custom Request
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-4">
                             <div className="text-sm text-gray-900">{reg.phone}</div>
                             <div className="text-xs text-gray-500">{reg.email}</div>
                           </td>
                           <td className="p-4 text-sm font-mono text-gray-600 bg-gray-50 rounded px-2">{reg.utr_number}</td>
+                          <td className="p-4">
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                              reg.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {reg.status || 'Pending'}
+                            </span>
+                          </td>
                           <td className="p-4 text-right">
                             <div className="flex justify-end gap-2">
+                              {reg.status !== 'Approved' && (
+                                <button 
+                                  onClick={() => handleApproveRegistration(reg)}
+                                  disabled={approvingId === reg.id}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-md transition-colors disabled:opacity-50 shadow-sm"
+                                  title="Verify Payment & Queue Offer Letter"
+                                >
+                                  {approvingId === reg.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />} Approve
+                                </button>
+                              )}
                               <button 
                                 onClick={() => generatePDF(reg, 'offer')}
                                 disabled={generatingPdf}

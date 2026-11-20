@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, ArrowRight, Loader2, UserCircle, GraduationCap, Sparkles } from 'lucide-react';
@@ -10,7 +10,49 @@ const StudentLogin = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isResetMode, setIsResetMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const navigate = useNavigate();
+
+  // Listen for Supabase Magic-link or Password Recovery session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        // User logged in via magic link or action token
+        supabase.from('students')
+          .select('status, end_date')
+          .eq('auth_id', session.user.id)
+          .single()
+          .then(({ data: studentData, error: studentError }) => {
+            if (!studentError && studentData && studentData.status !== 'Suspended') {
+              localStorage.setItem('student_session', JSON.stringify({ ...studentData, auth_id: session.user.id }));
+              navigate('/student/dashboard');
+            }
+          });
+      }
+    });
+  }, [navigate]);
+
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      setError("Please enter your registered email address.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/student/login`
+      });
+      if (resetErr) throw resetErr;
+      setResetSent(true);
+    } catch (err) {
+      setError(err.message || "Failed to send password reset link.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
