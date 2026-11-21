@@ -8,7 +8,7 @@ import { generateOfferLetterPdf } from './_lib/pdfGenerator.js';
  */
 export default async function handler(req, res) {
   const cronSecret = process.env.CRON_SECRET;
-  const internalKey = process.env.INTERNAL_WORKER_KEY || cronSecret;
+  const internalKey = process.env.INTERNAL_WORKER_KEY || cronSecret || process.env.SUPABASE_SECRET_KEY;
   const isVercelCron = req.headers['x-vercel-cron'] === '1';
   
   const authHeader = req.headers['authorization'];
@@ -17,8 +17,8 @@ export default async function handler(req, res) {
 
   const isAuthorized = 
     isVercelCron || 
-    (cronSecret && token === cronSecret) || 
-    (internalKey && headerKey === internalKey);
+    (token && token === internalKey) || 
+    (headerKey && headerKey === internalKey);
 
   if (!isAuthorized) {
     return res.status(403).json({ error: 'Forbidden: Unauthorized worker invocation' });

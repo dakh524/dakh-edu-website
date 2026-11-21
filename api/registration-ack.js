@@ -167,8 +167,7 @@ export default async function handler(req, res) {
     console.log(`[registration-ack] Queued REGISTRATION_ACK for registration ${registrationId}`);
 
     // ── 7. Non-blocking trigger: wake outbox worker immediately ──────────────
-    const cronSecret  = process.env.CRON_SECRET;
-    const internalKey = process.env.INTERNAL_WORKER_KEY || cronSecret;
+    const internalKey = process.env.INTERNAL_WORKER_KEY || process.env.CRON_SECRET || process.env.SUPABASE_SECRET_KEY;
     const origin = req.headers['x-forwarded-host']
       ? `https://${req.headers['x-forwarded-host']}`
       : (process.env.VITE_APP_URL || 'https://dakhedusolutions.in');
