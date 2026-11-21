@@ -31,6 +31,8 @@ const AdminDashboard = () => {
   // Search & Filter State for Registrations Hub
   const [regSearchTerm, setRegSearchTerm] = useState('');
   const [regFilterStatus, setRegFilterStatus] = useState('all'); // 'all', 'approved', 'pending'
+  const [regFilterBatchDate, setRegFilterBatchDate] = useState('all'); // 'all' or specific start_date YYYY-MM-DD
+  const [regFilterDomain, setRegFilterDomain] = useState('all');
   
   // Mail Outbox Logs & Resend State
   const [outboxLogs, setOutboxLogs] = useState([]);
@@ -1634,23 +1636,56 @@ const AdminDashboard = () => {
               {/* Sub-Tab 1: All Registrations Table */}
               {regSubTab === 'registrations' && (
                 <>
-                  {/* Search and Status Filters */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
-                    <div className="relative w-full sm:w-80">
+                  {/* Search, Batch Split & Status Filters */}
+                  <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-4">
+                    <div className="relative w-full lg:w-72">
                       <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input 
                         type="text"
-                        placeholder="Search student, college, UTR or email..."
+                        placeholder="Search student, college, UTR..."
                         value={regSearchTerm}
                         onChange={(e) => setRegSearchTerm(e.target.value)}
                         className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all text-slate-900 placeholder:text-slate-400"
                       />
                     </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Batch Start Date Filter */}
+                      <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                        <Calendar className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                        <span className="text-[11px] font-bold text-slate-500 uppercase">Batch Date:</span>
+                        <select
+                          value={regFilterBatchDate}
+                          onChange={(e) => setRegFilterBatchDate(e.target.value)}
+                          className="text-xs font-bold bg-transparent text-slate-800 focus:outline-none cursor-pointer"
+                        >
+                          <option value="all">All Dates ({registrations.length})</option>
+                          <option value="unset">Schedule Pending ({registrations.filter(r => !r.start_date).length})</option>
+                          {Array.from(new Set(registrations.map(r => r.start_date).filter(Boolean))).sort().map(d => (
+                            <option key={d} value={d}>
+                              Batch: {d} ({registrations.filter(r => r.start_date === d).length} interns)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Domain Filter */}
+                      <select
+                        value={regFilterDomain}
+                        onChange={(e) => setRegFilterDomain(e.target.value)}
+                        className="px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
+                      >
+                        <option value="all">All Domains</option>
+                        {Array.from(new Set(registrations.map(r => r.domain).filter(Boolean))).sort().map(dm => (
+                          <option key={dm} value={dm}>{dm}</option>
+                        ))}
+                      </select>
+
+                      {/* Approval Status Filter */}
                       <select
                         value={regFilterStatus}
                         onChange={(e) => setRegFilterStatus(e.target.value)}
-                        className="px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                        className="px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
                       >
                         <option value="all">All Statuses ({registrations.length})</option>
                         <option value="approved">Approved Only ({registrations.filter(r => r.status === 'Approved').length})</option>
@@ -1681,6 +1716,9 @@ const AdminDashboard = () => {
                           .filter(reg => {
                             if (regFilterStatus === 'approved' && reg.status !== 'Approved') return false;
                             if (regFilterStatus === 'pending' && reg.status === 'Approved') return false;
+                            if (regFilterDomain !== 'all' && reg.domain !== regFilterDomain) return false;
+                            if (regFilterBatchDate === 'unset' && reg.start_date) return false;
+                            if (regFilterBatchDate !== 'all' && regFilterBatchDate !== 'unset' && reg.start_date !== regFilterBatchDate) return false;
                             if (regSearchTerm.trim()) {
                               const q = regSearchTerm.toLowerCase();
                               const nameMatch = (reg.full_name || '').toLowerCase().includes(q);
@@ -1703,6 +1741,9 @@ const AdminDashboard = () => {
                             .filter(reg => {
                               if (regFilterStatus === 'approved' && reg.status !== 'Approved') return false;
                               if (regFilterStatus === 'pending' && reg.status === 'Approved') return false;
+                              if (regFilterDomain !== 'all' && reg.domain !== regFilterDomain) return false;
+                              if (regFilterBatchDate === 'unset' && reg.start_date) return false;
+                              if (regFilterBatchDate !== 'all' && regFilterBatchDate !== 'unset' && reg.start_date !== regFilterBatchDate) return false;
                               if (regSearchTerm.trim()) {
                                 const q = regSearchTerm.toLowerCase();
                                 const nameMatch = (reg.full_name || '').toLowerCase().includes(q);
