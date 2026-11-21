@@ -728,13 +728,16 @@ const AdminDashboard = () => {
     setResendingRegId(reg.id);
     try {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
-      const res = await fetch('/api/send-project-reminder', {
+      const res = await fetch('/api/resend-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${currentSession?.access_token || ''}`
         },
-        body: JSON.stringify({ registrationId: reg.id })
+        body: JSON.stringify({
+          registrationId: reg.id,
+          eventType: 'PROJECT_REMINDER'
+        })
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || 'Failed to send reminder');
@@ -755,7 +758,7 @@ const AdminDashboard = () => {
     setResendingRegId(reg.id);
     try {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
-      const res = await fetch('/api/send-certificate-email', {
+      const res = await fetch('/api/resend-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -763,6 +766,7 @@ const AdminDashboard = () => {
         },
         body: JSON.stringify({
           registrationId: reg.id,
+          eventType: 'CERTIFICATE_DISPATCH',
           fullName: reg.full_name,
           email: reg.email,
           domain: reg.domain,

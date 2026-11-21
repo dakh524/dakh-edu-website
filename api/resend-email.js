@@ -6,9 +6,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
+  // 1. Authorize Admin
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, error: 'Unauthorized' });
+    return res.status(401).json({ success: false, error: 'Unauthorized: missing authorization header' });
   }
 
   const token = authHeader.split(' ')[1];
@@ -17,63 +18,48 @@ export default async function handler(req, res) {
     const allowedAdmins = [process.env.VITE_ADMIN_EMAIL, 'ceo@dakhedusolutions.in'];
 
     if (authErr || !user || !allowedAdmins.includes(user.email)) {
-      return res.status(403).json({ success: false, error: 'Forbidden' });
+      return res.status(403).json({ success: false, error: 'Forbidden: admin access required' });
     }
 
-    const { registrationId, logId, eventType, email, fullName } = req.body || {};
+    const { registrationId, logId, email, fullName, eventType, certificateLink, pdfBase64 } = req.body;
 
     let targetReg = null;
-
-    // A. If registrationId provided, look up by ID
-    if (registrationId) {
-      const { data: regById } = await supabaseAdmin
-        .from('registrations')
-        .select('*')
-        .eq('id', registrationId)
-        .maybeSingle();
-      if (regById) targetReg = regById;
-    }
-
-    // B. If not found or if email provided, look up by email
-    if (!targetReg && email) {
-      const { data: regByEmail } = await supabaseAdmin
-        .from('registrations')
-        .select('*')
-        .eq('email', email.trim().toLowerCase())
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (regByEmail) targetReg = regByEmail;
-    }
-
-    // C. If still not found but we have logId, check outbox payload
     let outboxJob = null;
+
     if (logId) {
       const { data: job } = await supabaseAdmin
         .from('email_outbox')
         .select('*')
         .eq('id', logId)
         .maybeSingle();
-      if (job) {
-        outboxJob = job;
-        if (!targetReg && job.registration_id) {
-          const { data: r } = await supabaseAdmin
-            .from('registrations')
-            .select('*')
-            .eq('id', job.registration_id)
-            .maybeSingle();
-          if (r) targetReg = r;
-        }
-        if (!targetReg && job.payload?.email) {
-          const { data: r } = await supabaseAdmin
-            .from('registrations')
-            .select('*')
-            .eq('email', job.payload.email.trim().toLowerCase())
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          if (r) targetReg = r;
-        }
+      if (job) outboxJob = job;
+    }
+
+    if (registrationId) {
+      const { data: r } = await supabaseAdmin
+        .from('registrations')
+        .select('*')
+        .eq('id', registrationId)
+        .maybeSingle();
+      if (r) targetReg = r;
+    } else if (outboxJob) {
+      if (outboxJob.registration_id) {
+        const { data: r } = await supabaseAdmin
+          .from('registrations')
+          .select('*')
+          .eq('id', outboxJob.registration_id)
+          .maybeSingle();
+        if (r) targetReg = r;
+      }
+      if (!targetReg && outboxJob.payload?.email) {
+        const { data: r } = await supabaseAdmin
+          .from('registrations')
+          .select('*')
+          .eq('email', outboxJob.payload.email.trim().toLowerCase())
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (r) targetReg = r;
       }
     }
 
@@ -86,6 +72,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: 'Recipient email could not be resolved' });
     }
 
+    const duration = targetReg?.internship_duration || (targetReg?.start_date && targetReg?.end_date ? `${targetReg.start_date} to ${targetReg.end_date}` : '30 Days');
+
     const payload = {
       fullName: finalName,
       email: finalEmail,
@@ -93,7 +81,19 @@ export default async function handler(req, res) {
       planName: targetReg?.plan_name || outboxJob?.payload?.planName || 'Internship Program',
       planPrice: targetReg?.plan_price || outboxJob?.payload?.planPrice || 'Free',
       utrNumber: targetReg?.utr_number || outboxJob?.payload?.utrNumber || 'PENDING',
+      internNumber: targetReg?.intern_number || outboxJob?.payload?.internNumber || 'DES/INT/2026/001',
+      college: targetReg?.college || outboxJob?.payload?.college || '',
+      department: targetReg?.department || outboxJob?.payload?.department || '',
+      mode: targetReg?.mode || outboxJob?.payload?.mode || 'Online',
+      internshipDuration: duration,
+      startDate: targetReg?.start_date || outboxJob?.payload?.startDate || '',
+      endDate: targetReg?.end_date || outboxJob?.payload?.endDate || '',
+      dateOfApplication: targetReg?.created_at || outboxJob?.payload?.dateOfApplication || new Date().toISOString(),
+      certificateLink: certificateLink || outboxJob?.payload?.certificateLink || '',
+      pdfBase64: pdfBase64 || outboxJob?.payload?.pdfBase64 || null
     };
+
+    const targetEventType = eventType || 'REGISTRATION_ACK';
 
     // 3. Clear existing job if we have registrationId or logId
     if (finalRegId) {
@@ -101,7 +101,7 @@ export default async function handler(req, res) {
         .from('email_outbox')
         .delete()
         .eq('registration_id', finalRegId)
-        .eq('event_type', eventType || 'REGISTRATION_ACK');
+        .eq('event_type', targetEventType);
     } else if (logId) {
       await supabaseAdmin
         .from('email_outbox')
@@ -114,7 +114,7 @@ export default async function handler(req, res) {
       .from('email_outbox')
       .insert({
         registration_id: finalRegId || null,
-        event_type: eventType || 'REGISTRATION_ACK',
+        event_type: targetEventType,
         payload,
         status: 'pending'
       })
@@ -125,14 +125,13 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: insertErr.message });
     }
 
-    // 5. Immediately trigger in-process dispatch
-    await processOutboxJobsInternal(5);
-
-    return res.status(200).json({
-      success: true,
-      jobId: newJob?.id
-    });
-    await processOutboxJobsInternal(5);
+    // 5. Trigger outbox processor asynchronously
+    fetch(`${process.env.VITE_APP_URL || 'https://dakhedusolutions.in'}/api/process-email-outbox`, {
+      method: 'POST',
+      headers: {
+        'x-worker-key': process.env.INTERNAL_WORKER_KEY || process.env.CRON_SECRET || ''
+      }
+    }).catch(e => console.warn('Outbox trigger error:', e.message));
 
     return res.status(200).json({
       success: true,
