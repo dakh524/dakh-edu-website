@@ -29,6 +29,7 @@ const CHENNAI_COLLEGES = [
 ];
 
 const ACTIVE_INTERNSHIPS = [
+  "AWS Cloud Foundations",
   "Vibe Coding",
   "Web Development",
   "Generative AI",
@@ -36,6 +37,7 @@ const ACTIVE_INTERNSHIPS = [
 ];
 
 const RELATED_DOMAINS = [
+  "Cloud Computing",
   "AI & Machine Learning",
   "App Development",
   "UI/UX Design",

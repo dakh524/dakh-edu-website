@@ -5,7 +5,10 @@ import { LogOut, BookOpen, CheckCircle, FileText, Award, PlayCircle, Download, L
 import { motion, AnimatePresence } from 'framer-motion';
 import { GEN_AI_MODULES } from '../data/genAiModules';
 import { FULL_STACK_MODULES } from '../data/fullStackModules';
+import { AWS_CLOUD_MODULES, AWS_CLOUD_PROJECTS } from '../data/awsCloudModules';
 const DOMAIN_PROJECTS = {
+  'AWS Cloud Foundations': AWS_CLOUD_PROJECTS,
+  'Cloud Computing': AWS_CLOUD_PROJECTS,
   'Full Stack Development': [
     { id: 'fs_1', title: 'Photography Portfolio & Booking Website', description: 'Build a professional website for a photography business where clients can explore portfolios and book photography sessions.' },
     { id: 'fs_2', title: 'E-Commerce Website', description: 'Develop a full-stack online shopping platform for browsing and purchasing products.' },
@@ -369,6 +372,8 @@ const StudentDashboard = () => {
               setModules(VIBE_CODING_MODULES);
             } else if (currentDomain && currentDomain.toLowerCase().includes('gen')) {
               setModules(GEN_AI_MODULES);
+            } else if (currentDomain && (currentDomain.toLowerCase().includes('cloud') || currentDomain.toLowerCase().includes('aws'))) {
+              setModules(AWS_CLOUD_MODULES);
             } else if (currentDomain && (currentDomain.toLowerCase().includes('full stack') || currentDomain.toLowerCase().includes('web development'))) {
               setModules(FULL_STACK_MODULES);
             } else {

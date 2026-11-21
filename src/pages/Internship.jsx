@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import InternBot from '../components/InternBot';
 
 const DOMAINS = [
-  'Web Development', 'App Development', 'AI & Machine Learning', 'UI/UX Design',
+  'AWS Cloud Foundations', 'Web Development', 'App Development', 'AI & Machine Learning', 'UI/UX Design',
   'Python Full Stack', 'MERN Stack', 'Cyber Security', 'IoT',
   'Generative AI', 'Java Full Stack', 'Cloud Computing', 'Data Science'
 ];
@@ -92,7 +92,7 @@ const getDomainIcon = (domain) => {
   if (domain.includes('App')) return '📱';
   if (domain.includes('UI/UX')) return '🎨';
   if (domain.includes('Cyber')) return '🛡️';
-  if (domain.includes('Cloud')) return '☁️';
+  if (domain.includes('Cloud') || domain.includes('AWS')) return '☁️';
   if (domain.includes('IoT')) return '🔌';
   if (domain.includes('Java') || domain.includes('Python')) return '☕';
   return '⚡';

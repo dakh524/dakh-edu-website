@@ -5,7 +5,7 @@ import { BookOpen, Plus, Trash2, Loader2, Save } from 'lucide-react';
 const AdminLMSManager = () => {
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [domains, setDomains] = useState(['Web Development', 'UI/UX Design', 'App Development', 'Data Science']);
+  const [domains, setDomains] = useState(['AWS Cloud Foundations', 'Web Development', 'UI/UX Design', 'App Development', 'Data Science', 'Generative AI']);
   
   // Form state
   const [selectedDomain, setSelectedDomain] = useState('Web Development');
@@ -35,7 +35,7 @@ const AdminLMSManager = () => {
     if (!error && data) {
       setModules(data);
       const uniqueDomains = [...new Set(data.map(m => m.domain))];
-      const defaultDomains = ['Web Development', 'UI/UX Design', 'App Development', 'Data Science'];
+      const defaultDomains = ['AWS Cloud Foundations', 'Web Development', 'UI/UX Design', 'App Development', 'Data Science', 'Generative AI'];
       const mergedDomains = [...new Set([...defaultDomains, ...uniqueDomains])];
       setDomains(mergedDomains);
     }

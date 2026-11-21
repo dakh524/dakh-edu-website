@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { GEN_AI_MODULES } from '../data/genAiModules';
 import { FULL_STACK_MODULES } from '../data/fullStackModules';
+import { AWS_CLOUD_MODULES, AWS_CLOUD_PROJECTS } from '../data/awsCloudModules';
 
 // Fallback modules for Vibe Coding
 const VIBE_CODING_MODULES = [
@@ -69,6 +70,16 @@ const VIBE_CODING_MODULES = [
 ];
 
 const DOMAIN_PROJECTS = {
+  'AWS Cloud Foundations': [
+    { title: 'Static Website on AWS (S3 + CloudFront OAC)', desc: 'Build and deploy a responsive portfolio over HTTPS using private S3, CloudFront OAC, and cache invalidation.' },
+    { title: 'Event Landing Page with Global CDN', desc: 'Host a mobile-friendly club/event showcase site with dark mode toggle and sub-second latency on CloudFront.' },
+    { title: 'Production Cloud Static Architecture', desc: 'Implement production-grade AWS architecture with GitHub version control, private storage, and zero-downtime updates.' }
+  ],
+  'Cloud Computing': [
+    { title: 'Static Website on AWS (S3 + CloudFront OAC)', desc: 'Build and deploy a responsive portfolio over HTTPS using private S3, CloudFront OAC, and cache invalidation.' },
+    { title: 'Event Landing Page with Global CDN', desc: 'Host a mobile-friendly club/event showcase site with dark mode toggle and sub-second latency on CloudFront.' },
+    { title: 'Production Cloud Static Architecture', desc: 'Implement production-grade AWS architecture with GitHub version control, private storage, and zero-downtime updates.' }
+  ],
   'Full Stack Development': [
     { title: 'Photography Portfolio & Booking Platform', desc: 'Build a high-performance booking system where clients view portfolios and schedule photography sessions.' },
     { title: 'E-Commerce Marketplace', desc: 'Develop a full-stack shopping platform with cart, payment gateway integration, and order tracking.' },
@@ -329,7 +340,9 @@ export default function AnalyticsHub({
   const previewData = useMemo(() => {
     const domainKey = selectedDomain;
     let modules = [];
-    if (domainKey.includes('Gen') || domainKey.includes('AI')) {
+    if (domainKey.includes('Cloud') || domainKey.includes('AWS')) {
+      modules = AWS_CLOUD_MODULES;
+    } else if (domainKey.includes('Gen') || domainKey.includes('AI')) {
       modules = GEN_AI_MODULES;
     } else if (domainKey.includes('Full') || domainKey.includes('Web') || domainKey.includes('Python')) {
       modules = FULL_STACK_MODULES;
@@ -1438,6 +1451,7 @@ export default function AnalyticsHub({
 
           <div className="flex flex-wrap gap-2">
             {[
+              'AWS Cloud Foundations',
               'Generative AI',
               'Web Development',
               'Full Stack Development',

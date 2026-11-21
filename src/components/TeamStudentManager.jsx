@@ -32,6 +32,7 @@ const TeamStudentManager = () => {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   
   const domains = [
+    'AWS Cloud Foundations',
     'Vibe Coding',
     'Web Development',
     'Generative AI',
