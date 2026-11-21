@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink, GraduationCap, Search, Check, Send } from 'lucide-react';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink, GraduationCap, Search, Check, Send, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
@@ -13,6 +13,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('registrations');
   const [registrations, setRegistrations] = useState([]);
   const [regSubTab, setRegSubTab] = useState('registrations'); // 'registrations', 'certificates', or 'mailer'
+  const [viewingDetailReg, setViewingDetailReg] = useState(null); // Full details modal for intern
   const [editingScheduleReg, setEditingScheduleReg] = useState(null);
   const [customStartInput, setCustomStartInput] = useState('');
   const [customEndInput, setCustomEndInput] = useState('');
@@ -1780,8 +1781,15 @@ const AdminDashboard = () => {
                               </td>
 
                               {/* Student */}
-                              <td className="py-3.5 px-4">
-                                <div className="font-extrabold text-slate-900 text-sm">{reg.full_name}</div>
+                              <td 
+                                className="py-3.5 px-4 cursor-pointer group"
+                                onClick={() => setViewingDetailReg(reg)}
+                                title="Click to view full student profile & registration details"
+                              >
+                                <div className="font-extrabold text-slate-900 text-sm group-hover:text-purple-600 transition-colors flex items-center gap-1.5">
+                                  <span>{reg.full_name}</span>
+                                  <Eye className="w-3.5 h-3.5 text-slate-400 group-hover:text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
                                 {reg.intern_number ? (
                                   <div className="text-[10px] font-mono text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200/60 w-fit mt-0.5 font-bold">
                                     {reg.intern_number}
@@ -1946,6 +1954,193 @@ const AdminDashboard = () => {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Modal for viewing full Intern Profile & Registration Details */}
+                  {viewingDetailReg && (
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+                        {/* Header */}
+                        <div className="flex justify-between items-start border-b border-slate-100 pb-4 mb-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-md">
+                              {(viewingDetailReg.full_name || 'I').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                                {viewingDetailReg.full_name}
+                                <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold border ${
+                                  viewingDetailReg.status === 'Approved'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                                }`}>
+                                  {viewingDetailReg.status || 'Pending'}
+                                </span>
+                              </h3>
+                              <p className="text-xs font-mono text-purple-700 font-bold mt-0.5">
+                                {viewingDetailReg.intern_number ? `Intern ID: ${viewingDetailReg.intern_number}` : 'Intern ID: Not Assigned Yet'}
+                              </p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => setViewingDetailReg(null)} 
+                            className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Grid Details */}
+                        <div className="space-y-6">
+                          {/* Academic & Domain Info */}
+                          <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-purple-900 mb-3 flex items-center gap-1.5">
+                              <GraduationCap className="w-4 h-4 text-purple-600" /> Academic & Domain Information
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">College Name</span>
+                                <span className="text-slate-900 font-bold">{viewingDetailReg.college || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">Department & Year</span>
+                                <span className="text-slate-900 font-bold">
+                                  {viewingDetailReg.department || '—'} {viewingDetailReg.year_of_study ? `(${viewingDetailReg.year_of_study})` : ''}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">Internship Domain</span>
+                                <span className="text-purple-700 font-bold">{viewingDetailReg.domain || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">Internship Mode</span>
+                                <span className="text-slate-900 font-bold">{viewingDetailReg.mode || 'Online'}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Schedule & Batch */}
+                          <div className="bg-purple-50/40 p-4 rounded-2xl border border-purple-100/60">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-purple-900 mb-3 flex items-center gap-1.5">
+                              <Calendar className="w-4 h-4 text-purple-600" /> Schedule & Batch Details
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">Duration</span>
+                                <span className="text-slate-900 font-bold">{viewingDetailReg.internship_duration || '30 Days'}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">Start Date</span>
+                                <span className="text-slate-900 font-bold">{viewingDetailReg.start_date || 'Schedule Pending'}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">End Date</span>
+                                <span className="text-slate-900 font-bold">{viewingDetailReg.end_date || 'Schedule Pending'}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">Registered On</span>
+                                <span className="text-slate-900 font-bold">
+                                  {viewingDetailReg.created_at ? new Date(viewingDetailReg.created_at).toLocaleString('en-IN') : '—'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Contact & Payment Info */}
+                          <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-purple-900 mb-3 flex items-center gap-1.5">
+                              <ShoppingBag className="w-4 h-4 text-purple-600" /> Contact & Payment Verification
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">Student Email</span>
+                                <span className="text-slate-900 font-bold select-all">{viewingDetailReg.email || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">Phone Number</span>
+                                <span className="text-slate-900 font-bold select-all">{viewingDetailReg.phone || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">Selected Plan & Price</span>
+                                <span className="text-slate-900 font-bold">
+                                  {viewingDetailReg.plan_name || 'Standard'} (₹{viewingDetailReg.plan_price || '0'})
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">Payment UTR / Status</span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-800 font-bold">
+                                    {viewingDetailReg.utr_number || 'PENDING'}
+                                  </span>
+                                  {viewingDetailReg.payment_completed ? (
+                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                      ● Paid
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                      ○ Unpaid
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {viewingDetailReg.referral_code && (
+                                <div>
+                                  <span className="text-slate-400 block font-semibold mb-0.5">Referral Code</span>
+                                  <span className="text-purple-700 font-bold">{viewingDetailReg.referral_code}</span>
+                                </div>
+                              )}
+                              <div>
+                                <span className="text-slate-400 block font-semibold mb-0.5">Registration UUID</span>
+                                <span className="text-slate-500 font-mono text-[10px] select-all block truncate">
+                                  {viewingDetailReg.id}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Modal Action Buttons */}
+                        <div className="flex flex-wrap items-center justify-end gap-2.5 mt-6 pt-4 border-t border-slate-100">
+                          {viewingDetailReg.status !== 'Approved' && (
+                            <button
+                              onClick={() => {
+                                const target = viewingDetailReg;
+                                setViewingDetailReg(null);
+                                handleApproveRegistration(target);
+                              }}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Approve Registration
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              const target = viewingDetailReg;
+                              generatePDF(target, 'offer');
+                            }}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition-colors border border-indigo-200"
+                          >
+                            <FileText className="w-3.5 h-3.5" /> Download Offer Letter
+                          </button>
+                          <button
+                            onClick={() => {
+                              const target = viewingDetailReg;
+                              setViewingDetailReg(null);
+                              handleOpenScheduleEditor(target);
+                            }}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-xl transition-colors border border-purple-200"
+                          >
+                            <Edit className="w-3.5 h-3.5" /> Edit Dates
+                          </button>
+                          <button
+                            onClick={() => setViewingDetailReg(null)}
+                            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors"
+                          >
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Modal for editing Start/End Date */}
                   {editingScheduleReg && (
