@@ -1696,18 +1696,22 @@ const AdminDashboard = () => {
                   <Mail className="w-3.5 h-3.5 text-indigo-600" />
                   <span>Mail Manager & Logs</span>
                 </button>
+                <button
+                  onClick={() => setRegSubTab('analytics')}
+                  className={`py-2 px-4 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
+                    regSubTab === 'analytics'
+                      ? 'bg-white text-purple-700 shadow-sm border border-slate-200/60'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <BarChart2 className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Analytics</span>
+                </button>
               </div>
 
               {/* Sub-Tab 1: All Registrations Table */}
               {regSubTab === 'registrations' && (
                 <>
-                  {/* Interactive Domain Distribution Pie Chart & Analytics */}
-                  <DomainDistributionChart
-                    registrations={registrations}
-                    selectedDomain={regFilterDomain}
-                    onSelectDomain={(domain) => setRegFilterDomain(domain)}
-                  />
-
                   {/* Search, Batch Split & Status Filters */}
                   <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-4">
                     <div className="relative w-full lg:w-72">
@@ -2838,6 +2842,51 @@ const AdminDashboard = () => {
                       </div>
                     </form>
                   </div>
+                </div>
+              )}
+
+              {/* Sub-Tab 4: Domain Analytics & Charts */}
+              {regSubTab === 'analytics' && (
+                <div className="space-y-6">
+                  {/* Summary Metric Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                      <div className="text-slate-400 font-bold text-xs uppercase tracking-wider">Total Registrations</div>
+                      <div className="text-2xl font-black text-slate-900 mt-1">{registrations.length}</div>
+                      <div className="text-xs text-slate-500 mt-1 font-medium">All applications received</div>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                      <div className="text-slate-400 font-bold text-xs uppercase tracking-wider">Approved Interns</div>
+                      <div className="text-2xl font-black text-emerald-600 mt-1">
+                        {registrations.filter(r => r.status === 'Approved').length}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1 font-medium">Payment verified & offer issued</div>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                      <div className="text-slate-400 font-bold text-xs uppercase tracking-wider">Pending Review</div>
+                      <div className="text-2xl font-black text-amber-600 mt-1">
+                        {registrations.filter(r => r.status !== 'Approved').length}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1 font-medium">Awaiting verification</div>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                      <div className="text-slate-400 font-bold text-xs uppercase tracking-wider">Active Domains</div>
+                      <div className="text-2xl font-black text-purple-600 mt-1">
+                        {Array.from(new Set(registrations.map(r => (r.domain || '').trim()).filter(Boolean))).length}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1 font-medium">Distinct learning tracks</div>
+                    </div>
+                  </div>
+
+                  {/* Dedicated Interactive Domain Distribution Pie Chart */}
+                  <DomainDistributionChart
+                    registrations={registrations}
+                    selectedDomain={regFilterDomain}
+                    onSelectDomain={(domain) => {
+                      setRegFilterDomain(domain);
+                      setRegSubTab('registrations');
+                    }}
+                  />
                 </div>
               )}
             </motion.div>
