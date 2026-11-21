@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { flushSync } from 'react-dom';
-import AdminLMSManager from '../components/AdminLMSManager';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 
@@ -986,22 +985,11 @@ const AdminDashboard = () => {
             <BookOpen className="w-5 h-5" />
             Intern Projects
           </button>
-          <button 
-            onClick={() => setActiveTab('lms-manager')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'lms-manager' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <BookOpen className="w-5 h-5 text-indigo-500" />
-            LMS Manager
-          </button>
         </aside>
 
         {/* Content Area */}
         <main className="flex-grow bg-white rounded-3xl shadow-sm border border-gray-100 p-6 lg:p-8 overflow-hidden">
           
-          {activeTab === 'lms-manager' && (
-            <AdminLMSManager />
-          )}
-
           {activeTab === 'events' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
               <div className="mb-8">
