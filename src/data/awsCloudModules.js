@@ -457,3 +457,69 @@ Post-Evaluation Clean-up:
     ]
   }
 ];
+
+export const AWS_STARTER_FILES = {
+  html: `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Cloud Portfolio</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./script.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>My Cloud Portfolio</h1>
+    <section><h2>About Me</h2><p>I am learning cloud hosting.</p></section>
+    <section><h2>My Project</h2><p>I built this site for my AWS lab.</p></section>
+    <button id="theme" type="button" aria-pressed="false">Switch theme</button>
+  </main>
+</body>
+</html>`,
+  css: `body { margin: 0; font: 1rem/1.6 system-ui, sans-serif; }
+main { max-width: 42rem; margin: auto; padding: 1.5rem; }
+button { padding: .5rem 1rem; font: inherit; cursor: pointer; }
+.dark { background: #211831; color: #fff; }`,
+  js: `const button = document.querySelector("#theme");
+button.addEventListener("click", () => {
+  const dark = document.body.classList.toggle("dark");
+  button.setAttribute("aria-pressed", String(dark));
+});`
+};
+
+export const AWS_OFFICIAL_RESOURCES = [
+  {
+    title: 'SuperSimpleDev HTML/CSS Course Repo',
+    url: 'https://github.com/SuperSimpleDev/html-css-course',
+    category: 'GitHub',
+    desc: 'Practice repository showing how to organize HTML, CSS, and web assets.'
+  },
+  {
+    title: 'GitHub Skills: Introduction to GitHub',
+    url: 'https://github.com/skills/introduction-to-github',
+    category: 'GitHub',
+    desc: 'Interactive GitHub course for committing files, branching, and editing README.'
+  },
+  {
+    title: 'Private S3 + CloudFront OAC Project Repository',
+    url: 'https://github.com/JSK8887/aws-s3-cloudfront-oac',
+    category: 'GitHub',
+    desc: 'Reference repository for private S3 bucket policy and CloudFront OAC distribution.'
+  },
+  {
+    title: 'DAKH AWS Student Lab Guide (7-Page PDF)',
+    url: '/downloads/DAKH_AWS_Student_Lab_Guide.pdf',
+    category: 'Notes',
+    desc: 'Step-by-step labs, starter code, common errors, and evaluation checklist.',
+    download: true
+  },
+  {
+    title: 'DAKH AWS Portal Notes (Markdown)',
+    url: '/downloads/DAKH_AWS_Portal_Notes.md',
+    category: 'Notes',
+    desc: 'Complete editable curriculum notes for copying to local student editor.',
+    download: true
+  }
+];
+

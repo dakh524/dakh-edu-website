@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, BookOpen, CheckCircle, FileText, Award, PlayCircle, Download, Link as LinkIcon, CheckCircle2, ChevronRight, UserCircle, Lock, MonitorPlay, Code2, ArrowRight, HelpCircle, MessageSquare, TrendingUp, X } from 'lucide-react';
+import { LogOut, BookOpen, CheckCircle, FileText, Award, PlayCircle, Download, Link as LinkIcon, CheckCircle2, ChevronRight, UserCircle, Lock, MonitorPlay, Code2, ArrowRight, HelpCircle, MessageSquare, TrendingUp, X, Copy, Check, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GEN_AI_MODULES } from '../data/genAiModules';
 import { FULL_STACK_MODULES } from '../data/fullStackModules';
-import { AWS_CLOUD_MODULES, AWS_CLOUD_PROJECTS } from '../data/awsCloudModules';
+import { AWS_CLOUD_MODULES, AWS_CLOUD_PROJECTS, AWS_STARTER_FILES, AWS_OFFICIAL_RESOURCES } from '../data/awsCloudModules';
 const DOMAIN_PROJECTS = {
   'AWS Cloud Foundations': AWS_CLOUD_PROJECTS,
   'Cloud Computing': AWS_CLOUD_PROJECTS,
@@ -287,11 +287,20 @@ const StudentDashboard = () => {
   const [savingProject, setSavingProject] = useState(false);
   const [showBenefitsModal, setShowBenefitsModal] = useState(false);
   const [showResourcesModal, setShowResourcesModal] = useState(false);
+  const [showAwsResourcesModal, setShowAwsResourcesModal] = useState(false);
+  const [awsStarterTab, setAwsStarterTab] = useState('html');
+  const [awsCodeCopied, setAwsCodeCopied] = useState(false);
   const [showDesktopWarning, setShowDesktopWarning] = useState(false);
   
   const [projectLink, setProjectLink] = useState('');
   const [githubRepo, setGithubRepo] = useState('');
   const [feedback, setFeedback] = useState('');
+
+  const handleCopyAwsCode = (text) => {
+    navigator.clipboard.writeText(text);
+    setAwsCodeCopied(true);
+    setTimeout(() => setAwsCodeCopied(false), 2000);
+  };
 
   const navigate = useNavigate();
 
@@ -1000,6 +1009,42 @@ const StudentDashboard = () => {
               Quick Resources
             </h3>
             <div className="space-y-2">
+              {(student?.domain?.toLowerCase().includes('cloud') || student?.domain?.toLowerCase().includes('aws')) && (
+                <>
+                  <a 
+                    href="/downloads/DAKH_AWS_Student_Lab_Guide.pdf" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    download="DAKH_AWS_Student_Lab_Guide.pdf"
+                    className="w-full text-left flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 border border-slate-200/80 transition-all group"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center text-red-600 group-hover:bg-red-100 group-hover:scale-105 transition-all shadow-sm">
+                      <Download className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-bold text-[#111827] truncate">Download Lab Guide</p>
+                      <p className="text-[11px] text-slate-500">Official 7-Page PDF Notes</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                  </a>
+
+                  <button 
+                    type="button"
+                    onClick={() => setShowAwsResourcesModal(true)} 
+                    className="w-full text-left flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 border border-slate-200/80 transition-all group cursor-pointer"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-100 group-hover:scale-105 transition-all shadow-sm">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-bold text-[#111827] truncate">AWS Notes & Repos</p>
+                      <p className="text-[11px] text-slate-500">Starter Code & GitHub Links</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                  </button>
+                </>
+              )}
+
               {student?.domain === 'Vibe Coding' && (
                 <button onClick={() => setShowResourcesModal(true)} className="w-full text-left flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group">
                   <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-100 group-hover:scale-105 transition-all shadow-sm">
@@ -1312,6 +1357,140 @@ const StudentDashboard = () => {
                         <p className="text-slate-500 text-xs mt-0.5">Free PDFs of AI/ML papers directly from authors, fully legal.</p>
                       </li>
                     </ul>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* AWS Cloud Foundations Resources Modal */}
+      <AnimatePresence>
+        {showAwsResourcesModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => setShowAwsResourcesModal(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+              animate={{ opacity: 1, scale: 1, y: 0 }} 
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[1.5rem] shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 md:p-8 flex-1 overflow-y-auto">
+                <button 
+                  onClick={() => setShowAwsResourcesModal(false)}
+                  className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                
+                <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-6">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                
+                <h3 className="text-2xl font-extrabold text-[#111827] tracking-tight mb-2">AWS Cloud Learning Pack</h3>
+                <p className="text-slate-500 text-[15px] leading-relaxed mb-6">
+                  Official guides, starter website code, and GitHub repository links for your AWS Cloud Foundations internship.
+                </p>
+                
+                <div className="space-y-6">
+                  {/* Download Guides */}
+                  <div>
+                    <h4 className="font-bold text-[#111827] text-[15px] mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-purple-600" /> Official Notes & Guides
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <a 
+                        href="/downloads/DAKH_AWS_Student_Lab_Guide.pdf" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        download="DAKH_AWS_Student_Lab_Guide.pdf"
+                        className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 hover:border-purple-300 transition-all flex items-center justify-between group"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900">Student Lab Guide (PDF)</p>
+                          <p className="text-[11px] text-slate-500">7-Page step-by-step notes</p>
+                        </div>
+                        <Download className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
+                      </a>
+                      <a 
+                        href="/downloads/DAKH_AWS_Portal_Notes.md" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        download="DAKH_AWS_Portal_Notes.md"
+                        className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 hover:border-indigo-300 transition-all flex items-center justify-between group"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900">Portal Notes (Markdown)</p>
+                          <p className="text-[11px] text-slate-500">Editable week-by-week copy</p>
+                        </div>
+                        <Download className="w-4 h-4 text-indigo-600 group-hover:scale-110 transition-transform" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* GitHub Reference Repositories */}
+                  <div>
+                    <h4 className="font-bold text-[#111827] text-[15px] mb-3 flex items-center gap-2">
+                      <Code2 className="w-4 h-4 text-emerald-600" /> GitHub Course & Practice Repositories
+                    </h4>
+                    <div className="space-y-2">
+                      {AWS_OFFICIAL_RESOURCES?.filter(r => r.category === 'GitHub').map((repo) => (
+                        <a 
+                          key={repo.title}
+                          href={repo.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 hover:border-emerald-300 hover:bg-slate-50/80 transition-all flex items-center justify-between group"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">{repo.title}</p>
+                            <p className="text-[11px] text-slate-500 truncate">{repo.desc}</p>
+                          </div>
+                          <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 shrink-0 ml-2" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Starter Website Source Code */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-bold text-[#111827] text-[15px] flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-indigo-600" /> Starter Website Code
+                      </h4>
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                          {['html', 'css', 'js'].map((t) => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => setAwsStarterTab(t)}
+                              className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-bold uppercase transition-colors cursor-pointer ${
+                                awsStarterTab === t ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+                              }`}
+                            >
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyAwsCode(AWS_STARTER_FILES[awsStarterTab])}
+                          className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs"
+                        >
+                          {awsCodeCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                          <span>{awsCodeCopied ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                    </div>
+                    <pre className="text-xs font-mono text-slate-200 bg-slate-950 p-3 rounded-xl border border-slate-800 overflow-x-auto max-h-48 leading-relaxed">
+                      <code>{AWS_STARTER_FILES[awsStarterTab]}</code>
+                    </pre>
                   </div>
                 </div>
               </div>

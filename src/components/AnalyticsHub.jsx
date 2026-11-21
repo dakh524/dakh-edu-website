@@ -26,11 +26,16 @@ import {
   ShieldCheck,
   Zap,
   TrendingDown,
-  AlertTriangle
+  AlertTriangle,
+  Download,
+  Copy,
+  FileText,
+  ChevronRight,
+  Terminal
 } from 'lucide-react';
 import { GEN_AI_MODULES } from '../data/genAiModules';
 import { FULL_STACK_MODULES } from '../data/fullStackModules';
-import { AWS_CLOUD_MODULES, AWS_CLOUD_PROJECTS } from '../data/awsCloudModules';
+import { AWS_CLOUD_MODULES, AWS_CLOUD_PROJECTS, AWS_STARTER_FILES, AWS_OFFICIAL_RESOURCES } from '../data/awsCloudModules';
 
 // Fallback modules for Vibe Coding
 const VIBE_CODING_MODULES = [
@@ -133,6 +138,32 @@ export default function AnalyticsHub({
   const [mailFilterStatus, setMailFilterStatus] = useState('all');
   const [expireFilter, setExpireFilter] = useState('all'); // 'all', 'critical_3days', 'soon_7days', 'completed'
   const [expireSearchTerm, setExpireSearchTerm] = useState('');
+  const [starterCodeTab, setStarterCodeTab] = useState('html');
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  const handleLaunchLiveInspector = () => {
+    const demoStudentSession = {
+      id: 'inspector_demo_student',
+      full_name: 'Inspector Admin (Preview Mode)',
+      email: 'inspector@dakhedusolutions.in',
+      intern_number: 'DES/INT/2026/AWS01',
+      domain: selectedDomain,
+      status: 'Active',
+      progress_percentage: 25,
+      selected_project: previewData.projects[0]?.title || 'Capstone Project 1',
+      start_date: new Date().toISOString().split('T')[0],
+      end_date: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+      duration: '1 Month Masterclass'
+    };
+    localStorage.setItem('student_session', JSON.stringify(demoStudentSession));
+    window.open('/student/dashboard', '_blank');
+  };
+
+  const handleCopyCode = (text) => {
+    navigator.clipboard.writeText(text);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  };
 
   // 1. Domain aggregation
   const { domainStats, totalRegistrations, topDomain } = useMemo(() => {
@@ -1473,7 +1504,7 @@ export default function AnalyticsHub({
           </div>
 
           <div className="border-2 border-indigo-100 rounded-2xl p-6 bg-slate-50/50 space-y-6">
-            <div className="bg-gradient-to-r from-purple-700 to-indigo-700 text-white p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="bg-gradient-to-r from-purple-700 to-indigo-700 text-white p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <span className="bg-white/20 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-md tracking-wider">
                   Intern Dashboard Preview
@@ -1483,11 +1514,152 @@ export default function AnalyticsHub({
                   Complete your weekly modules, take module quizzes, and submit your capstone project before deadline.
                 </p>
               </div>
-              <div className="bg-white/10 backdrop-blur-xs p-3 rounded-xl border border-white/20 text-right shrink-0">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-purple-200">Overall Progress</div>
-                <div className="text-2xl font-black">25% Complete</div>
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleLaunchLiveInspector}
+                  className="px-4 py-2.5 bg-white text-indigo-900 hover:bg-indigo-50 font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer border border-white/40"
+                  title="Open live student dashboard with this domain preloaded"
+                >
+                  <ExternalLink className="w-4 h-4 text-indigo-600" />
+                  <span>Launch Live Student Portal →</span>
+                </button>
+                <div className="bg-white/10 backdrop-blur-xs p-3 rounded-xl border border-white/20 text-right">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-purple-200">Overall Progress</div>
+                  <div className="text-xl font-black">25% Complete</div>
+                </div>
               </div>
             </div>
+
+            {selectedDomain === 'AWS Cloud Foundations' && (
+              <div className="space-y-4 pt-1">
+                {/* Official Lab Guide & Notes Files */}
+                <div className="space-y-2.5">
+                  <h5 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-emerald-600" />
+                    Official Student Lab Guide & Curriculum Notes (Downloadable)
+                  </h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="bg-white p-4 rounded-xl border border-emerald-200/90 shadow-2xs flex items-center justify-between gap-3">
+                      <div className="space-y-1 min-w-0">
+                        <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-100">
+                          Official PDF Guide
+                        </span>
+                        <div className="font-extrabold text-sm text-slate-900 truncate">
+                          DAKH AWS Student Lab Guide (7 Pages)
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Step-by-step labs, starter code, common errors & final checklist.
+                        </p>
+                      </div>
+                      <a
+                        href="/downloads/DAKH_AWS_Student_Lab_Guide.pdf"
+                        download="DAKH_AWS_Student_Lab_Guide.pdf"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Download PDF
+                      </a>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-xl border border-indigo-200/90 shadow-2xs flex items-center justify-between gap-3">
+                      <div className="space-y-1 min-w-0">
+                        <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-100">
+                          Portal Notes
+                        </span>
+                        <div className="font-extrabold text-sm text-slate-900 truncate">
+                          DAKH AWS Portal Notes (.md)
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Editable markdown notes with starter code & copy-paste blocks.
+                        </p>
+                      </div>
+                      <a
+                        href="/downloads/DAKH_AWS_Portal_Notes.md"
+                        download="DAKH_AWS_Portal_Notes.md"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Download Notes
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* GitHub Repositories */}
+                <div className="space-y-2.5">
+                  <h5 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <Code2 className="w-4 h-4 text-purple-600" />
+                    Official GitHub Reference & Course Repositories
+                  </h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {AWS_OFFICIAL_RESOURCES.filter(r => r.category === 'GitHub').map((repo) => (
+                      <a
+                        key={repo.title}
+                        href={repo.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-white p-4 rounded-xl border border-slate-200/90 hover:border-purple-300 hover:shadow-xs transition-all group block space-y-1.5 cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+                            GitHub Repository
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-purple-600 transition-colors" />
+                        </div>
+                        <div className="font-extrabold text-xs text-slate-900 group-hover:text-purple-700 transition-colors">
+                          {repo.title}
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2">
+                          {repo.desc}
+                        </p>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Starter Code Viewer */}
+                <div className="bg-slate-900 text-slate-100 p-5 rounded-2xl border border-slate-800 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Terminal className="w-4 h-4 text-emerald-400" />
+                      <span className="font-extrabold text-xs text-white">Starter Website Source Files (3 Files)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex bg-slate-800 p-1 rounded-xl">
+                        {['html', 'css', 'js'].map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setStarterCodeTab(t)}
+                            className={`px-3 py-1 rounded-lg text-xs font-mono font-bold uppercase transition-colors cursor-pointer ${
+                              starterCodeTab === t ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {t === 'html' ? 'index.html' : t === 'css' ? 'style.css' : 'script.js'}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCode(AWS_STARTER_FILES[starterCodeTab])}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
+                      >
+                        {codeCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{codeCopied ? 'Copied!' : 'Copy Code'}</span>
+                      </button>
+                    </div>
+                  </div>
+                  <pre className="text-xs font-mono text-slate-300 overflow-x-auto p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 max-h-56">
+                    <code>{AWS_STARTER_FILES[starterCodeTab]}</code>
+                  </pre>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-3">
               <h5 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
