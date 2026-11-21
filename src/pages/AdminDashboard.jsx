@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink, GraduationCap, Search, Check, Send, Eye } from 'lucide-react';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink, GraduationCap, Search, Check, Send, Eye, IndianRupee, Wallet } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import AnalyticsHub from '../components/AnalyticsHub';
+import EarningsManager from '../components/EarningsManager';
 
 const AdminDashboard = () => {
   const [session, setSession] = useState(null);
@@ -1295,6 +1296,17 @@ const AdminDashboard = () => {
             <BookOpen className="w-4 h-4" />
             <span>Intern Projects</span>
           </button>
+          <button 
+            onClick={() => setActiveTab('earnings')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+              activeTab === 'earnings' 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25 border-transparent' 
+                : 'text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent'
+            }`}
+          >
+            <IndianRupee className="w-4 h-4" />
+            <span>Total Earnings</span>
+          </button>
         </aside>
 
         {/* Content Area */}
@@ -1706,6 +1718,14 @@ const AdminDashboard = () => {
                 >
                   <BarChart2 className="w-3.5 h-3.5 text-purple-600" />
                   <span>Analytics</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('earnings')}
+                  className="py-2 px-4 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-emerald-700 hover:bg-emerald-50/70 border border-transparent"
+                  title="View Total Money Earned & Manage Inflows"
+                >
+                  <IndianRupee className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Total Earnings</span>
                 </button>
               </div>
 
@@ -3322,6 +3342,12 @@ const AdminDashboard = () => {
                   </>
                 )}
               </AnimatePresence>
+            </motion.div>
+          )}
+
+          {activeTab === 'earnings' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <EarningsManager registrations={registrations} />
             </motion.div>
           )}
 
