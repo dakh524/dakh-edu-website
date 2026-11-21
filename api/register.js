@@ -99,9 +99,9 @@ export default async function handler(req, res) {
       ? `https://${req.headers['x-forwarded-host']}`
       : (process.env.VITE_APP_URL || 'https://www.dakhedusolutions.in');
 
-    const internalKey = process.env.INTERNAL_WORKER_KEY || process.env.CRON_SECRET;
+    const internalKey = process.env.INTERNAL_WORKER_KEY || process.env.CRON_SECRET || process.env.SUPABASE_SECRET_KEY;
     if (internalKey) {
-      fetch(`${origin}/api/process-email-outbox`, {
+      await fetch(`${origin}/api/process-email-outbox`, {
         method: 'POST',
         headers: {
           'x-worker-key': internalKey,

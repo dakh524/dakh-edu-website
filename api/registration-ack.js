@@ -166,20 +166,20 @@ export default async function handler(req, res) {
 
     console.log(`[registration-ack] Queued REGISTRATION_ACK for registration ${registrationId}`);
 
-    // ── 7. Non-blocking trigger: wake outbox worker immediately ──────────────
+    // ── 7. Trigger outbox worker immediately ──────────────────────────────
     const internalKey = process.env.INTERNAL_WORKER_KEY || process.env.CRON_SECRET || process.env.SUPABASE_SECRET_KEY;
     const origin = req.headers['x-forwarded-host']
       ? `https://${req.headers['x-forwarded-host']}`
-      : (process.env.VITE_APP_URL || 'https://dakhedusolutions.in');
+      : (process.env.VITE_APP_URL || 'https://www.dakhedusolutions.in');
 
     if (internalKey) {
-      fetch(`${origin}/api/process-email-outbox`, {
+      await fetch(`${origin}/api/process-email-outbox`, {
         method: 'POST',
         headers: {
           'x-worker-key':  internalKey,
           'Authorization': `Bearer ${internalKey}`
         }
-      }).catch(() => { /* non-blocking */ });
+      }).catch(() => { /* continue */ });
     }
 
     return res.status(200).json({ queued: true });
