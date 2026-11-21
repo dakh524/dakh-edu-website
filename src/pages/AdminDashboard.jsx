@@ -31,6 +31,11 @@ const AdminDashboard = () => {
   // Search & Filter State for Registrations Hub
   const [regSearchTerm, setRegSearchTerm] = useState('');
   const [regFilterStatus, setRegFilterStatus] = useState('all'); // 'all', 'approved', 'pending'
+  
+  // Mail Outbox Logs & Resend State
+  const [outboxLogs, setOutboxLogs] = useState([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [resendingRegId, setResendingRegId] = useState(null);
   const [freelancers, setFreelancers] = useState([]);
   const [blogs, setBlogs] = useState([]);
   const [events, setEvents] = useState([]);
@@ -651,6 +656,7 @@ const AdminDashboard = () => {
       setEmailMessage('');
       setEmailActionText('');
       setEmailActionUrl('');
+      fetchEmailLogs();
     } catch (err) {
       setEmailSendStatus({
         type: 'error',
@@ -658,6 +664,61 @@ const AdminDashboard = () => {
       });
     } finally {
       setIsSendingCustomEmail(false);
+    }
+  };
+
+  const fetchEmailLogs = async () => {
+    setIsLoadingLogs(true);
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const res = await fetch('/api/email-logs', {
+        headers: {
+          'Authorization': `Bearer ${currentSession?.access_token || ''}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOutboxLogs(data.logs || []);
+      }
+    } catch (err) {
+      console.warn("Could not fetch email logs:", err.message);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
+  const handleInstantResendEmail = async (reg) => {
+    if (!window.confirm(`Resend Acknowledgement Email now to ${reg.full_name} (${reg.email})?`)) {
+      return;
+    }
+
+    setResendingRegId(reg.id);
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const res = await fetch('/api/resend-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          registrationId: reg.id,
+          eventType: 'REGISTRATION_ACK'
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to dispatch email');
+      }
+
+      alert(`Acknowledgement Email dispatched successfully to ${reg.email}!`);
+      fetchRegistrations();
+      fetchEmailLogs();
+    } catch (err) {
+      alert(`Error resending email: ${err.message}`);
+    } finally {
+      setResendingRegId(null);
     }
   };
 
@@ -1547,7 +1608,10 @@ const AdminDashboard = () => {
                   </span>
                 </button>
                 <button
-                  onClick={() => setRegSubTab('mailer')}
+                  onClick={() => {
+                    setRegSubTab('mailer');
+                    fetchEmailLogs();
+                  }}
                   className={`py-2 px-4 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
                     regSubTab === 'mailer'
                       ? 'bg-white text-purple-700 shadow-sm border border-slate-200/60'
@@ -1555,7 +1619,7 @@ const AdminDashboard = () => {
                   }`}
                 >
                   <Mail className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Mail Manager</span>
+                  <span>Mail Manager & Logs</span>
                 </button>
               </div>
 
@@ -1744,9 +1808,21 @@ const AdminDashboard = () => {
                                     )}
                                   </div>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60 w-fit">
-                                    <Clock className="w-3 h-3 text-amber-600" /> Pending
-                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60 w-fit">
+                                      <Clock className="w-3 h-3 text-amber-600" /> Pending
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleInstantResendEmail(reg)}
+                                      disabled={resendingRegId === reg.id}
+                                      className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded-md border border-purple-200/80 transition-all disabled:opacity-50"
+                                      title="Dispatch / Retry Thank-You Email Now"
+                                    >
+                                      {resendingRegId === reg.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Send className="w-2.5 h-2.5" />}
+                                      Send
+                                    </button>
+                                  </div>
                                 )}
                               </td>
 
@@ -2033,101 +2109,196 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              {/* Sub-Tab 3: Custom Mail Manager */}
+              {/* Sub-Tab 3: Custom Mail Manager & Live Outbox Logs */}
               {regSubTab === 'mailer' && (
-                <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl">
-                  <div className="mb-6">
-                    <h3 className="text-lg font-black text-gray-900">Custom Mail Manager</h3>
-                    <p className="text-gray-500 text-sm mt-1">Compose and send official announcements, updates, or instructions directly to registered interns via Resend.</p>
-                  </div>
-
-                  {emailSendStatus && (
-                    <div className={`p-4 rounded-xl mb-6 text-sm font-bold ${
-                      emailSendStatus.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
-                    }`}>
-                      {emailSendStatus.text}
-                    </div>
-                  )}
-
-                  <form onSubmit={handleSendCustomEmail} className="space-y-4 max-w-2xl">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Target Audience</label>
-                      <select
-                        value={emailTargetType}
-                        onChange={(e) => setEmailTargetType(e.target.value)}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
-                      >
-                        <option value="all">All Registrations ({registrations.length} students)</option>
-                        <option value="approved">Approved Interns Only ({registrations.filter(r => r.status === 'Approved').length} students)</option>
-                        <option value="pending">Pending Registrations Only ({registrations.filter(r => r.status !== 'Approved').length} students)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Email Subject</label>
-                      <input
-                        type="text"
-                        required
-                        value={emailSubject}
-                        onChange={(e) => setEmailSubject(e.target.value)}
-                        placeholder="e.g. Important Update Regarding Your Internship Onboarding"
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Message Content</label>
-                      <textarea
-                        rows={6}
-                        required
-                        value={emailMessage}
-                        onChange={(e) => setEmailMessage(e.target.value)}
-                        placeholder="Type the message or instructions you want to convey to the students..."
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-8">
+                  {/* Section A: Live Email Outbox Activity & Status */}
+                  <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                       <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Action Button Text (Optional)</label>
-                        <input
-                          type="text"
-                          value={emailActionText}
-                          onChange={(e) => setEmailActionText(e.target.value)}
-                          placeholder="e.g. Join WhatsApp Group / Open LMS"
-                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                        />
+                        <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-purple-600" />
+                          Live Email Outbox Status (System Automated & Manual)
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          View which emails went through Resend, which failed, and reason if not sent.
+                        </p>
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Action Button URL (Optional)</label>
-                        <input
-                          type="url"
-                          value={emailActionUrl}
-                          onChange={(e) => setEmailActionUrl(e.target.value)}
-                          placeholder="https://..."
-                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-2">
                       <button
-                        type="submit"
-                        disabled={isSendingCustomEmail}
-                        className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                        type="button"
+                        onClick={fetchEmailLogs}
+                        disabled={isLoadingLogs}
+                        className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 w-fit disabled:opacity-50"
                       >
-                        {isSendingCustomEmail ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" /> Sending Emails...
-                          </>
-                        ) : (
-                          <>
-                            <Mail className="w-4 h-4" /> Send Email Announcement
-                          </>
-                        )}
+                        <Loader2 className={`w-3.5 h-3.5 ${isLoadingLogs ? 'animate-spin' : ''}`} />
+                        Refresh Logs
                       </button>
                     </div>
-                  </form>
+
+                    <div className="overflow-x-auto rounded-xl border border-slate-200">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-extrabold uppercase text-[10px] tracking-wider">
+                            <th className="py-2.5 px-3">Queued Time</th>
+                            <th className="py-2.5 px-3">Student / Recipient</th>
+                            <th className="py-2.5 px-3">Email Type</th>
+                            <th className="py-2.5 px-3">Delivery Status</th>
+                            <th className="py-2.5 px-3">Resend ID / Error Reason</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-medium">
+                          {outboxLogs.length === 0 ? (
+                            <tr>
+                              <td colSpan="5" className="py-6 text-center text-slate-400">
+                                {isLoadingLogs ? 'Loading email delivery logs...' : 'No email outbox activity recorded yet.'}
+                              </td>
+                            </tr>
+                          ) : (
+                            outboxLogs.map(log => (
+                              <tr key={log.id} className="hover:bg-slate-50/60">
+                                <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap text-[11px]">
+                                  {new Date(log.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <div className="font-bold text-slate-900">{log.payload?.fullName || 'N/A'}</div>
+                                  <div className="text-[11px] text-slate-500">{log.payload?.email}</div>
+                                </td>
+                                <td className="py-2.5 px-3 whitespace-nowrap">
+                                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/60">
+                                    {log.event_type}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 whitespace-nowrap">
+                                  {log.status === 'sent' ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                      <CheckCircle className="w-3 h-3 text-emerald-600" /> Sent Successfully
+                                    </span>
+                                  ) : log.status === 'failed' ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                                      <AlertCircle className="w-3 h-3 text-rose-600" /> Failed ({log.attempts} attempts)
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                      <Clock className="w-3 h-3 text-amber-600" /> {log.status || 'pending'}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  {log.last_error ? (
+                                    <span className="text-rose-600 text-[11px] font-mono break-all line-clamp-2" title={log.last_error}>
+                                      {log.last_error}
+                                    </span>
+                                  ) : log.provider_id ? (
+                                    <span className="text-slate-400 text-[10px] font-mono">
+                                      Resend: {log.provider_id}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400 text-[10px] italic">In Queue</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Section B: Compose Custom Mail Announcement */}
+                  <div className="bg-slate-50/70 border border-slate-200 p-6 rounded-2xl">
+                    <div className="mb-6">
+                      <h3 className="text-base font-black text-slate-900">Compose & Send Mail to Interns</h3>
+                      <p className="text-slate-500 text-xs mt-0.5">Send custom instructions, reminders, or welcome letters directly to registered students.</p>
+                    </div>
+
+                    {emailSendStatus && (
+                      <div className={`p-4 rounded-xl mb-6 text-xs font-bold ${
+                        emailSendStatus.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
+                      }`}>
+                        {emailSendStatus.text}
+                      </div>
+                    )}
+
+                    <form onSubmit={handleSendCustomEmail} className="space-y-4 max-w-2xl">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Target Audience</label>
+                        <select
+                          value={emailTargetType}
+                          onChange={(e) => setEmailTargetType(e.target.value)}
+                          className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                        >
+                          <option value="all">All Registrations ({registrations.length} students)</option>
+                          <option value="approved">Approved Interns Only ({registrations.filter(r => r.status === 'Approved').length} students)</option>
+                          <option value="pending">Pending Registrations Only ({registrations.filter(r => r.status !== 'Approved').length} students)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Email Subject</label>
+                        <input
+                          type="text"
+                          required
+                          value={emailSubject}
+                          onChange={(e) => setEmailSubject(e.target.value)}
+                          placeholder="e.g. Important Update Regarding Your Internship Onboarding"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white text-slate-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Message Content</label>
+                        <textarea
+                          rows={6}
+                          required
+                          value={emailMessage}
+                          onChange={(e) => setEmailMessage(e.target.value)}
+                          placeholder="Type the message or instructions you want to convey to the students..."
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white text-slate-900"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Action Button Text (Optional)</label>
+                          <input
+                            type="text"
+                            value={emailActionText}
+                            onChange={(e) => setEmailActionText(e.target.value)}
+                            placeholder="e.g. Join WhatsApp Group / Open LMS"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white text-slate-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1 uppercase">Action Button URL (Optional)</label>
+                          <input
+                            type="url"
+                            value={emailActionUrl}
+                            onChange={(e) => setEmailActionUrl(e.target.value)}
+                            placeholder="https://..."
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white text-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-2">
+                        <button
+                          type="submit"
+                          disabled={isSendingCustomEmail}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-xs shadow-sm"
+                        >
+                          {isSendingCustomEmail ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending Emails...
+                            </>
+                          ) : (
+                            <>
+                              <Mail className="w-3.5 h-3.5" /> Send Email Announcement
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
               )}
             </motion.div>
