@@ -86,26 +86,61 @@ export async function processOutboxJobsInternal(limit = 10) {
 
       } else if (job.event_type === 'PAYMENT_APPROVED') {
         console.log(`[Email Dispatch] Processing Stage 2 PAYMENT_APPROVED for job ${job.id}`);
-        let activationUrl = '';
+
+        // 1. Resolve student credentials from students table (intern ID and password)
+        let internNumber = payload.internNumber;
+        let studentPassword = payload.password || payload.tempPassword;
+
         try {
-          const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
-            type: 'magiclink',
-            email: payload.email,
-            options: {
-              redirectTo: `${process.env.VITE_APP_URL || 'https://dakhedusolutions.in'}/student/login`
-            }
-          });
-          if (!linkErr && linkData?.properties?.action_link) {
-            activationUrl = linkData.properties.action_link;
+          let sQuery = supabaseAdmin.from('students').select('*');
+          if (job.registration_id) {
+            sQuery = sQuery.eq('registration_id', job.registration_id);
+          } else if (payload.email) {
+            sQuery = sQuery.ilike('email', payload.email.trim());
           }
-        } catch (authErr) {
-          console.warn('Could not generate magic link, fallback to login page:', authErr);
+          const { data: sData } = await sQuery.order('created_at', { ascending: false }).limit(1).maybeSingle();
+
+          if (sData) {
+            if (sData.intern_number) internNumber = sData.intern_number;
+            if (sData.password) {
+              studentPassword = sData.password;
+            } else {
+              // Generate and save password so both student and admin have it
+              studentPassword = `Dakh@${Math.floor(1000 + Math.random() * 9000)}abc`;
+              await supabaseAdmin.from('students').update({ password: studentPassword }).eq('id', sData.id);
+            }
+          } else {
+            // Student record does not exist yet; auto-provision
+            studentPassword = studentPassword || `Dakh@${Math.floor(1000 + Math.random() * 9000)}abc`;
+            try {
+              await supabaseAdmin.from('students').insert([{
+                registration_id: job.registration_id || null,
+                full_name: payload.fullName || 'Student',
+                email: payload.email,
+                intern_number: internNumber,
+                domain: payload.domain,
+                duration: payload.internshipDuration,
+                start_date: payload.startDate || null,
+                end_date: payload.endDate || null,
+                password: studentPassword,
+                status: 'Active'
+              }]);
+            } catch (insErr) {
+              console.warn('Auto provision student error:', insErr.message);
+            }
+          }
+        } catch (sErr) {
+          console.warn('Student record lookup error:', sErr.message);
+        }
+
+        if (!studentPassword) {
+          studentPassword = `Dakh@${Math.floor(1000 + Math.random() * 9000)}abc`;
         }
 
         // Generate Official 2-Page Offer Letter PDF from AcroForm Template
         const pdfBuffer = await generateOfferLetterPdf({
           fullName: payload.fullName,
-          internNumber: payload.internNumber,
+          internNumber: internNumber || payload.internNumber,
           college: payload.college,
           department: payload.department,
           domain: payload.domain,
@@ -118,10 +153,9 @@ export async function processOutboxJobsInternal(limit = 10) {
         const html = getPaymentApprovalEmailHtml({
           fullName: payload.fullName,
           domain: payload.domain,
-          internNumber: payload.internNumber,
-          activationUrl,
+          internNumber: internNumber || payload.internNumber,
           loginEmail: payload.email,
-          password: payload.password || payload.tempPassword || 'Set during signup / Click link below'
+          password: studentPassword
         });
 
         const safeName = (payload.fullName || 'Student').replace(/[^a-zA-Z0-9]/g, '_');

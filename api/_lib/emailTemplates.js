@@ -109,12 +109,11 @@ export function getPaymentApprovalEmailHtml({
   domain,
   internNumber,
   loginEmail,
-  password,
-  activationUrl
+  password
 }) {
-  const displayLoginId = loginEmail || internNumber || 'Your Registered Email';
-  const displayPassword = password || 'Provided during registration / Click link below';
-  const loginUrl = activationUrl || 'https://www.dakhedusolutions.in/student/login';
+  const displayLoginId = internNumber || loginEmail || 'Your Registered Email';
+  const displayPassword = password || 'Provided during registration';
+  const loginUrl = 'https://www.dakhedusolutions.in/student/login';
 
   return `
 <!DOCTYPE html>
@@ -167,19 +166,25 @@ export function getPaymentApprovalEmailHtml({
                     <h3 style="font-size:14px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 12px 0;">
                       Student Dashboard Login
                     </h3>
-                    <p style="font-size:14px;line-height:1.8;color:#334155;margin:0;">
-                      <strong>Login ID</strong> — <span style="font-family:monospace;font-weight:700;color:#7c3aed;">${displayLoginId}</span><br>
-                      <strong>Password</strong> — <span style="font-family:monospace;font-weight:700;color:#0f172a;">${displayPassword}</span>
+                    <p style="font-size:14px;line-height:1.9;color:#334155;margin:0;">
+                      <strong>Login ID</strong> — <span style="font-family:monospace;font-weight:700;color:#7c3aed;font-size:15px;">${displayLoginId}</span><br>
+                      ${loginEmail && internNumber && loginEmail !== internNumber ? `<strong>Registered Email</strong> — <span style="font-family:monospace;font-weight:600;color:#475569;">${loginEmail}</span><br>` : ''}
+                      <strong>Password</strong> — <span style="font-family:monospace;font-weight:700;color:#0f172a;background:#ede9fe;padding:2px 8px;border-radius:4px;border:1px solid #ddd6fe;font-size:15px;">${displayPassword}</span>
                     </p>
                   </td>
                 </tr>
               </table>
 
-              <!-- Login CTA Button -->
+              <!-- Login CTA Button & Direct Link -->
               <div style="text-align:center;margin:28px 0;">
                 <a href="${loginUrl}" style="background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;display:inline-block;box-shadow:0 4px 12px rgba(124,58,237,0.3);">
                   Log in to your Student Dashboard →
                 </a>
+                <div style="margin-top:14px;">
+                  <a href="${loginUrl}" style="color:#7c3aed;text-decoration:underline;font-size:13px;font-weight:700;">
+                    DAKH Edu Solutions | Learn. Build. Earn. (${loginUrl})
+                  </a>
+                </div>
               </div>
 
               <p style="font-size:14px;line-height:1.6;color:#475569;margin:0 0 24px 0;">

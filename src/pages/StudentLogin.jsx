@@ -59,45 +59,48 @@ const StudentLogin = () => {
     setLoading(true);
     setError(null);
 
+    const inputVal = (email || '').trim();
+    const cleanPassword = (password || '').trim();
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      let authUser = null;
+      if (inputVal.includes('@')) {
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: inputVal,
+          password: cleanPassword,
+        });
+        if (!authError && authData?.session) {
+          authUser = authData.session.user;
+        }
+      }
 
-      if (error) {
-        // Fallback check against students table
-        const cleanEmail = email.trim().toLowerCase();
-        const { data: studentMatch, error: matchError } = await supabase
-          .from('students')
-          .select('*, registrations(plan_name)')
-          .ilike('email', cleanEmail)
-          .eq('password', password.trim())
-          .single();
+      // Check students table by either Intern ID or Email + Password
+      const { data: studentMatch } = await supabase
+        .from('students')
+        .select('*, registrations(plan_name)')
+        .or(`email.ilike.${inputVal.toLowerCase()},intern_number.ilike.${inputVal}`)
+        .eq('password', cleanPassword)
+        .maybeSingle();
 
-        if (studentMatch && !matchError) {
-          if (studentMatch.status === 'Suspended') {
-            throw new Error('Your internship access has been revoked or expired. Please contact support.');
-          }
-
-          if (studentMatch.end_date && new Date() > new Date(studentMatch.end_date)) {
-            throw new Error('Your internship access has automatically expired. Please contact DAKH Edu Solutions.');
-          }
-
-          localStorage.setItem('student_session', JSON.stringify(studentMatch));
-          navigate('/student/dashboard');
-          return;
+      if (studentMatch) {
+        if (studentMatch.status === 'Suspended') {
+          throw new Error('Your internship access has been revoked or expired. Please contact support.');
         }
 
-        throw error;
+        if (studentMatch.end_date && new Date() > new Date(studentMatch.end_date)) {
+          throw new Error('Your internship access has automatically expired. Please contact DAKH Edu Solutions.');
+        }
+
+        localStorage.setItem('student_session', JSON.stringify(studentMatch));
+        navigate('/student/dashboard');
+        return;
       }
-      
-      if (data.session) {
-        // Check if student is suspended
+
+      if (authUser) {
         const { data: studentData, error: studentError } = await supabase
           .from('students')
           .select('status, end_date')
-          .eq('auth_id', data.session.user.id)
+          .eq('auth_id', authUser.id)
           .single();
 
         if (studentError || !studentData) {
@@ -115,9 +118,12 @@ const StudentLogin = () => {
           throw new Error('Your internship access has automatically expired. Please contact DAKH Edu Solutions.');
         }
 
-        localStorage.setItem('student_session', JSON.stringify({ ...studentData, auth_id: data.session.user.id }));
+        localStorage.setItem('student_session', JSON.stringify({ ...studentData, auth_id: authUser.id }));
         navigate('/student/dashboard');
+        return;
       }
+
+      throw new Error('Invalid Login ID / Email or Password. Please check your credentials.');
     } catch (err) {
       setError(err.message || 'Failed to login. Please check your credentials.');
     } finally {
@@ -164,16 +170,16 @@ const StudentLogin = () => {
               className="space-y-6"
             >
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Email Address</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">Login ID or Email Address</label>
                 <div className="relative group">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-purple-500 transition-colors" />
                   <input
-                    type="email"
+                    type="text"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 font-medium rounded-2xl pl-12 pr-4 py-4 focus:outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 transition-all hover:border-slate-200"
-                    placeholder="intern@example.com"
+                    placeholder="Intern ID (e.g. DES/INT/...) or Email"
                   />
                 </div>
               </div>

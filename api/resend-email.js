@@ -92,6 +92,25 @@ export default async function handler(req, res) {
 
     const duration = targetReg?.internship_duration || (targetReg?.start_date && targetReg?.end_date ? `${targetReg.start_date} to ${targetReg.end_date}` : '30 Days');
 
+    // Check students table for intern number and existing password
+    let studentInternNumber = targetReg?.intern_number || outboxJob?.payload?.internNumber || null;
+    let studentPassword = outboxJob?.payload?.password || null;
+    try {
+      let sq = supabaseAdmin.from('students').select('intern_number, password');
+      if (finalRegId) {
+        sq = sq.eq('registration_id', finalRegId);
+      } else if (finalEmail) {
+        sq = sq.ilike('email', finalEmail.trim());
+      }
+      const { data: sMatch } = await sq.order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (sMatch) {
+        if (sMatch.intern_number) studentInternNumber = sMatch.intern_number;
+        if (sMatch.password) studentPassword = sMatch.password;
+      }
+    } catch (e) {
+      console.warn('Could not query students in resend-email:', e.message);
+    }
+
     const payload = {
       fullName: finalName,
       email: finalEmail,
@@ -99,7 +118,8 @@ export default async function handler(req, res) {
       planName: targetReg?.plan_name || outboxJob?.payload?.planName || 'Internship Program',
       planPrice: targetReg?.plan_price || outboxJob?.payload?.planPrice || 'Free',
       utrNumber: targetReg?.utr_number || outboxJob?.payload?.utrNumber || 'PENDING',
-      internNumber: targetReg?.intern_number || outboxJob?.payload?.internNumber || 'DES/INT/2026/001',
+      internNumber: studentInternNumber || 'DES/INT/2026/001',
+      password: studentPassword || null,
       college: targetReg?.college || outboxJob?.payload?.college || '',
       department: targetReg?.department || outboxJob?.payload?.department || '',
       mode: targetReg?.mode || outboxJob?.payload?.mode || 'Online',
