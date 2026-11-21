@@ -687,16 +687,17 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleInstantResendEmail = async (reg, eventType = 'REGISTRATION_ACK') => {
-    const studentName = reg.full_name || reg.payload?.fullName || 'Student';
-    const studentEmail = reg.email || reg.payload?.email || '';
-    const regId = reg.id || reg.registration_id;
+  const handleInstantResendEmail = async (logOrReg, eventType = 'REGISTRATION_ACK') => {
+    const studentName = logOrReg.full_name || logOrReg.payload?.fullName || 'Student';
+    const studentEmail = logOrReg.email || logOrReg.payload?.email || '';
+    const regId = logOrReg.registration_id || logOrReg.id;
+    const logId = logOrReg.payload ? logOrReg.id : null;
 
     if (!window.confirm(`Resend ${eventType === 'PAYMENT_APPROVED' ? 'Offer Letter Email' : 'Acknowledgement Email'} now to ${studentName} (${studentEmail})?`)) {
       return;
     }
 
-    setResendingRegId(regId);
+    setResendingRegId(logOrReg.id || regId);
     try {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       const res = await fetch('/api/resend-email', {
@@ -706,7 +707,10 @@ const AdminDashboard = () => {
           'Authorization': `Bearer ${currentSession?.access_token || ''}`
         },
         body: JSON.stringify({
-          registrationId: regId,
+          registrationId: regId || null,
+          logId: logId || null,
+          email: studentEmail || null,
+          fullName: studentName || null,
           eventType: eventType
         })
       });
