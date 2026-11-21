@@ -30,26 +30,13 @@ const CHENNAI_COLLEGES = [
 
 const ACTIVE_INTERNSHIPS = [
   "AWS Cloud Foundations",
-  "Vibe Coding",
   "Web Development",
+  "Full Stack Development",
   "Generative AI",
-  "Full Stack Development"
+  "Vibe Coding"
 ];
 
-const RELATED_DOMAINS = [
-  "Cloud Computing",
-  "AI & Machine Learning",
-  "App Development",
-  "UI/UX Design",
-  "Data Science",
-  "Python Full Stack"
-];
-
-const DOMAINS_LIST = [
-  ...ACTIVE_INTERNSHIPS,
-  ...RELATED_DOMAINS,
-  "Other"
-];
+const DOMAINS_LIST = ACTIVE_INTERNSHIPS;
 
 const ApplyInternship = () => {
   const [searchParams] = useSearchParams();
@@ -621,17 +608,9 @@ const ApplyInternship = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <select required name="domain" value={formData.domain} onChange={handleChange} className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none bg-white">
                       <option value="" disabled>Select Domain</option>
-                      <optgroup label="🔥 Top Active Internships">
-                        {ACTIVE_INTERNSHIPS.map((dom) => (
-                          <option key={dom} value={dom}>{dom}</option>
-                        ))}
-                      </optgroup>
-                      <optgroup label="📌 Project Based Internships">
-                        {RELATED_DOMAINS.map((dom) => (
-                          <option key={dom} value={dom}>{dom}</option>
-                        ))}
-                        <option value="Other">Other (Project Based)</option>
-                      </optgroup>
+                      {ACTIVE_INTERNSHIPS.map((dom) => (
+                        <option key={dom} value={dom}>{dom}</option>
+                      ))}
                     </select>
                     <div className="relative">
                       <input 

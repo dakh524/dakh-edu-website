@@ -10,9 +10,11 @@ import { useNavigate } from 'react-router-dom';
 import InternBot from '../components/InternBot';
 
 const DOMAINS = [
-  'AWS Cloud Foundations', 'Web Development', 'App Development', 'AI & Machine Learning', 'UI/UX Design',
-  'Python Full Stack', 'MERN Stack', 'Cyber Security', 'IoT',
-  'Generative AI', 'Java Full Stack', 'Cloud Computing', 'Data Science'
+  'AWS Cloud Foundations',
+  'Web Development',
+  'Full Stack Development',
+  'Generative AI',
+  'Vibe Coding'
 ];
 
 // Badge Component

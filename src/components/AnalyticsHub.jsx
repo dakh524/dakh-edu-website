@@ -1452,13 +1452,10 @@ export default function AnalyticsHub({
           <div className="flex flex-wrap gap-2">
             {[
               'AWS Cloud Foundations',
-              'Generative AI',
               'Web Development',
               'Full Stack Development',
-              'Vibe Coding',
-              'App Development',
-              'Data Science',
-              'UI/UX Design'
+              'Generative AI',
+              'Vibe Coding'
             ].map(domain => (
               <button
                 key={domain}

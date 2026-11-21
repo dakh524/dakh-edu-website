@@ -33,16 +33,10 @@ const TeamStudentManager = () => {
   
   const domains = [
     'AWS Cloud Foundations',
-    'Vibe Coding',
     'Web Development',
-    'Generative AI',
     'Full Stack Development',
-    'AI & Machine Learning',
-    'App Development',
-    'UI/UX Design',
-    'Data Science',
-    'Python Full Stack',
-    'Other'
+    'Generative AI',
+    'Vibe Coding'
   ];
 
   useEffect(() => {
