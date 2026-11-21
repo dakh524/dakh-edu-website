@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './_lib/supabaseServer.js';
+import { processOutboxJobsInternal } from './_lib/outboxProcessor.js';
 
 /**
  * POST /api/registration-ack
@@ -166,20 +167,11 @@ export default async function handler(req, res) {
 
     console.log(`[registration-ack] Queued REGISTRATION_ACK for registration ${registrationId}`);
 
-    // ── 7. Trigger outbox worker immediately ──────────────────────────────
-    const internalKey = process.env.INTERNAL_WORKER_KEY || process.env.CRON_SECRET || process.env.SUPABASE_SECRET_KEY;
-    const origin = req.headers['x-forwarded-host']
-      ? `https://${req.headers['x-forwarded-host']}`
-      : (process.env.VITE_APP_URL || 'https://www.dakhedusolutions.in');
-
-    if (internalKey) {
-      await fetch(`${origin}/api/process-email-outbox`, {
-        method: 'POST',
-        headers: {
-          'x-worker-key':  internalKey,
-          'Authorization': `Bearer ${internalKey}`
-        }
-      }).catch(() => { /* continue */ });
+    // ── 7. Directly dispatch outbox job in-process (Instant Guarantee) ────────
+    try {
+      await processOutboxJobsInternal(5);
+    } catch (procErr) {
+      console.warn('[registration-ack] In-process outbox dispatch warning:', procErr.message);
     }
 
     return res.status(200).json({ queued: true });

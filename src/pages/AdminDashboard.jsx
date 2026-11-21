@@ -1684,7 +1684,8 @@ const AdminDashboard = () => {
                       <th className="p-4 font-black">Requested Schedule</th>
                       <th className="p-4 font-black">Contact</th>
                       <th className="p-4 font-black">UTR</th>
-                      <th className="p-4 font-black">Payment Status</th>
+                      <th className="p-4 font-black">Ack Email</th>
+                      <th className="p-4 font-black">Approval Status</th>
                       <th className="p-4 font-black text-right">Actions</th>
                     </tr>
                   </thead>
@@ -1722,6 +1723,24 @@ const AdminDashboard = () => {
                             <div className="text-xs text-gray-500">{reg.email}</div>
                           </td>
                           <td className="p-4 text-sm font-mono text-gray-600 bg-gray-50 rounded px-2">{reg.utr_number}</td>
+                          <td className="p-4">
+                            {reg.reg_email_status === 'sent' ? (
+                              <div className="flex flex-col gap-0.5">
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full w-fit">
+                                  <CheckCircle className="w-3 h-3 text-emerald-600" /> Sent
+                                </span>
+                                {reg.reg_email_sent_at && (
+                                  <span className="text-[10px] text-gray-400">
+                                    {new Date(reg.reg_email_sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full w-fit">
+                                <Clock className="w-3 h-3 text-amber-600" /> Pending
+                              </span>
+                            )}
+                          </td>
                           <td className="p-4">
                             <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                               reg.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
