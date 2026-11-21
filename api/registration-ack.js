@@ -101,7 +101,7 @@ export default async function handler(req, res) {
       isAuthorized = true;
     }
 
-    // ── 5. Guard: do not re-enqueue if already sent ───────────────────────────
+    // ── 5. Guard: check if already sent or already in outbox ──────────────────
     if (reg.reg_email_status === 'sent') {
       return res.status(200).json({
         queued: false,
@@ -109,7 +109,36 @@ export default async function handler(req, res) {
       });
     }
 
-    // ── 6. Idempotent outbox insert via ON CONFLICT DO NOTHING ─────────────────
+    const { data: existingJob } = await supabaseAdmin
+      .from('email_outbox')
+      .select('id, status')
+      .eq('registration_id', reg.id)
+      .eq('event_type', 'REGISTRATION_ACK')
+      .maybeSingle();
+
+    if (existingJob) {
+      // Trigger processor just in case it's pending
+      const origin = req.headers['x-forwarded-host']
+        ? `https://${req.headers['x-forwarded-host']}`
+        : (process.env.VITE_APP_URL || 'https://www.dakhedusolutions.in');
+      const internalKey = process.env.INTERNAL_WORKER_KEY || process.env.CRON_SECRET;
+      if (internalKey) {
+        fetch(`${origin}/api/process-email-outbox`, {
+          method: 'POST',
+          headers: {
+            'x-worker-key':  internalKey,
+            'Authorization': `Bearer ${internalKey}`
+          }
+        }).catch(() => {});
+      }
+
+      return res.status(200).json({
+        queued: false,
+        reason: 'Acknowledgement already queued — no duplicate created'
+      });
+    }
+
+    // ── 6. Outbox insert ───────────────────────────────────────────────────────
     // Sourced strictly from trusted DB record, never from request body.
     const payload = {
       fullName:       reg.full_name,
@@ -122,31 +151,17 @@ export default async function handler(req, res) {
 
     const { error: insertError, data: insertData } = await supabaseAdmin
       .from('email_outbox')
-      .upsert(
-        {
-          registration_id: reg.id,
-          event_type:      'REGISTRATION_ACK',
-          payload,
-          status:          'pending'
-        },
-        {
-          onConflict:       'registration_id,event_type',
-          ignoreDuplicates: true
-        }
-      )
+      .insert({
+        registration_id: reg.id,
+        event_type:      'REGISTRATION_ACK',
+        payload,
+        status:          'pending'
+      })
       .select('id');
 
     if (insertError) {
       console.error('[registration-ack] Insert error:', insertError);
-      return res.status(500).json({ error: 'Failed to queue acknowledgement email' });
-    }
-
-    // Duplicate check: ignoreDuplicates returns empty array if conflict occurred
-    if (!insertData || insertData.length === 0) {
-      return res.status(200).json({
-        queued: false,
-        reason: 'Acknowledgement already queued — no duplicate created'
-      });
+      return res.status(500).json({ error: 'Failed to queue acknowledgement email: ' + insertError.message });
     }
 
     console.log(`[registration-ack] Queued REGISTRATION_ACK for registration ${registrationId}`);
