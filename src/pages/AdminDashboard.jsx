@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
+import DomainDistributionChart from '../components/DomainDistributionChart';
 
 const AdminDashboard = () => {
   const [session, setSession] = useState(null);
@@ -1700,6 +1701,13 @@ const AdminDashboard = () => {
               {/* Sub-Tab 1: All Registrations Table */}
               {regSubTab === 'registrations' && (
                 <>
+                  {/* Interactive Domain Distribution Pie Chart & Analytics */}
+                  <DomainDistributionChart
+                    registrations={registrations}
+                    selectedDomain={regFilterDomain}
+                    onSelectDomain={(domain) => setRegFilterDomain(domain)}
+                  />
+
                   {/* Search, Batch Split & Status Filters */}
                   <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-4">
                     <div className="relative w-full lg:w-72">
