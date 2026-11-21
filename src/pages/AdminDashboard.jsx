@@ -676,7 +676,7 @@ const AdminDashboard = () => {
   const handleInstantResendEmail = async (logOrReg, eventType = 'REGISTRATION_ACK') => {
     const studentName = logOrReg.full_name || logOrReg.payload?.fullName || 'Student';
     const studentEmail = logOrReg.email || logOrReg.payload?.email || '';
-    const regId = logOrReg.registration_id || logOrReg.id;
+    const regId = logOrReg.registration_id || (logOrReg.payload ? null : logOrReg.id);
     const logId = logOrReg.payload ? logOrReg.id : null;
 
     let eventLabel = 'Acknowledgement Email';
@@ -688,7 +688,7 @@ const AdminDashboard = () => {
       return;
     }
 
-    setResendingRegId(logOrReg.id || regId);
+    setResendingRegId(logOrReg.id);
     try {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       const res = await fetch('/api/resend-email', {

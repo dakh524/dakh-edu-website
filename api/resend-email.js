@@ -15,10 +15,28 @@ export default async function handler(req, res) {
   const token = authHeader.split(' ')[1];
   try {
     const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token);
-    const allowedAdmins = [process.env.VITE_ADMIN_EMAIL, 'ceo@dakhedusolutions.in'];
+    const allowedAdmins = [
+      process.env.VITE_ADMIN_EMAIL, 
+      'ceo@dakhedusolutions.in',
+      'dakhedusolution@gmail.com',
+      'admin@dakhedusolutions.in'
+    ].filter(Boolean);
 
-    if (authErr || !user || !allowedAdmins.includes(user.email)) {
-      return res.status(403).json({ success: false, error: 'Forbidden: admin access required' });
+    let isAllowed = !authErr && user && allowedAdmins.includes(user.email);
+    if (!isAllowed && user) {
+      const { data: tm } = await supabaseAdmin
+        .from('team_members')
+        .select('role')
+        .eq('email', user.email)
+        .maybeSingle();
+      if (tm && ['admin', 'ceo', 'superadmin'].includes(tm.role?.toLowerCase())) {
+        isAllowed = true;
+      }
+    }
+
+    if (!isAllowed) {
+      console.warn('Unauthorized admin attempt:', user?.email);
+      return res.status(403).json({ success: false, error: `Forbidden: Admin access required for user ${user?.email || 'unauthenticated'}` });
     }
 
     const { registrationId, logId, email, fullName, eventType, certificateLink, pdfBase64 } = req.body;
