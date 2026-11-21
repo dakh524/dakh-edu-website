@@ -687,12 +687,16 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleInstantResendEmail = async (reg) => {
-    if (!window.confirm(`Resend Acknowledgement Email now to ${reg.full_name} (${reg.email})?`)) {
+  const handleInstantResendEmail = async (reg, eventType = 'REGISTRATION_ACK') => {
+    const studentName = reg.full_name || reg.payload?.fullName || 'Student';
+    const studentEmail = reg.email || reg.payload?.email || '';
+    const regId = reg.id || reg.registration_id;
+
+    if (!window.confirm(`Resend ${eventType === 'PAYMENT_APPROVED' ? 'Offer Letter Email' : 'Acknowledgement Email'} now to ${studentName} (${studentEmail})?`)) {
       return;
     }
 
-    setResendingRegId(reg.id);
+    setResendingRegId(regId);
     try {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       const res = await fetch('/api/resend-email', {
@@ -702,8 +706,8 @@ const AdminDashboard = () => {
           'Authorization': `Bearer ${currentSession?.access_token || ''}`
         },
         body: JSON.stringify({
-          registrationId: reg.id,
-          eventType: 'REGISTRATION_ACK'
+          registrationId: regId,
+          eventType: eventType
         })
       });
 
@@ -712,7 +716,7 @@ const AdminDashboard = () => {
         throw new Error(data.error || 'Failed to dispatch email');
       }
 
-      alert(`Acknowledgement Email dispatched successfully to ${reg.email}!`);
+      alert(`Email dispatched successfully to ${studentEmail}!`);
       fetchRegistrations();
       fetchEmailLogs();
     } catch (err) {
@@ -2144,12 +2148,13 @@ const AdminDashboard = () => {
                             <th className="py-2.5 px-3">Email Type</th>
                             <th className="py-2.5 px-3">Delivery Status</th>
                             <th className="py-2.5 px-3">Resend ID / Error Reason</th>
+                            <th className="py-2.5 px-3 text-right">Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 font-medium">
                           {outboxLogs.length === 0 ? (
                             <tr>
-                              <td colSpan="5" className="py-6 text-center text-slate-400">
+                              <td colSpan="6" className="py-6 text-center text-slate-400">
                                 {isLoadingLogs ? 'Loading email delivery logs...' : 'No email outbox activity recorded yet.'}
                               </td>
                             </tr>
@@ -2195,6 +2200,26 @@ const AdminDashboard = () => {
                                   ) : (
                                     <span className="text-slate-400 text-[10px] italic">In Queue</span>
                                   )}
+                                </td>
+                                <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleInstantResendEmail(log, log.event_type)}
+                                    disabled={resendingRegId === (log.registration_id || log.id)}
+                                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all disabled:opacity-50 border ${
+                                      log.status === 'sent'
+                                        ? 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                                        : 'bg-purple-600 hover:bg-purple-700 text-white border-transparent shadow-xs'
+                                    }`}
+                                    title={log.status === 'sent' ? 'Resend this email' : 'Retry sending email now'}
+                                  >
+                                    {resendingRegId === (log.registration_id || log.id) ? (
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      <Send className="w-3 h-3" />
+                                    )}
+                                    {log.status === 'sent' ? 'Resend' : 'Send Now'}
+                                  </button>
                                 </td>
                               </tr>
                             ))
