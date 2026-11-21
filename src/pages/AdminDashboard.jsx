@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
-import DomainDistributionChart from '../components/DomainDistributionChart';
+import AnalyticsHub from '../components/AnalyticsHub';
 
 const AdminDashboard = () => {
   const [session, setSession] = useState(null);
@@ -2845,49 +2845,18 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              {/* Sub-Tab 4: Domain Analytics & Charts */}
+              {/* Sub-Tab 4: Full Analytics Hub (Domain Pie, Daily Timeline Bar, Mail Dispatch & Student Portal Preview) */}
               {regSubTab === 'analytics' && (
-                <div className="space-y-6">
-                  {/* Summary Metric Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                      <div className="text-slate-400 font-bold text-xs uppercase tracking-wider">Total Registrations</div>
-                      <div className="text-2xl font-black text-slate-900 mt-1">{registrations.length}</div>
-                      <div className="text-xs text-slate-500 mt-1 font-medium">All applications received</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                      <div className="text-slate-400 font-bold text-xs uppercase tracking-wider">Approved Interns</div>
-                      <div className="text-2xl font-black text-emerald-600 mt-1">
-                        {registrations.filter(r => r.status === 'Approved').length}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-1 font-medium">Payment verified & offer issued</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                      <div className="text-slate-400 font-bold text-xs uppercase tracking-wider">Pending Review</div>
-                      <div className="text-2xl font-black text-amber-600 mt-1">
-                        {registrations.filter(r => r.status !== 'Approved').length}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-1 font-medium">Awaiting verification</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                      <div className="text-slate-400 font-bold text-xs uppercase tracking-wider">Active Domains</div>
-                      <div className="text-2xl font-black text-purple-600 mt-1">
-                        {Array.from(new Set(registrations.map(r => (r.domain || '').trim()).filter(Boolean))).length}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-1 font-medium">Distinct learning tracks</div>
-                    </div>
-                  </div>
-
-                  {/* Dedicated Interactive Domain Distribution Pie Chart */}
-                  <DomainDistributionChart
-                    registrations={registrations}
-                    selectedDomain={regFilterDomain}
-                    onSelectDomain={(domain) => {
-                      setRegFilterDomain(domain);
-                      setRegSubTab('registrations');
-                    }}
-                  />
-                </div>
+                <AnalyticsHub
+                  registrations={registrations}
+                  certificates={certificates}
+                  outboxLogs={outboxLogs}
+                  onResendEmail={handleInstantResendEmail}
+                  onFilterDomainInTable={(domain) => {
+                    setRegFilterDomain(domain);
+                    setRegSubTab('registrations');
+                  }}
+                />
               )}
             </motion.div>
           )}
