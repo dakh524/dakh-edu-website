@@ -93,20 +93,10 @@ const AdminDashboard = () => {
       localStorage.setItem('seen_blogs', blogs.length.toString());
       setSeenCounts(prev => ({ ...prev, blogs: blogs.length }));
     }
-    if (activeTab === 'freelancers') {
-      localStorage.setItem('seen_freelancers', freelancers.length.toString());
-      setSeenCounts(prev => ({ ...prev, freelancers: freelancers.length }));
-    }
-    if (activeTab === 'products') {
-      localStorage.setItem('seen_products', products.length.toString());
-      setSeenCounts(prev => ({ ...prev, products: products.length }));
-    }
-  }, [activeTab, registrations.length, blogs.length, freelancers.length, products.length]);
+  }, [activeTab, registrations.length, blogs.length]);
 
   const newRegistrationsCount = Math.max(0, registrations.length - seenCounts.registrations);
   const newBlogsCount = Math.max(0, blogs.length - seenCounts.blogs);
-  const newFreelancersCount = Math.max(0, freelancers.length - seenCounts.freelancers);
-  const newProductsCount = Math.max(0, products.length - seenCounts.products);
 
   const navigate = useNavigate();
 
@@ -952,13 +942,6 @@ const AdminDashboard = () => {
             )}
           </button>
           <button 
-            onClick={() => setActiveTab('roadmap')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'roadmap' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <MapIcon className="w-5 h-5" />
-            Manage Roadmap
-          </button>
-          <button 
             onClick={() => setActiveTab('events')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'events' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
           >
@@ -976,38 +959,11 @@ const AdminDashboard = () => {
             )}
           </button>
           <button 
-            onClick={() => setActiveTab('freelancers')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'freelancers' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <Briefcase className="w-5 h-5" />
-            Freelancers
-            {newFreelancersCount > 0 && (
-              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{newFreelancersCount}</span>
-            )}
-          </button>
-          <button 
-            onClick={() => setActiveTab('products')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'products' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <ShoppingBag className="w-5 h-5" />
-            Manage Products
-            {newProductsCount > 0 && (
-              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{newProductsCount}</span>
-            )}
-          </button>
-          <button 
             onClick={() => setActiveTab('advertisement')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'advertisement' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
           >
             <ImageIcon className="w-5 h-5" />
             Advertisement
-          </button>
-          <button 
-            onClick={() => setActiveTab('partners')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'partners' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <Handshake className="w-5 h-5" />
-            Manage Partners
           </button>
           <button 
             onClick={() => setActiveTab('certificates')}
@@ -1124,204 +1080,7 @@ const AdminDashboard = () => {
             </motion.div>
           )}
 
-          {activeTab === 'products' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
-              <div className="mb-8">
-                <h2 className="text-2xl font-black text-gray-900">Add New Product</h2>
-                <p className="text-gray-500 font-medium mt-1">Publish a product to the "Our Products & Services" gallery.</p>
-              </div>
 
-              <form onSubmit={handleAddProduct} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Product Title (Required)</label>
-                  <input 
-                    type="text" 
-                    required
-                    value={productTitle}
-                    onChange={(e) => setProductTitle(e.target.value)}
-                    placeholder="e.g. AI Content Generator"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Image URL (Required)</label>
-                  <input 
-                    type="url" 
-                    required
-                    value={productImageUrl}
-                    onChange={(e) => setProductImageUrl(e.target.value)}
-                    placeholder="https://example.com/product-image.png"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Product Description (Required)</label>
-                  <textarea 
-                    required
-                    rows={3}
-                    value={productDescription}
-                    onChange={(e) => setProductDescription(e.target.value)}
-                    placeholder="Describe your product or service..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 resize-none"
-                  ></textarea>
-                </div>
-                {productImageUrl && (
-                  <div className="mt-4 rounded-xl overflow-hidden border border-gray-200">
-                    <img src={productImageUrl} alt="Preview" className="w-full h-auto object-cover max-h-64" onError={(e) => e.target.style.display = 'none'} />
-                  </div>
-                )}
-                <button 
-                  type="submit" 
-                  disabled={isSubmittingProduct}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
-                >
-                  {isSubmittingProduct ? 'Publishing Product...' : 'Publish Product'}
-                </button>
-              </form>
-
-              <div className="mt-12">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-bold text-gray-900">Manage Uploaded Products</h3>
-                  <button onClick={fetchProducts} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
-                    <Loader2 className="w-4 h-4" /> Refresh
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {products.length === 0 ? (
-                    <div className="col-span-2 p-8 text-center bg-gray-50 rounded-xl text-gray-500 font-medium border border-gray-100">
-                      No products added yet.
-                    </div>
-                  ) : (
-                    products.map(product => (
-                      <div key={product.id} className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white flex flex-col">
-                        <div className="aspect-video w-full relative bg-gray-50">
-                          <img src={product.image_url} alt={product.title} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="p-4 flex-grow">
-                          <h4 className="font-bold text-gray-900 text-lg mb-1">{product.title}</h4>
-                          <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
-                        </div>
-                        <button 
-                          onClick={() => handleDeleteProduct(product.id)}
-                          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === 'partners' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
-              <div className="mb-8">
-                <h2 className="text-2xl font-black text-gray-900">Add New Partner</h2>
-                <p className="text-gray-500 font-medium mt-1">Add an organization to the "Our Partnered Companies" section.</p>
-              </div>
-
-              <form onSubmit={handleAddPartner} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Company/Organization Name</label>
-                  <input 
-                    type="text" 
-                    required
-                    value={partnerName}
-                    onChange={(e) => setPartnerName(e.target.value)}
-                    placeholder="e.g. Otrumai Foundation"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
-                  <textarea 
-                    required
-                    rows={3}
-                    value={partnerDescription}
-                    onChange={(e) => setPartnerDescription(e.target.value)}
-                    placeholder="A short description about the partnership."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 resize-none"
-                  ></textarea>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Logo URL</label>
-                  <input 
-                    type="url" 
-                    required
-                    value={partnerLogoUrl}
-                    onChange={(e) => setPartnerLogoUrl(e.target.value)}
-                    placeholder="https://example.com/logo.png"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
-                  <select 
-                    value={partnerCategory}
-                    onChange={(e) => setPartnerCategory(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 font-medium"
-                  >
-                    <option value="Community">Community (Teal)</option>
-                    <option value="Tech Partner">Tech Partner (Gray)</option>
-                    <option value="Placement">Placement (Red)</option>
-                    <option value="EdTech">EdTech (Purple)</option>
-                    <option value="Internship Partner">Internship Partner (Blue)</option>
-                  </select>
-                </div>
-                {partnerLogoUrl && (
-                  <div className="mt-4 p-4 rounded-xl border border-gray-200 bg-white flex justify-center items-center h-32 w-1/2 mx-auto">
-                    <img src={partnerLogoUrl} alt="Preview" className="max-w-full max-h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
-                  </div>
-                )}
-                <button 
-                  type="submit" 
-                  disabled={isSubmittingPartner}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
-                >
-                  {isSubmittingPartner ? 'Adding Partner...' : 'Add Partner'}
-                </button>
-              </form>
-
-              <div className="mt-12">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-bold text-gray-900">Manage Partners</h3>
-                  <button onClick={fetchPartners} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
-                    <Loader2 className="w-4 h-4" /> Refresh
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {partners.length === 0 ? (
-                    <div className="col-span-2 p-8 text-center bg-gray-50 rounded-xl text-gray-500 font-medium border border-gray-100">
-                      No partners added yet.
-                    </div>
-                  ) : (
-                    partners.map(partner => (
-                      <div key={partner.id} className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-white flex flex-col p-4">
-                        <div className="h-20 w-full relative bg-gray-50 rounded-lg flex justify-center items-center border border-gray-100 mb-3">
-                          <img src={partner.logo_url} alt={partner.name} className="max-w-[80%] max-h-[80%] object-contain" />
-                        </div>
-                        <div className="flex-grow">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100/50 mb-2 inline-block">
-                            {partner.category}
-                          </span>
-                          <h4 className="font-bold text-gray-900 text-base mb-1">{partner.name}</h4>
-                          <p className="text-sm text-gray-500 line-clamp-2">{partner.description}</p>
-                        </div>
-                        <button 
-                          onClick={() => handleDeletePartner(partner.id)}
-                          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
 
           {activeTab === 'intern-projects' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
@@ -1577,90 +1336,6 @@ const AdminDashboard = () => {
             </motion.div>
           )}
 
-          {activeTab === 'freelancers' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-2xl font-black text-gray-900">Freelancer Applications</h2>
-                  <p className="text-gray-500 font-medium mt-1">View incoming freelancer applications.</p>
-                </div>
-                <button onClick={fetchFreelancers} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
-                  <Loader2 className="w-4 h-4" /> Refresh
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {freelancers.length === 0 ? (
-                  <div className="p-8 text-center bg-gray-50 border border-gray-100 rounded-xl text-gray-500 font-medium">
-                    No applications yet.
-                  </div>
-                ) : (
-                  freelancers.map(freelancer => (
-                    <div key={freelancer.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900">{freelancer.full_name}</h3>
-                          <p className="text-purple-600 font-semibold text-sm">{freelancer.college_name} ({freelancer.year_of_study}) - {freelancer.department}</p>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                          <select 
-                            value={freelancer.status} 
-                            onChange={(e) => handleUpdateFreelancerStatus(freelancer.id, e.target.value)}
-                            className={`font-bold text-xs px-3 py-1.5 rounded-full uppercase tracking-wider border-none cursor-pointer focus:ring-2 focus:ring-purple-300 transition-colors ${
-                              freelancer.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
-                              freelancer.status === 'reviewed' ? 'bg-blue-100 text-blue-700' :
-                              freelancer.status === 'contacted' ? 'bg-indigo-100 text-indigo-700' :
-                              freelancer.status === 'hired' ? 'bg-green-100 text-green-700' :
-                              'bg-gray-100 text-gray-700'
-                            }`}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="reviewed">Reviewed</option>
-                            <option value="contacted">Contacted</option>
-                            <option value="hired">Hired</option>
-                            <option value="rejected">Rejected</option>
-                          </select>
-                          <button onClick={() => handleDeleteFreelancer(freelancer.id)} className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors" title="Delete Application">
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-2"><Mail size={16} /> <a href={`mailto:${freelancer.email}`} className="hover:underline">{freelancer.email}</a></div>
-                        <div className="flex items-center gap-2"><Phone size={16} /> <a href={`tel:${freelancer.phone}`} className="hover:underline">{freelancer.phone}</a></div>
-                        <div className="flex items-center gap-2"><MapIcon size={16} /> {freelancer.city || 'N/A'}</div>
-                        <div className="flex items-center gap-2"><Briefcase size={16} /> {freelancer.experience_level}</div>
-                        <div className="flex items-center gap-2"><Clock size={16} /> {freelancer.availability}</div>
-                        <div className="flex items-center gap-2 text-xs text-gray-400"><Calendar size={16} /> Applied: {new Date(freelancer.applied_at).toLocaleString()}</div>
-                      </div>
-                      <div className="mb-4">
-                        <h4 className="font-bold text-gray-900 mb-2">Skills:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {freelancer.skills.map(s => <span key={s} className="bg-gray-100 px-3 py-1 rounded-full text-xs font-semibold">{s}</span>)}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                        <div>
-                          <h4 className="font-bold text-gray-900 mb-1">Brief Introduction:</h4>
-                          <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg min-h-[4rem] whitespace-pre-wrap">{freelancer.bio || 'Not provided'}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-gray-900 mb-1">Why DAKH?</h4>
-                          <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg min-h-[4rem] whitespace-pre-wrap">{freelancer.why_dakh || 'Not provided'}</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-4 pt-4 border-t border-gray-100">
-                        {freelancer.portfolio_url && <a href={freelancer.portfolio_url.startsWith('http') ? freelancer.portfolio_url : `https://${freelancer.portfolio_url}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-semibold text-sm"><Globe size={16} /> Portfolio</a>}
-                        {freelancer.linkedin_url && <a href={freelancer.linkedin_url.startsWith('http') ? freelancer.linkedin_url : `https://${freelancer.linkedin_url}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-semibold text-sm"><Globe size={16} /> LinkedIn</a>}
-                        {freelancer.github_url && <a href={freelancer.github_url.startsWith('http') ? freelancer.github_url : `https://${freelancer.github_url}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors font-semibold text-sm"><Globe size={16} /> GitHub</a>}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          )}
-
           {activeTab === 'registrations' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="flex justify-between items-center mb-6">
@@ -1797,19 +1472,6 @@ const AdminDashboard = () => {
                     )}
                   </tbody>
                 </table>
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === 'roadmap' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <h2 className="text-2xl font-black text-gray-900 mb-2">Manage Roadmap</h2>
-              <p className="text-gray-500 font-medium mb-6">Edit the steps displayed on the Internship page. (Coming soon)</p>
-              
-              <div className="p-8 bg-purple-50 rounded-2xl border-2 border-dashed border-purple-200 text-center">
-                <MapIcon className="w-12 h-12 text-purple-300 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-purple-900">Roadmap Editor Placeholder</h3>
-                <p className="text-purple-700 mt-2">The frontend logic for editing the Roadmap steps via Supabase can be implemented here.</p>
               </div>
             </motion.div>
           )}
