@@ -125,17 +125,13 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: insertErr.message });
     }
 
-    // 5. Trigger outbox processor asynchronously
-    fetch(`${process.env.VITE_APP_URL || 'https://dakhedusolutions.in'}/api/process-email-outbox`, {
-      method: 'POST',
-      headers: {
-        'x-worker-key': process.env.INTERNAL_WORKER_KEY || process.env.CRON_SECRET || ''
-      }
-    }).catch(e => console.warn('Outbox trigger error:', e.message));
+    // 5. Directly process outbox job in-process (synchronously dispatches email via Resend)
+    const dispatchResults = await processOutboxJobsInternal(5);
 
     return res.status(200).json({
       success: true,
-      jobId: newJob?.id
+      jobId: newJob?.id,
+      dispatchResults
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
