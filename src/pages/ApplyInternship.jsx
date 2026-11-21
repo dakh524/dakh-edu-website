@@ -250,6 +250,16 @@ const ApplyInternship = () => {
       return;
     }
 
+    if (!formData.utr || !formData.utr.trim()) {
+      alert("Transaction ID / UTR number is mandatory. Please enter your UPI / Bank reference ID to proceed.");
+      return;
+    }
+
+    if (!formData.paymentCompleted) {
+      alert(`Please confirm that you have completed the payment of ₹${finalPrice} via QR code / UPI.`);
+      return;
+    }
+
     try {
       // Generate a temporary password (e.g. random 6 chars)
       const randomPassword = Math.random().toString(36).slice(-6) + 'Dakh@';
@@ -280,8 +290,8 @@ const ApplyInternship = () => {
         plan_name: finalPlanName,
         plan_price: finalPrice.toString(),
         referral_code: formData.referral || null,
-        utr_number: (formData.utr || '').trim() || 'PENDING_PAY_LATER',
-        payment_completed: !!formData.paymentCompleted
+        utr_number: formData.utr.trim(),
+        payment_completed: true
       };
 
       // Include scheduling columns if present
@@ -817,19 +827,38 @@ const ApplyInternship = () => {
                     )}
                   </div>
 
-                  <input type="text" name="utr" placeholder="Transaction ID / UTR No. (Optional – can submit later)" value={formData.utr} onChange={handleChange} className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none mt-2" />
+                  <div className="mt-2">
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Transaction ID / UTR No. <span className="text-rose-500 font-extrabold">* (Required)</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      name="utr" 
+                      required 
+                      placeholder="Enter 12-digit UPI / UTR Transaction ID *" 
+                      value={formData.utr} 
+                      onChange={(e) => {
+                        handleChange(e);
+                        if (e.target.value.trim().length > 3) {
+                          setFormData(prev => ({ ...prev, utr: e.target.value, paymentCompleted: true }));
+                        }
+                      }} 
+                      className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none" 
+                    />
+                  </div>
                   
                   <div className="p-4 border-2 border-gray-300 rounded-xl bg-gray-50 flex items-center gap-3">
                     <input 
                       type="checkbox" 
                       id="paymentCompleted" 
                       name="paymentCompleted"
+                      required
                       checked={formData.paymentCompleted} 
                       onChange={handleChange} 
                       className="w-5 h-5 accent-purple-600"
                     />
                     <label htmlFor="paymentCompleted" className="font-bold text-gray-800 cursor-pointer text-sm">
-                      I have completed the payment of ₹{finalPrice} via QR code / UPI (Leave unchecked if paying later).
+                      I have completed the payment of ₹{finalPrice} via QR code / UPI. *
                     </label>
                   </div>
 
