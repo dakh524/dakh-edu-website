@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink, GraduationCap } from 'lucide-react';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink, GraduationCap, Search, Check, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
@@ -27,6 +27,10 @@ const AdminDashboard = () => {
   const [emailActionUrl, setEmailActionUrl] = useState('');
   const [isSendingCustomEmail, setIsSendingCustomEmail] = useState(false);
   const [emailSendStatus, setEmailSendStatus] = useState(null);
+
+  // Search & Filter State for Registrations Hub
+  const [regSearchTerm, setRegSearchTerm] = useState('');
+  const [regFilterStatus, setRegFilterStatus] = useState('all'); // 'all', 'approved', 'pending'
   const [freelancers, setFreelancers] = useState([]);
   const [blogs, setBlogs] = useState([]);
   const [events, setEvents] = useState([]);
@@ -1050,84 +1054,115 @@ const AdminDashboard = () => {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-100/70 flex flex-col font-sans">
       {/* Admin Navbar */}
-      <nav className="bg-[#0f172a] text-white p-4 shadow-xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center font-black text-xl">D</div>
+      <nav className="bg-slate-900 text-white px-6 py-3.5 shadow-md sticky top-0 z-40 border-b border-slate-800">
+        <div className="max-w-[1500px] mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-indigo-500 rounded-xl flex items-center justify-center font-black text-white text-xl shadow-md shadow-purple-500/20">D</div>
             <div>
-              <h1 className="font-black text-xl tracking-wide">Admin Dashboard</h1>
-              <p className="text-xs text-gray-400 font-medium">DAKH Edu Solutions</p>
+              <h1 className="font-extrabold text-base tracking-tight text-white flex items-center gap-2">
+                DAKH Admin Portal
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-md border border-purple-500/30">Official</span>
+              </h1>
+              <p className="text-[11px] text-slate-400 font-medium">Internal Management & Operations</p>
             </div>
           </div>
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg font-bold transition-colors text-sm"
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white px-4 py-2 rounded-xl font-bold transition-all text-xs border border-slate-700 shadow-sm"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
             Sign Out
           </button>
         </div>
       </nav>
 
       {/* Main Content */}
-      <div className="flex-grow max-w-7xl mx-auto w-full p-6 lg:p-8 flex flex-col md:flex-row gap-8">
+      <div className="flex-grow max-w-[1500px] mx-auto w-full p-4 lg:p-6 flex flex-col md:flex-row gap-6">
         
         {/* Sidebar */}
-        <aside className="w-full md:w-64 shrink-0 space-y-2">
+        <aside className="w-full md:w-60 shrink-0 space-y-1.5">
           <button 
             onClick={() => setActiveTab('registrations')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'registrations' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+              activeTab === 'registrations' 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25 border-transparent' 
+                : 'text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent'
+            }`}
           >
-            <Users className="w-5 h-5" />
-            Registrations
+            <Users className="w-4 h-4" />
+            <span>Registrations</span>
             {newRegistrationsCount > 0 && (
-              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{newRegistrationsCount}</span>
+              <span className={`ml-auto text-xs py-0.5 px-2 rounded-full font-bold ${
+                activeTab === 'registrations' ? 'bg-white text-purple-700' : 'bg-purple-600 text-white'
+              }`}>{newRegistrationsCount}</span>
             )}
           </button>
           <button 
             onClick={() => setActiveTab('events')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'events' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+              activeTab === 'events' 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25 border-transparent' 
+                : 'text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent'
+            }`}
           >
-            <Calendar className="w-5 h-5" />
-            Manage Events
+            <Calendar className="w-4 h-4" />
+            <span>Manage Events</span>
           </button>
           <button 
             onClick={() => setActiveTab('blogs')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'blogs' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+              activeTab === 'blogs' 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25 border-transparent' 
+                : 'text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent'
+            }`}
           >
-            <FileText className="w-5 h-5" />
-            Manage Blogs
+            <FileText className="w-4 h-4" />
+            <span>Manage Blogs</span>
             {newBlogsCount > 0 && (
-              <span className="ml-auto bg-purple-600 text-white text-xs py-0.5 px-2 rounded-full">{newBlogsCount}</span>
+              <span className={`ml-auto text-xs py-0.5 px-2 rounded-full font-bold ${
+                activeTab === 'blogs' ? 'bg-white text-purple-700' : 'bg-purple-600 text-white'
+              }`}>{newBlogsCount}</span>
             )}
           </button>
           <button 
             onClick={() => setActiveTab('advertisement')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'advertisement' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+              activeTab === 'advertisement' 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25 border-transparent' 
+                : 'text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent'
+            }`}
           >
-            <ImageIcon className="w-5 h-5" />
-            Advertisement
+            <ImageIcon className="w-4 h-4" />
+            <span>Advertisement</span>
           </button>
           <button 
             onClick={() => setActiveTab('team')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'team' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+              activeTab === 'team' 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25 border-transparent' 
+                : 'text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent'
+            }`}
           >
-            <Users className="w-5 h-5" />
-            Manage Team
+            <Users className="w-4 h-4" />
+            <span>Manage Team</span>
           </button>
           <button 
             onClick={() => setActiveTab('intern-projects')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'intern-projects' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+              activeTab === 'intern-projects' 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25 border-transparent' 
+                : 'text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent'
+            }`}
           >
-            <BookOpen className="w-5 h-5" />
-            Intern Projects
+            <BookOpen className="w-4 h-4" />
+            <span>Intern Projects</span>
           </button>
         </aside>
 
         {/* Content Area */}
-        <main className="flex-grow bg-white rounded-3xl shadow-sm border border-gray-100 p-6 lg:p-8 overflow-hidden">
+        <main className="flex-grow bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 lg:p-7 overflow-hidden">
           
           {activeTab === 'events' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
@@ -1465,204 +1500,301 @@ const AdminDashboard = () => {
 
           {activeTab === 'registrations' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              {/* Header & Sub-Tabs Navigation */}
+              {/* Header */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900">Internship Management Hub</h2>
-                  <p className="text-gray-500 font-medium mt-1">Verify students, manage schedules & dates, issue certificates, and dispatch emails.</p>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Internship Management Hub</h2>
+                  <p className="text-slate-500 font-medium text-sm mt-0.5">Verify students, manage schedules & dates, issue certificates, and dispatch emails.</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={fetchRegistrations} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors text-sm flex items-center gap-2">
-                    <Loader2 className="w-4 h-4" /> Refresh
+                <div className="flex items-center gap-2.5">
+                  <button 
+                    onClick={fetchRegistrations} 
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs flex items-center gap-2 border border-slate-200/80 shadow-sm"
+                  >
+                    <Loader2 className="w-3.5 h-3.5" /> Refresh Data
                   </button>
                 </div>
               </div>
 
-              {/* Sub-Tabs: Registrations | Certificates | Email Manager */}
-              <div className="flex border-b border-gray-200 mb-6 gap-2">
+              {/* Sub-Tabs: Pill Navigation */}
+              <div className="flex bg-slate-100/90 p-1.5 rounded-2xl w-fit mb-6 border border-slate-200/80 shadow-inner">
                 <button
                   onClick={() => setRegSubTab('registrations')}
-                  className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-all relative ${
+                  className={`py-2 px-4 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
                     regSubTab === 'registrations'
-                      ? 'text-purple-600 border-b-2 border-purple-600'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-white text-purple-700 shadow-sm border border-slate-200/60'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <Users className="w-4 h-4" />
-                  All Registrations
-                  <span className="bg-purple-100 text-purple-700 text-xs py-0.5 px-2 rounded-full font-semibold">
+                  <Users className="w-3.5 h-3.5 text-purple-600" />
+                  <span>All Registrations</span>
+                  <span className="bg-purple-100 text-purple-800 text-[10px] py-0.5 px-2 rounded-full font-extrabold">
                     {registrations.length}
                   </span>
                 </button>
                 <button
                   onClick={() => setRegSubTab('certificates')}
-                  className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-all relative ${
+                  className={`py-2 px-4 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
                     regSubTab === 'certificates'
-                      ? 'text-purple-600 border-b-2 border-purple-600'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-white text-purple-700 shadow-sm border border-slate-200/60'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <Award className="w-4 h-4" />
-                  Certificate Manager
-                  <span className="bg-green-100 text-green-700 text-xs py-0.5 px-2 rounded-full font-semibold">
+                  <Award className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Certificate Manager</span>
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] py-0.5 px-2 rounded-full font-extrabold">
                     {certificates.length}
                   </span>
                 </button>
                 <button
                   onClick={() => setRegSubTab('mailer')}
-                  className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-all relative ${
+                  className={`py-2 px-4 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
                     regSubTab === 'mailer'
-                      ? 'text-purple-600 border-b-2 border-purple-600'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-white text-purple-700 shadow-sm border border-slate-200/60'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <Mail className="w-4 h-4" />
-                  Mail Manager
+                  <Mail className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Mail Manager</span>
                 </button>
               </div>
 
               {/* Sub-Tab 1: All Registrations Table */}
               {regSubTab === 'registrations' && (
                 <>
-                  <div className="overflow-x-auto rounded-xl border border-gray-200">
-                    <table className="w-full text-left border-collapse">
+                  {/* Search and Status Filters */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+                    <div className="relative w-full sm:w-80">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input 
+                        type="text"
+                        placeholder="Search student, college, UTR or email..."
+                        value={regSearchTerm}
+                        onChange={(e) => setRegSearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all text-slate-900 placeholder:text-slate-400"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <select
+                        value={regFilterStatus}
+                        onChange={(e) => setRegFilterStatus(e.target.value)}
+                        className="px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                      >
+                        <option value="all">All Statuses ({registrations.length})</option>
+                        <option value="approved">Approved Only ({registrations.filter(r => r.status === 'Approved').length})</option>
+                        <option value="pending">Pending Only ({registrations.filter(r => r.status !== 'Approved').length})</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* High Quality Styled Table */}
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
+                    <table className="w-full text-left border-collapse min-w-[1050px]">
                       <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 text-xs uppercase tracking-wider">
-                          <th className="p-4 font-black">Date</th>
-                          <th className="p-4 font-black">Student Name</th>
-                          <th className="p-4 font-black">College & Dept</th>
-                          <th className="p-4 font-black">Plan & Fees</th>
-                          <th className="p-4 font-black">Internship Dates</th>
-                          <th className="p-4 font-black">Contact</th>
-                          <th className="p-4 font-black">UTR / Payment</th>
-                          <th className="p-4 font-black">Ack Mail</th>
-                          <th className="p-4 font-black">Status</th>
-                          <th className="p-4 font-black text-right">Actions</th>
+                        <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 text-[11px] uppercase tracking-wider font-extrabold">
+                          <th className="py-3 px-4">Date</th>
+                          <th className="py-3 px-4">Student</th>
+                          <th className="py-3 px-4">College & Dept</th>
+                          <th className="py-3 px-4">Plan & Amount</th>
+                          <th className="py-3 px-4">Internship Dates</th>
+                          <th className="py-3 px-4">Contact</th>
+                          <th className="py-3 px-4">UTR & Payment</th>
+                          <th className="py-3 px-4">Ack Mail</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {registrations.length === 0 ? (
+                      <tbody className="divide-y divide-slate-100 text-xs">
+                        {registrations
+                          .filter(reg => {
+                            if (regFilterStatus === 'approved' && reg.status !== 'Approved') return false;
+                            if (regFilterStatus === 'pending' && reg.status === 'Approved') return false;
+                            if (regSearchTerm.trim()) {
+                              const q = regSearchTerm.toLowerCase();
+                              const nameMatch = (reg.full_name || '').toLowerCase().includes(q);
+                              const collegeMatch = (reg.college || '').toLowerCase().includes(q);
+                              const emailMatch = (reg.email || '').toLowerCase().includes(q);
+                              const utrMatch = (reg.utr_number || '').toLowerCase().includes(q);
+                              const idMatch = (reg.intern_number || '').toLowerCase().includes(q);
+                              return nameMatch || collegeMatch || emailMatch || utrMatch || idMatch;
+                            }
+                            return true;
+                          })
+                          .length === 0 ? (
                           <tr>
-                            <td colSpan="10" className="p-8 text-center text-gray-500 font-medium">No registrations found.</td>
+                            <td colSpan="10" className="py-12 text-center text-slate-400 font-medium">
+                              No registrations found matching criteria.
+                            </td>
                           </tr>
                         ) : (
-                          registrations.map(reg => (
-                            <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="p-4 text-xs text-gray-500 font-medium">{new Date(reg.created_at).toLocaleDateString()}</td>
-                              <td className="p-4">
-                                <div className="font-bold text-gray-900">{reg.full_name}</div>
-                                {reg.intern_number && (
-                                  <div className="text-[11px] font-mono text-purple-600 font-bold">{reg.intern_number}</div>
+                          registrations
+                            .filter(reg => {
+                              if (regFilterStatus === 'approved' && reg.status !== 'Approved') return false;
+                              if (regFilterStatus === 'pending' && reg.status === 'Approved') return false;
+                              if (regSearchTerm.trim()) {
+                                const q = regSearchTerm.toLowerCase();
+                                const nameMatch = (reg.full_name || '').toLowerCase().includes(q);
+                                const collegeMatch = (reg.college || '').toLowerCase().includes(q);
+                                const emailMatch = (reg.email || '').toLowerCase().includes(q);
+                                const utrMatch = (reg.utr_number || '').toLowerCase().includes(q);
+                                const idMatch = (reg.intern_number || '').toLowerCase().includes(q);
+                                return nameMatch || collegeMatch || emailMatch || utrMatch || idMatch;
+                              }
+                              return true;
+                            })
+                            .map(reg => (
+                            <tr key={reg.id} className="hover:bg-slate-50/80 transition-colors">
+                              {/* Date */}
+                              <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap font-medium text-[11px]">
+                                {new Date(reg.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </td>
+
+                              {/* Student */}
+                              <td className="py-3.5 px-4">
+                                <div className="font-extrabold text-slate-900 text-sm">{reg.full_name}</div>
+                                {reg.intern_number ? (
+                                  <div className="text-[10px] font-mono text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200/60 w-fit mt-0.5 font-bold">
+                                    {reg.intern_number}
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400">ID unassigned</span>
                                 )}
                               </td>
-                              <td className="p-4 text-xs text-gray-600">
-                                <div className="font-semibold text-gray-800">{reg.college || 'N/A'}</div>
-                                <div className="text-gray-500">{reg.department || ''} {reg.year_of_study ? `(${reg.year_of_study})` : ''}</div>
-                              </td>
-                              <td className="p-4">
-                                <div className="text-xs font-bold text-purple-600">{reg.plan_name}</div>
-                                <div className="text-xs font-black text-emerald-600 mt-0.5">
-                                  ₹{reg.plan_price || 'Free'}
+
+                              {/* College & Dept */}
+                              <td className="py-3.5 px-4 max-w-[190px]">
+                                <div className="font-bold text-slate-800 truncate" title={reg.college || 'N/A'}>
+                                  {reg.college || 'N/A'}
                                 </div>
-                                <div className="text-[10px] text-gray-400 font-medium">{reg.domain}</div>
-                              </td>
-                              <td className="p-4">
-                                <div className="text-xs font-bold text-gray-900 flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5 text-purple-600" />
-                                  {reg.internship_duration || '30 Days'}
+                                <div className="text-slate-500 text-[11px] truncate">
+                                  {reg.department || '-'} {reg.year_of_study ? `(${reg.year_of_study})` : ''}
                                 </div>
-                                <div className="text-[11px] text-gray-700 font-medium mt-0.5">
+                              </td>
+
+                              {/* Plan & Amount */}
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <div className="font-bold text-purple-700 text-xs">{reg.plan_name}</div>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                                    ₹{reg.plan_price || 'Free'}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-medium">({reg.domain})</span>
+                                </div>
+                              </td>
+
+                              {/* Internship Dates */}
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[11px] font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 flex items-center gap-1">
+                                    <Clock className="w-3 h-3 text-purple-600" />
+                                    {reg.internship_duration || '30 Days'}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-slate-600 font-medium mt-1">
                                   {reg.start_date && reg.end_date ? (
-                                    <span>{reg.start_date} <span className="text-gray-400">→</span> {reg.end_date}</span>
+                                    <span>
+                                      <strong className="text-slate-900">{reg.start_date}</strong> <span className="text-slate-400">→</span> <strong className="text-slate-900">{reg.end_date}</strong>
+                                    </span>
                                   ) : (
-                                    <span className="text-amber-600 italic">No schedule set</span>
+                                    <span className="text-amber-600 italic font-semibold">Schedule Pending</span>
                                   )}
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() => handleOpenScheduleEditor(reg)}
-                                  className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded-md border border-purple-200 transition-colors"
-                                  title="Edit Internship Start & End Date"
+                                  className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded-md border border-purple-200/80 transition-colors shadow-2xs"
                                 >
                                   <Edit className="w-2.5 h-2.5" /> Edit Dates
                                 </button>
                               </td>
-                              <td className="p-4 text-xs">
-                                <div className="text-gray-900 font-medium">{reg.phone}</div>
-                                <div className="text-gray-500">{reg.email}</div>
+
+                              {/* Contact */}
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <div className="font-bold text-slate-800 text-xs">{reg.phone}</div>
+                                <div className="text-slate-500 text-[11px] max-w-[170px] truncate" title={reg.email}>{reg.email}</div>
                               </td>
-                              <td className="p-4">
-                                <div className="text-xs font-mono text-gray-700 bg-gray-50 rounded px-2 py-1 border border-gray-100 w-fit">
+
+                              {/* UTR & Payment */}
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <div className="font-mono text-slate-700 bg-slate-50 border border-slate-200 rounded px-2 py-0.5 text-[11px] w-fit">
                                   {reg.utr_number || 'PENDING'}
                                 </div>
                                 {reg.payment_completed ? (
-                                  <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                                    Paid
+                                  <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/50">
+                                    ● Paid
                                   </span>
                                 ) : (
-                                  <span className="inline-block mt-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                                    Unpaid
+                                  <span className="inline-block mt-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/50">
+                                    ○ Unpaid
                                   </span>
                                 )}
                               </td>
-                              <td className="p-4">
+
+                              {/* Ack Mail */}
+                              <td className="py-3.5 px-4 whitespace-nowrap">
                                 {reg.reg_email_status === 'sent' ? (
                                   <div className="flex flex-col gap-0.5">
-                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full w-fit">
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 w-fit">
                                       <CheckCircle className="w-3 h-3 text-emerald-600" /> Sent
                                     </span>
                                     {reg.reg_email_sent_at && (
-                                      <span className="text-[10px] text-gray-400">
+                                      <span className="text-[10px] text-slate-400">
                                         {new Date(reg.reg_email_sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                       </span>
                                     )}
                                   </div>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full w-fit">
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60 w-fit">
                                     <Clock className="w-3 h-3 text-amber-600" /> Pending
                                   </span>
                                 )}
                               </td>
-                              <td className="p-4">
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                                  reg.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+
+                              {/* Approval Status */}
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${
+                                  reg.status === 'Approved' 
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                    : 'bg-amber-50 text-amber-700 border-amber-200'
                                 }`}>
                                   {reg.status || 'Pending'}
                                 </span>
                               </td>
-                              <td className="p-4 text-right">
-                                <div className="flex justify-end gap-1.5">
+
+                              {/* Actions */}
+                              <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                <div className="flex items-center justify-end gap-1.5">
                                   {reg.status !== 'Approved' && (
                                     <button 
                                       onClick={() => handleApproveRegistration(reg)}
                                       disabled={approvingId === reg.id}
-                                      className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 shadow-sm"
+                                      className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50 shadow-sm"
                                       title="Verify Payment & Queue Offer Letter"
                                     >
-                                      {approvingId === reg.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
+                                      {approvingId === reg.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Approve
                                     </button>
                                   )}
                                   <button 
                                     onClick={() => generatePDF(reg, 'offer')}
                                     disabled={generatingPdf}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
-                                    title="Download Offer Letter"
+                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 border border-indigo-100"
+                                    title="Download Official Offer Letter PDF"
                                   >
                                     <FileText className="w-3 h-3" /> Offer
                                   </button>
                                   <button 
                                     onClick={() => handleQuickCertLink(reg)}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-lg transition-colors"
-                                    title="Add/Manage Certificate Link"
+                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-lg transition-colors border border-purple-100"
+                                    title="Assign / Add Certificate Link"
                                   >
                                     <Award className="w-3 h-3" /> Cert
                                   </button>
                                   <button 
                                     onClick={() => handleDeleteRegistration(reg.id)}
-                                    className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold rounded-lg transition-colors"
-                                    title="Delete Registration"
+                                    className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-lg transition-colors border border-rose-100"
+                                    title="Delete Record"
                                   >
-                                    <Trash2 className="w-3 h-3" />
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </td>
@@ -1675,20 +1807,21 @@ const AdminDashboard = () => {
 
                   {/* Modal for editing Start/End Date */}
                   {editingScheduleReg && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                      <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100">
                         <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-black text-gray-900">Edit Internship Schedule</h3>
-                          <button onClick={() => setEditingScheduleReg(null)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+                          <h3 className="text-lg font-black text-slate-900">Edit Internship Schedule</h3>
+                          <button onClick={() => setEditingScheduleReg(null)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
                             <X className="w-5 h-5" />
                           </button>
                         </div>
-                        <p className="text-sm text-gray-500 mb-4">
-                          Student: <strong className="text-gray-900">{editingScheduleReg.full_name}</strong> ({editingScheduleReg.domain})
-                        </p>
+                        <div className="bg-purple-50/70 p-3.5 rounded-2xl border border-purple-100 mb-4">
+                          <p className="text-xs text-purple-900 font-bold">{editingScheduleReg.full_name}</p>
+                          <p className="text-[11px] text-purple-700">{editingScheduleReg.domain} • {editingScheduleReg.college}</p>
+                        </div>
                         <form onSubmit={handleSaveSchedule} className="space-y-4">
                           <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Duration</label>
+                            <label className="block text-xs font-bold text-slate-700 mb-1.5">Internship Duration</label>
                             <select
                               value={customDurationInput}
                               onChange={(e) => {
@@ -1699,7 +1832,7 @@ const AdminDashboard = () => {
                                   } catch (_) {}
                                 }
                               }}
-                              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                              className="w-full px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white text-slate-900"
                             >
                               <option value="15 Days">15 Days</option>
                               <option value="30 Days">30 Days (1 Month)</option>
@@ -1709,7 +1842,7 @@ const AdminDashboard = () => {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Start Date (YYYY-MM-DD)</label>
+                            <label className="block text-xs font-bold text-slate-700 mb-1.5">Start Date</label>
                             <input
                               type="date"
                               required
@@ -1722,31 +1855,31 @@ const AdminDashboard = () => {
                                   } catch (_) {}
                                 }
                               }}
-                              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                              className="w-full px-3.5 py-2.5 text-xs font-medium rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white text-slate-900"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">End Date (Auto-calculated / Editable)</label>
+                            <label className="block text-xs font-bold text-slate-700 mb-1.5">End Date (Auto-calculated / Editable)</label>
                             <input
                               type="date"
                               required
                               value={customEndInput}
                               onChange={(e) => setCustomEndInput(e.target.value)}
-                              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                              className="w-full px-3.5 py-2.5 text-xs font-medium rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white text-slate-900"
                             />
                           </div>
-                          <div className="flex gap-2 pt-2">
+                          <div className="flex gap-2.5 pt-2">
                             <button
                               type="button"
                               onClick={() => setEditingScheduleReg(null)}
-                              className="w-1/2 py-2.5 rounded-xl border border-gray-200 font-bold text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                              className="w-1/2 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-600 hover:bg-slate-50 transition-colors"
                             >
                               Cancel
                             </button>
                             <button
                               type="submit"
                               disabled={isSavingSchedule}
-                              className="w-1/2 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 font-bold text-sm text-white transition-colors disabled:opacity-50"
+                              className="w-1/2 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 font-bold text-xs text-white transition-colors disabled:opacity-50 shadow-sm"
                             >
                               {isSavingSchedule ? 'Saving...' : 'Save Schedule'}
                             </button>
