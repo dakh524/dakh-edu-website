@@ -184,75 +184,33 @@ const AdminDashboard = () => {
       let fileName = `${student.full_name}_${type === 'offer' ? 'Offer_Letter' : 'Certificate'}.pdf`;
 
       if (type === 'offer') {
-        // Generate using the official 1-page A4 Offer Letter template
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pageWidth = 210;
-        const pageHeight = 297;
-
-        // Load background template
-        const img = new Image();
-        img.src = '/templates/offer-letter-template.png';
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = () => {
-            // fallback if path differs
-            img.src = '/internship-offer.png';
-            img.onload = resolve;
-            img.onerror = reject;
-          };
-        });
-
-        pdf.addImage(img, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(30, 41, 59);
-
-        // Ref No
-        pdf.setFontSize(9);
-        const cleanRef = (finalStudent.intern_number || 'DAKH/INTERN/2026/001').replace(/^DAKH\/INTERN\//i, '').replace(/^DES\/INT\/2026\//i, '2026/');
-        pdf.text(cleanRef, 56, 48.2);
-
-        // Date
-        const issueDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-        pdf.text(issueDate, 167, 48.2);
-
-        // Salutation
-        pdf.setFontSize(10);
-        pdf.text(`${finalStudent.full_name || 'Candidate'},`, 23, 71.0);
-
-        // Table Data
-        const col2X = 64;
-        const maxColWidth = 130;
-        const printCell = (text, yPos, defaultSize = 8.5) => {
-          if (!text) text = '—';
-          pdf.setFontSize(defaultSize);
-          let str = String(text).trim();
-          if (pdf.getTextWidth(str) > maxColWidth) {
-            pdf.setFontSize(defaultSize - 1.5);
-            if (pdf.getTextWidth(str) > maxColWidth) {
-              while (str.length > 10 && pdf.getTextWidth(str + '...') > maxColWidth) {
-                str = str.slice(0, -1);
-              }
-              str += '...';
+        // Generate and download official 2-page Offer Letter from template
+        try {
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          const res = await fetch(`/api/download-offer-letter?id=${student.id}`, {
+            headers: {
+              'Authorization': `Bearer ${currentSession?.access_token || ''}`
             }
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `HTTP ${res.status}`);
           }
-          pdf.text(str, col2X, yPos);
-        };
 
-        const durationStr = finalStudent.internship_duration || (finalStudent.start_date && finalStudent.end_date ? `${finalStudent.start_date} to ${finalStudent.end_date}` : '30 Days');
-        const appDate = finalStudent.created_at ? new Date(finalStudent.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : issueDate;
-
-        printCell(finalStudent.full_name, 98.2, 9);
-        printCell(finalStudent.college, 104.0, 8.5);
-        printCell(finalStudent.department, 109.5, 8.5);
-        printCell(finalStudent.year_of_study || finalStudent.year, 115.2, 8.5);
-        printCell(finalStudent.domain, 121.0, 9);
-        printCell(durationStr, 126.8, 8.5);
-        printCell(finalStudent.utr_number, 132.5, 8.5);
-        printCell(appDate, 138.2, 8.5);
-        printCell(finalStudent.phone, 144.0, 8.5);
-        printCell(finalStudent.email, 149.5, 8.5);
-
-        pdf.save(fileName);
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `DAKH_Offer_Letter_${(student.full_name || 'Student').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (downloadErr) {
+          console.error("Server offer letter download failed, falling back to client generation:", downloadErr);
+          alert(`Notice: Server PDF generation error (${downloadErr.message}). Downloading standard letter.`);
+        }
       } else {
         const element = document.getElementById('certificate-template');
         if (!element) throw new Error("Template not found");

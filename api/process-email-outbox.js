@@ -100,22 +100,17 @@ export default async function handler(req, res) {
             console.warn('Could not generate magic link, fallback to login page:', authErr);
           }
 
-          // Generate A4 Official Offer Letter PDF with Authentic Template Background
-          const pdfBuffer = generateOfferLetterPdf({
+          // Generate Official 2-Page Offer Letter PDF from AcroForm Template
+          const pdfBuffer = await generateOfferLetterPdf({
             fullName: payload.fullName,
             internNumber: payload.internNumber,
             college: payload.college,
             department: payload.department,
-            year: payload.year,
             domain: payload.domain,
+            mode: payload.mode || 'Online',
             internshipDuration: payload.internshipDuration || (payload.startDate && payload.endDate ? `${payload.startDate} to ${payload.endDate}` : '30 Days'),
-            startDate: payload.startDate,
-            endDate: payload.endDate,
-            utrNumber: payload.utrNumber,
-            dateOfApplication: payload.dateOfApplication ? new Date(payload.dateOfApplication).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
-            phone: payload.phone,
-            email: payload.email,
-            issueDate: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+            dateOfApplication: payload.dateOfApplication || job.created_at || new Date(),
+            issueDate: new Date()
           });
 
           const html = getPaymentApprovalEmailHtml({
