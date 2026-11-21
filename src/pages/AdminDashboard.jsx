@@ -1158,12 +1158,21 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteRegistration = async (id) => {
-    if (window.confirm('Are you sure you want to delete this internship registration?')) {
-      const { error } = await supabase.from('registrations').delete().eq('id', id);
-      if (!error) {
-        setRegistrations(registrations.filter((r) => r.id !== id));
-      } else {
-        alert("Failed to delete registration: " + error.message);
+    if (window.confirm('Are you sure you want to delete this internship registration? This will also remove any linked intern record.')) {
+      try {
+        // 1. Clean up child records referencing this registration
+        await supabase.from('email_outbox').delete().eq('registration_id', id);
+        await supabase.from('students').delete().eq('registration_id', id);
+
+        // 2. Delete the registration
+        const { error } = await supabase.from('registrations').delete().eq('id', id);
+        if (error) throw error;
+
+        setRegistrations(prev => prev.filter((r) => r.id !== id));
+        alert("Registration and linked intern record deleted successfully!");
+        fetchRegistrations();
+      } catch (err) {
+        alert("Failed to delete registration: " + err.message);
       }
     }
   };
