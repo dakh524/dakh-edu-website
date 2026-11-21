@@ -12,6 +12,21 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('registrations');
   const [registrations, setRegistrations] = useState([]);
+  const [regSubTab, setRegSubTab] = useState('registrations'); // 'registrations', 'certificates', or 'mailer'
+  const [editingScheduleReg, setEditingScheduleReg] = useState(null);
+  const [customStartInput, setCustomStartInput] = useState('');
+  const [customEndInput, setCustomEndInput] = useState('');
+  const [customDurationInput, setCustomDurationInput] = useState('30 Days');
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+
+  // Email Manager State
+  const [emailTargetType, setEmailTargetType] = useState('all'); // 'all', 'approved', 'pending'
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
+  const [emailActionText, setEmailActionText] = useState('');
+  const [emailActionUrl, setEmailActionUrl] = useState('');
+  const [isSendingCustomEmail, setIsSendingCustomEmail] = useState(false);
+  const [emailSendStatus, setEmailSendStatus] = useState(null);
   const [freelancers, setFreelancers] = useState([]);
   const [blogs, setBlogs] = useState([]);
   const [events, setEvents] = useState([]);
@@ -508,7 +523,138 @@ const AdminDashboard = () => {
     setCertEmail(reg.email);
     setCertDomain(reg.domain);
     setCertCode(reg.intern_number || `DES/INT/2026/${Math.floor(1000 + Math.random() * 9000)}`);
-    setActiveTab('certificates');
+    setActiveTab('registrations');
+    setRegSubTab('certificates');
+  };
+
+  const handleOpenScheduleEditor = (reg) => {
+    setEditingScheduleReg(reg);
+    setCustomDurationInput(reg.internship_duration || '30 Days');
+    setCustomStartInput(reg.start_date || '');
+    setCustomEndInput(reg.end_date || '');
+  };
+
+  const handleSaveSchedule = async (e) => {
+    e.preventDefault();
+    if (!editingScheduleReg) return;
+    setIsSavingSchedule(true);
+
+    try {
+      let finalStart = customStartInput.trim();
+      let finalEnd = customEndInput.trim();
+
+      // Normalize if valid
+      try {
+        if (finalStart) finalStart = normaliseDateToISO(finalStart);
+      } catch (_) {}
+
+      try {
+        if (!finalEnd && finalStart) {
+          finalEnd = computeInclusiveEndDate(finalStart, customDurationInput);
+        } else if (finalEnd) {
+          finalEnd = normaliseDateToISO(finalEnd);
+        }
+      } catch (_) {}
+
+      const { error } = await supabase
+        .from('registrations')
+        .update({
+          start_date: finalStart || null,
+          end_date: finalEnd || null,
+          internship_duration: customDurationInput,
+          is_custom_schedule: true
+        })
+        .eq('id', editingScheduleReg.id);
+
+      if (error) throw error;
+
+      // Also sync to students table if exists
+      await supabase
+        .from('students')
+        .update({
+          start_date: finalStart || null,
+          end_date: finalEnd || null,
+          internship_duration: customDurationInput
+        })
+        .eq('registration_id', editingScheduleReg.id);
+
+      alert(`Schedule updated for ${editingScheduleReg.full_name} (${finalStart} → ${finalEnd})`);
+      setEditingScheduleReg(null);
+      fetchRegistrations();
+    } catch (err) {
+      alert("Failed to update schedule: " + err.message);
+    } finally {
+      setIsSavingSchedule(false);
+    }
+  };
+
+  const handleSendCustomEmail = async (e) => {
+    e.preventDefault();
+    if (!emailSubject.trim() || !emailMessage.trim()) {
+      alert("Please fill in both Subject and Message.");
+      return;
+    }
+
+    const filtered = registrations.filter(r => {
+      if (emailTargetType === 'approved') return r.status === 'Approved';
+      if (emailTargetType === 'pending') return r.status !== 'Approved';
+      return true;
+    });
+
+    const recipients = filtered
+      .filter(r => r.email && r.email.includes('@'))
+      .map(r => ({ email: r.email.trim(), name: r.full_name }));
+
+    if (recipients.length === 0) {
+      alert(`No recipients found matching target "${emailTargetType}".`);
+      return;
+    }
+
+    if (!window.confirm(`Send this email to ${recipients.length} student(s) (${emailTargetType})?`)) {
+      return;
+    }
+
+    setIsSendingCustomEmail(true);
+    setEmailSendStatus(null);
+
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const res = await fetch('/api/send-custom-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          recipients,
+          subject: emailSubject.trim(),
+          messageText: emailMessage.trim(),
+          actionUrl: emailActionUrl.trim() || null,
+          actionText: emailActionText.trim() || null
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to dispatch emails');
+      }
+
+      setEmailSendStatus({
+        type: 'success',
+        text: `Successfully sent to ${data.sentCount} out of ${data.total} recipients!`
+      });
+      setEmailSubject('');
+      setEmailMessage('');
+      setEmailActionText('');
+      setEmailActionUrl('');
+    } catch (err) {
+      setEmailSendStatus({
+        type: 'error',
+        text: `Error sending emails: ${err.message}`
+      });
+    } finally {
+      setIsSendingCustomEmail(false);
+    }
   };
 
   const fetchRegistrations = async () => {
@@ -965,13 +1111,6 @@ const AdminDashboard = () => {
             Advertisement
           </button>
           <button 
-            onClick={() => setActiveTab('certificates')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'certificates' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <Award className="w-5 h-5" />
-            Manage Certificates
-          </button>
-          <button 
             onClick={() => setActiveTab('team')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'team' ? 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}
           >
@@ -1326,292 +1465,538 @@ const AdminDashboard = () => {
 
           {activeTab === 'registrations' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <div className="flex justify-between items-center mb-6">
+              {/* Header & Sub-Tabs Navigation */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900">Internship Registrations</h2>
-                  <p className="text-gray-500 font-medium mt-1">View and manage all student applications.</p>
+                  <h2 className="text-2xl font-black text-gray-900">Internship Management Hub</h2>
+                  <p className="text-gray-500 font-medium mt-1">Verify students, manage schedules & dates, issue certificates, and dispatch emails.</p>
                 </div>
-                <button onClick={fetchRegistrations} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
-                  <Loader2 className="w-4 h-4" /> Refresh
+                <div className="flex items-center gap-2">
+                  <button onClick={fetchRegistrations} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors text-sm flex items-center gap-2">
+                    <Loader2 className="w-4 h-4" /> Refresh
+                  </button>
+                </div>
+              </div>
+
+              {/* Sub-Tabs: Registrations | Certificates | Email Manager */}
+              <div className="flex border-b border-gray-200 mb-6 gap-2">
+                <button
+                  onClick={() => setRegSubTab('registrations')}
+                  className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-all relative ${
+                    regSubTab === 'registrations'
+                      ? 'text-purple-600 border-b-2 border-purple-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  All Registrations
+                  <span className="bg-purple-100 text-purple-700 text-xs py-0.5 px-2 rounded-full font-semibold">
+                    {registrations.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setRegSubTab('certificates')}
+                  className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-all relative ${
+                    regSubTab === 'certificates'
+                      ? 'text-purple-600 border-b-2 border-purple-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Award className="w-4 h-4" />
+                  Certificate Manager
+                  <span className="bg-green-100 text-green-700 text-xs py-0.5 px-2 rounded-full font-semibold">
+                    {certificates.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setRegSubTab('mailer')}
+                  className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-all relative ${
+                    regSubTab === 'mailer'
+                      ? 'text-purple-600 border-b-2 border-purple-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Mail className="w-4 h-4" />
+                  Mail Manager
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-gray-200">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 text-sm uppercase tracking-wider">
-                      <th className="p-4 font-black">Date</th>
-                      <th className="p-4 font-black">Student Name</th>
-                      <th className="p-4 font-black">College</th>
-                      <th className="p-4 font-black">Plan & Domain</th>
-                      <th className="p-4 font-black">Requested Schedule</th>
-                      <th className="p-4 font-black">Contact</th>
-                      <th className="p-4 font-black">UTR</th>
-                      <th className="p-4 font-black">Ack Email</th>
-                      <th className="p-4 font-black">Approval Status</th>
-                      <th className="p-4 font-black text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {registrations.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="p-8 text-center text-gray-500 font-medium">No registrations found.</td>
-                      </tr>
-                    ) : (
-                      registrations.map(reg => (
-                        <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="p-4 text-sm text-gray-500 font-medium">{new Date(reg.created_at).toLocaleDateString()}</td>
-                          <td className="p-4 font-bold text-gray-900">{reg.full_name}</td>
-                          <td className="p-4 text-sm text-gray-600">{reg.college}</td>
-                          <td className="p-4">
-                            <div className="text-sm font-bold text-purple-600">{reg.plan_name}</div>
-                            <div className="text-xs text-gray-500 font-medium">{reg.domain}</div>
-                          </td>
-                          <td className="p-4">
-                            <div className="text-xs font-bold text-gray-900 flex items-center gap-1">
-                              <Clock className="w-3.5 h-3.5 text-purple-600" />
-                              {reg.internship_duration || '30 Days'}
-                            </div>
-                            <div className="text-[11px] text-gray-500 mt-0.5">
-                              {reg.start_date && reg.end_date ? `${reg.start_date} – ${reg.end_date}` : 'Batch Schedule'}
-                            </div>
-                            {reg.is_custom_schedule && (
-                              <span className="inline-block mt-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                                Custom Request
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <div className="text-sm text-gray-900">{reg.phone}</div>
-                            <div className="text-xs text-gray-500">{reg.email}</div>
-                          </td>
-                          <td className="p-4 text-sm font-mono text-gray-600 bg-gray-50 rounded px-2">{reg.utr_number}</td>
-                          <td className="p-4">
-                            {reg.reg_email_status === 'sent' ? (
-                              <div className="flex flex-col gap-0.5">
-                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full w-fit">
-                                  <CheckCircle className="w-3 h-3 text-emerald-600" /> Sent
-                                </span>
-                                {reg.reg_email_sent_at && (
-                                  <span className="text-[10px] text-gray-400">
-                                    {new Date(reg.reg_email_sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {/* Sub-Tab 1: All Registrations Table */}
+              {regSubTab === 'registrations' && (
+                <>
+                  <div className="overflow-x-auto rounded-xl border border-gray-200">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 text-xs uppercase tracking-wider">
+                          <th className="p-4 font-black">Date</th>
+                          <th className="p-4 font-black">Student Name</th>
+                          <th className="p-4 font-black">College & Dept</th>
+                          <th className="p-4 font-black">Plan & Fees</th>
+                          <th className="p-4 font-black">Internship Dates</th>
+                          <th className="p-4 font-black">Contact</th>
+                          <th className="p-4 font-black">UTR / Payment</th>
+                          <th className="p-4 font-black">Ack Mail</th>
+                          <th className="p-4 font-black">Status</th>
+                          <th className="p-4 font-black text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {registrations.length === 0 ? (
+                          <tr>
+                            <td colSpan="10" className="p-8 text-center text-gray-500 font-medium">No registrations found.</td>
+                          </tr>
+                        ) : (
+                          registrations.map(reg => (
+                            <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="p-4 text-xs text-gray-500 font-medium">{new Date(reg.created_at).toLocaleDateString()}</td>
+                              <td className="p-4">
+                                <div className="font-bold text-gray-900">{reg.full_name}</div>
+                                {reg.intern_number && (
+                                  <div className="text-[11px] font-mono text-purple-600 font-bold">{reg.intern_number}</div>
+                                )}
+                              </td>
+                              <td className="p-4 text-xs text-gray-600">
+                                <div className="font-semibold text-gray-800">{reg.college || 'N/A'}</div>
+                                <div className="text-gray-500">{reg.department || ''} {reg.year_of_study ? `(${reg.year_of_study})` : ''}</div>
+                              </td>
+                              <td className="p-4">
+                                <div className="text-xs font-bold text-purple-600">{reg.plan_name}</div>
+                                <div className="text-xs font-black text-emerald-600 mt-0.5">
+                                  ₹{reg.plan_price || 'Free'}
+                                </div>
+                                <div className="text-[10px] text-gray-400 font-medium">{reg.domain}</div>
+                              </td>
+                              <td className="p-4">
+                                <div className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5 text-purple-600" />
+                                  {reg.internship_duration || '30 Days'}
+                                </div>
+                                <div className="text-[11px] text-gray-700 font-medium mt-0.5">
+                                  {reg.start_date && reg.end_date ? (
+                                    <span>{reg.start_date} <span className="text-gray-400">→</span> {reg.end_date}</span>
+                                  ) : (
+                                    <span className="text-amber-600 italic">No schedule set</span>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenScheduleEditor(reg)}
+                                  className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded-md border border-purple-200 transition-colors"
+                                  title="Edit Internship Start & End Date"
+                                >
+                                  <Edit className="w-2.5 h-2.5" /> Edit Dates
+                                </button>
+                              </td>
+                              <td className="p-4 text-xs">
+                                <div className="text-gray-900 font-medium">{reg.phone}</div>
+                                <div className="text-gray-500">{reg.email}</div>
+                              </td>
+                              <td className="p-4">
+                                <div className="text-xs font-mono text-gray-700 bg-gray-50 rounded px-2 py-1 border border-gray-100 w-fit">
+                                  {reg.utr_number || 'PENDING'}
+                                </div>
+                                {reg.payment_completed ? (
+                                  <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                    Paid
+                                  </span>
+                                ) : (
+                                  <span className="inline-block mt-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                                    Unpaid
                                   </span>
                                 )}
-                              </div>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full w-fit">
-                                <Clock className="w-3 h-3 text-amber-600" /> Pending
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                              reg.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                            }`}>
-                              {reg.status || 'Pending'}
-                            </span>
-                          </td>
-                          <td className="p-4 text-right">
-                            <div className="flex justify-end gap-2">
-                              {reg.status !== 'Approved' && (
-                                <button 
-                                  onClick={() => handleApproveRegistration(reg)}
-                                  disabled={approvingId === reg.id}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-md transition-colors disabled:opacity-50 shadow-sm"
-                                  title="Verify Payment & Queue Offer Letter"
-                                >
-                                  {approvingId === reg.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />} Approve
-                                </button>
-                              )}
-                              <button 
-                                onClick={() => generatePDF(reg, 'offer')}
-                                disabled={generatingPdf}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-md transition-colors disabled:opacity-50"
-                                title="Download Offer Letter"
-                              >
-                                <FileText className="w-3.5 h-3.5" /> Download
-                              </button>
-                              <button 
-                                onClick={() => generatePDF(reg, 'certificate')}
-                                disabled={generatingPdf}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-bold rounded-md transition-colors disabled:opacity-50"
-                                title="Download Certificate"
-                              >
-                                <FileBadge className="w-3.5 h-3.5" /> Cert
-                              </button>
-                              <button 
-                                onClick={() => handleQuickCertLink(reg)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-md transition-colors"
-                                title="Add/Manage Certificate Link"
-                              >
-                                <Award className="w-3.5 h-3.5" /> Link
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteRegistration(reg.id)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold rounded-md transition-colors"
-                                title="Delete Registration"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </motion.div>
-          )}
+                              </td>
+                              <td className="p-4">
+                                {reg.reg_email_status === 'sent' ? (
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full w-fit">
+                                      <CheckCircle className="w-3 h-3 text-emerald-600" /> Sent
+                                    </span>
+                                    {reg.reg_email_sent_at && (
+                                      <span className="text-[10px] text-gray-400">
+                                        {new Date(reg.reg_email_sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full w-fit">
+                                    <Clock className="w-3 h-3 text-amber-600" /> Pending
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-4">
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                                  reg.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {reg.status || 'Pending'}
+                                </span>
+                              </td>
+                              <td className="p-4 text-right">
+                                <div className="flex justify-end gap-1.5">
+                                  {reg.status !== 'Approved' && (
+                                    <button 
+                                      onClick={() => handleApproveRegistration(reg)}
+                                      disabled={approvingId === reg.id}
+                                      className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 shadow-sm"
+                                      title="Verify Payment & Queue Offer Letter"
+                                    >
+                                      {approvingId === reg.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} Approve
+                                    </button>
+                                  )}
+                                  <button 
+                                    onClick={() => generatePDF(reg, 'offer')}
+                                    disabled={generatingPdf}
+                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+                                    title="Download Offer Letter"
+                                  >
+                                    <FileText className="w-3 h-3" /> Offer
+                                  </button>
+                                  <button 
+                                    onClick={() => handleQuickCertLink(reg)}
+                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-lg transition-colors"
+                                    title="Add/Manage Certificate Link"
+                                  >
+                                    <Award className="w-3 h-3" /> Cert
+                                  </button>
+                                  <button 
+                                    onClick={() => handleDeleteRegistration(reg.id)}
+                                    className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold rounded-lg transition-colors"
+                                    title="Delete Registration"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
 
-          {activeTab === 'certificates' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <div className="flex justify-between items-center mb-6">
+                  {/* Modal for editing Start/End Date */}
+                  {editingScheduleReg && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-black text-gray-900">Edit Internship Schedule</h3>
+                          <button onClick={() => setEditingScheduleReg(null)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Student: <strong className="text-gray-900">{editingScheduleReg.full_name}</strong> ({editingScheduleReg.domain})
+                        </p>
+                        <form onSubmit={handleSaveSchedule} className="space-y-4">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Duration</label>
+                            <select
+                              value={customDurationInput}
+                              onChange={(e) => {
+                                setCustomDurationInput(e.target.value);
+                                if (customStartInput) {
+                                  try {
+                                    setCustomEndInput(computeInclusiveEndDate(customStartInput, e.target.value));
+                                  } catch (_) {}
+                                }
+                              }}
+                              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                            >
+                              <option value="15 Days">15 Days</option>
+                              <option value="30 Days">30 Days (1 Month)</option>
+                              <option value="45 Days">45 Days</option>
+                              <option value="60 Days">60 Days (2 Months)</option>
+                              <option value="90 Days">90 Days (3 Months)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Start Date (YYYY-MM-DD)</label>
+                            <input
+                              type="date"
+                              required
+                              value={customStartInput}
+                              onChange={(e) => {
+                                setCustomStartInput(e.target.value);
+                                if (e.target.value) {
+                                  try {
+                                    setCustomEndInput(computeInclusiveEndDate(e.target.value, customDurationInput));
+                                  } catch (_) {}
+                                }
+                              }}
+                              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">End Date (Auto-calculated / Editable)</label>
+                            <input
+                              type="date"
+                              required
+                              value={customEndInput}
+                              onChange={(e) => setCustomEndInput(e.target.value)}
+                              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                            />
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingScheduleReg(null)}
+                              className="w-1/2 py-2.5 rounded-xl border border-gray-200 font-bold text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={isSavingSchedule}
+                              className="w-1/2 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 font-bold text-sm text-white transition-colors disabled:opacity-50"
+                            >
+                              {isSavingSchedule ? 'Saving...' : 'Save Schedule'}
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Sub-Tab 2: Certificate Manager */}
+              {regSubTab === 'certificates' && (
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900">Manage Certificates</h2>
-                  <p className="text-gray-500 font-medium mt-1">Add and manage certificate download links for interns.</p>
-                </div>
-                <button onClick={fetchCertificates} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2">
-                  <Loader2 className="w-4 h-4" /> Refresh
-                </button>
-              </div>
+                  {/* Form to add certificate */}
+                  <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl mb-8">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Add or Update Certificate Link</h3>
+                    <form onSubmit={handleAddCertificate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Full Name</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={certName}
+                          onChange={(e) => setCertName(e.target.value)}
+                          placeholder="e.g. John Doe"
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Email Address</label>
+                        <input 
+                          type="email" 
+                          required
+                          value={certEmail}
+                          onChange={(e) => setCertEmail(e.target.value)}
+                          placeholder="e.g. john@example.com"
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Certificate Code</label>
+                        <div className="flex gap-2">
+                          <input 
+                            type="text" 
+                            required
+                            value={certCode}
+                            onChange={(e) => setCertCode(e.target.value)}
+                            placeholder="e.g. DES/INT/2026/001"
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                          />
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const rand = Math.floor(1000 + Math.random() * 9000);
+                              setCertCode(`DES/INT/2026/${rand}`);
+                            }}
+                            className="px-2.5 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                          >
+                            Generate
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Domain / Course</label>
+                        <input 
+                          type="text" 
+                          required
+                          list="admin-cert-domains"
+                          value={certDomain}
+                          onChange={(e) => setCertDomain(e.target.value)}
+                          placeholder="e.g. Web Development"
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                        />
+                        <datalist id="admin-cert-domains">
+                          <option value="Vibe Coding" />
+                          <option value="Web Development" />
+                          <option value="Generative AI" />
+                          <option value="Full Stack Development" />
+                          <option value="AI & Machine Learning" />
+                          <option value="App Development" />
+                          <option value="UI/UX Design" />
+                          <option value="Data Science" />
+                          <option value="Python Full Stack" />
+                        </datalist>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Certificate Link (Google Drive / Cloud Storage URL)</label>
+                        <input 
+                          type="url" 
+                          required
+                          value={certLink}
+                          onChange={(e) => setCertLink(e.target.value)}
+                          placeholder="https://drive.google.com/file/... or https://storage.googleapis.com/..."
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                        />
+                      </div>
+                      <div className="md:col-span-2 pt-2">
+                        <button 
+                          type="submit" 
+                          disabled={isSubmittingCert}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                        >
+                          {isSubmittingCert ? 'Adding...' : 'Add / Update Certificate Link'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
 
-              {/* Form to add certificate */}
-              <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl mb-8">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Add New Certificate Link</h3>
-                <form onSubmit={handleAddCertificate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Full Name</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={certName}
-                      onChange={(e) => setCertName(e.target.value)}
-                      placeholder="e.g. John Doe"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                    />
+                  {/* Table list of certificates */}
+                  <div className="overflow-x-auto rounded-xl border border-gray-200">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 text-xs uppercase tracking-wider">
+                          <th className="p-4 font-black">Name</th>
+                          <th className="p-4 font-black">Email</th>
+                          <th className="p-4 font-black">Code</th>
+                          <th className="p-4 font-black">Domain</th>
+                          <th className="p-4 font-black">Certificate Link</th>
+                          <th className="p-4 font-black text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 text-sm">
+                        {certificates.length === 0 ? (
+                          <tr>
+                            <td colSpan="6" className="p-8 text-center text-gray-500 font-medium">No certificates found.</td>
+                          </tr>
+                        ) : (
+                          certificates.map(c => (
+                            <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="p-4 font-bold text-gray-900">{c.full_name}</td>
+                              <td className="p-4 text-gray-600">{c.email}</td>
+                              <td className="p-4 font-mono font-semibold text-purple-600">{c.certificate_code}</td>
+                              <td className="p-4 text-gray-600">{c.domain}</td>
+                              <td className="p-4">
+                                <a href={c.certificate_link} target="_blank" rel="noreferrer" className="text-purple-600 hover:underline font-medium break-all max-w-[200px] block truncate">
+                                  {c.certificate_link}
+                                </a>
+                              </td>
+                              <td className="p-4 text-right">
+                                <button onClick={() => handleDeleteCertificate(c.id)} className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors cursor-pointer">
+                                  <Trash2 size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Email Address</label>
-                    <input 
-                      type="email" 
-                      required
-                      value={certEmail}
-                      onChange={(e) => setCertEmail(e.target.value)}
-                      placeholder="e.g. john@example.com"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                    />
+                </div>
+              )}
+
+              {/* Sub-Tab 3: Custom Mail Manager */}
+              {regSubTab === 'mailer' && (
+                <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-black text-gray-900">Custom Mail Manager</h3>
+                    <p className="text-gray-500 text-sm mt-1">Compose and send official announcements, updates, or instructions directly to registered interns via Resend.</p>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Certificate Code</label>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
+
+                  {emailSendStatus && (
+                    <div className={`p-4 rounded-xl mb-6 text-sm font-bold ${
+                      emailSendStatus.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}>
+                      {emailSendStatus.text}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSendCustomEmail} className="space-y-4 max-w-2xl">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Target Audience</label>
+                      <select
+                        value={emailTargetType}
+                        onChange={(e) => setEmailTargetType(e.target.value)}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                      >
+                        <option value="all">All Registrations ({registrations.length} students)</option>
+                        <option value="approved">Approved Interns Only ({registrations.filter(r => r.status === 'Approved').length} students)</option>
+                        <option value="pending">Pending Registrations Only ({registrations.filter(r => r.status !== 'Approved').length} students)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Email Subject</label>
+                      <input
+                        type="text"
                         required
-                        value={certCode}
-                        onChange={(e) => setCertCode(e.target.value)}
-                        placeholder="e.g. DES/INT/2026/001"
+                        value={emailSubject}
+                        onChange={(e) => setEmailSubject(e.target.value)}
+                        placeholder="e.g. Important Update Regarding Your Internship Onboarding"
                         className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
                       />
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          const rand = Math.floor(1000 + Math.random() * 9000);
-                          setCertCode(`DES/INT/2026/${rand}`);
-                        }}
-                        className="px-2.5 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Message Content</label>
+                      <textarea
+                        rows={6}
+                        required
+                        value={emailMessage}
+                        onChange={(e) => setEmailMessage(e.target.value)}
+                        placeholder="Type the message or instructions you want to convey to the students..."
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Action Button Text (Optional)</label>
+                        <input
+                          type="text"
+                          value={emailActionText}
+                          onChange={(e) => setEmailActionText(e.target.value)}
+                          placeholder="e.g. Join WhatsApp Group / Open LMS"
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Action Button URL (Optional)</label>
+                        <input
+                          type="url"
+                          value={emailActionUrl}
+                          onChange={(e) => setEmailActionUrl(e.target.value)}
+                          placeholder="https://..."
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        disabled={isSendingCustomEmail}
+                        className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                       >
-                        Generate
+                        {isSendingCustomEmail ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Sending Emails...
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="w-4 h-4" /> Send Email Announcement
+                          </>
+                        )}
                       </button>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Domain / Course</label>
-                    <input 
-                      type="text" 
-                      required
-                      list="admin-cert-domains"
-                      value={certDomain}
-                      onChange={(e) => setCertDomain(e.target.value)}
-                      placeholder="e.g. Web Development"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                    />
-                    <datalist id="admin-cert-domains">
-                      <option value="Vibe Coding" />
-                      <option value="Web Development" />
-                      <option value="Generative AI" />
-                      <option value="Full Stack Development" />
-                      <option value="AI & Machine Learning" />
-                      <option value="App Development" />
-                      <option value="UI/UX Design" />
-                      <option value="Data Science" />
-                      <option value="Python Full Stack" />
-                    </datalist>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Certificate Link (URL)</label>
-                    <input 
-                      type="url" 
-                      required
-                      value={certLink}
-                      onChange={(e) => setCertLink(e.target.value)}
-                      placeholder="https://drive.google.com/file/... or https://supabase-storage-url.com/..."
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-950"
-                    />
-                  </div>
-                  <div className="md:col-span-2 pt-2">
-                    <button 
-                      type="submit" 
-                      disabled={isSubmittingCert}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
-                    >
-                      {isSubmittingCert ? 'Adding...' : 'Add Certificate Link'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              {/* Table list of certificates */}
-              <div className="overflow-x-auto rounded-xl border border-gray-200">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 text-xs uppercase tracking-wider">
-                      <th className="p-4 font-black">Name</th>
-                      <th className="p-4 font-black">Email</th>
-                      <th className="p-4 font-black">Code</th>
-                      <th className="p-4 font-black">Domain</th>
-                      <th className="p-4 font-black">Certificate Link</th>
-                      <th className="p-4 font-black text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 text-sm">
-                    {certificates.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="p-8 text-center text-gray-500 font-medium">No certificates found.</td>
-                      </tr>
-                    ) : (
-                      certificates.map(c => (
-                        <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="p-4 font-bold text-gray-900">{c.full_name}</td>
-                          <td className="p-4 text-gray-600">{c.email}</td>
-                          <td className="p-4 font-mono font-semibold text-purple-600">{c.certificate_code}</td>
-                          <td className="p-4 text-gray-600">{c.domain}</td>
-                          <td className="p-4">
-                            <a href={c.certificate_link} target="_blank" rel="noreferrer" className="text-purple-600 hover:underline font-medium break-all max-w-[200px] block truncate">
-                              {c.certificate_link}
-                            </a>
-                          </td>
-                          <td className="p-4 text-right">
-                            <button onClick={() => handleDeleteCertificate(c.id)} className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors cursor-pointer">
-                              <Trash2 size={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  </form>
+                </div>
+              )}
             </motion.div>
           )}
 
