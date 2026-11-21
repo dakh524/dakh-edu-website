@@ -276,7 +276,11 @@ const ApplyInternship = () => {
       }
 
       // 2. Save Registration with Exact Student Chosen Schedule
+      // Use pre-generated UUID so we never fail on RLS .select() restrictions
+      const registrationId = crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).substring(2) + Date.now().toString(36));
+
       const insertPayload = {
+        id: registrationId,
         full_name: formData.fullName,
         email: formData.email,
         phone: formData.phone,
@@ -286,8 +290,8 @@ const ApplyInternship = () => {
         domain: formData.domain,
         plan_name: finalPlanName,
         plan_price: finalPrice.toString(),
-        referral_code: formData.referral,
-        utr_number: formData.utr || null,
+        referral_code: formData.referral || null,
+        utr_number: (formData.utr || '').trim() || 'PENDING_PAY_LATER',
         payment_completed: !!formData.paymentCompleted
       };
 
@@ -296,10 +300,9 @@ const ApplyInternship = () => {
       if (computedSchedule.startDateFormatted) insertPayload.start_date = computedSchedule.startDateFormatted;
       if (computedSchedule.endDateFormatted) insertPayload.end_date = computedSchedule.endDateFormatted;
 
-      const { data: regData, error: regError } = await supabase
+      const { error: regError } = await supabase
         .from('registrations')
-        .insert([insertPayload])
-        .select();
+        .insert([insertPayload]);
 
       if (regError) {
         console.error("Error saving registration:", regError);
@@ -311,7 +314,7 @@ const ApplyInternship = () => {
         const internNumber = `DES/INT/2026/${Math.floor(1000 + Math.random() * 9000)}`;
         await supabase.from('students').insert([{
           auth_id: authData.user.id,
-          registration_id: regData[0].id,
+          registration_id: registrationId,
           full_name: formData.fullName,
           email: formData.email,
           intern_number: internNumber,
@@ -321,17 +324,17 @@ const ApplyInternship = () => {
         setCredentials({
           email: formData.email,
           intern_number: internNumber,
-          registration_id: regData[0].id,
+          registration_id: registrationId,
           payment_completed: !!formData.paymentCompleted,
           utr_number: formData.utr || null
         });
       }
 
       // 4. Enqueue registration acknowledgement email via secure backend API.
-      //    Passes registrationId with student's authenticated session bearer token.
+      //    Passes registrationId with student's session token if present.
       //    The backend validates authorization and reads recipient email directly from the DB record.
       let ackQueued = false;
-      if (!regError && regData?.[0]?.id) {
+      if (!regError) {
         try {
           const headers = { 'Content-Type': 'application/json' };
           if (authData?.session?.access_token) {
@@ -341,7 +344,7 @@ const ApplyInternship = () => {
             method: 'POST',
             headers,
             body: JSON.stringify({
-              registrationId: regData[0].id
+              registrationId: registrationId
             })
           });
           const ackJson = await ackRes.json().catch(() => ({}));
