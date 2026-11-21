@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts } from 'pdf-lib';
+import { PDFDocument, StandardFonts, PDFName, PDFString } from 'pdf-lib';
 import { OFFER_LETTER_TEMPLATE_BASE64 } from './offerLetterTemplateBase64.js';
 
 /**
@@ -60,9 +60,9 @@ export async function generateOfferLetterPdf({
   const formattedAppDate = dateOfApplication ? formatKolkataDate(dateOfApplication) : formattedIssueDate;
   
   // Normalized duration (e.g. "30 days" or "29 days")
-  let cleanDuration = (internshipDuration || '30 Days').trim();
+  let cleanDuration = (internshipDuration || '30 days').trim();
   if (!cleanDuration.toLowerCase().includes('day') && !cleanDuration.toLowerCase().includes('month')) {
-    cleanDuration = `${cleanDuration} Days`;
+    cleanDuration = `${cleanDuration} days`;
   }
   
   // Normalized mode
@@ -88,10 +88,25 @@ export async function generateOfferLetterPdf({
   // 4. Use Standard Helvetica Font with template native #182136 styling
   const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  // 5. Fill each AcroForm field and update appearances
+  // 5. Fill each AcroForm field explicitly with 11 pt font size, scaling down only if text would clip
   for (const [fieldName, val] of Object.entries(fieldValues)) {
     try {
       const field = form.getTextField(fieldName);
+      // Ensure DA contains unescaped standard operator so setFontSize works cleanly
+      field.acroField.dict.set(PDFName.of('DA'), PDFString.of('/Helv 11 Tf 0.094118 0.129412 0.211765 rg'));
+
+      // Check available width to prevent clipping
+      let targetFontSize = 11;
+      const widgets = field.acroField.getWidgets();
+      if (widgets && widgets.length > 0) {
+        const rect = widgets[0].getRectangle();
+        const availableWidth = rect.width - 6; // Leave safety margin
+        while (helveticaFont.widthOfTextAtSize(val, targetFontSize) > availableWidth && targetFontSize > 6.5) {
+          targetFontSize -= 0.5;
+        }
+      }
+
+      field.setFontSize(targetFontSize);
       field.setText(val);
       field.updateAppearances(helveticaFont);
     } catch (err) {
