@@ -142,12 +142,32 @@ const AdminDashboard = () => {
     }
   };
 
+  // Helper to suggest the next unique Intern Number based on current registrations
+  const getNextSuggestedInternNumber = () => {
+    let maxNum = 0;
+    (registrations || []).forEach(r => {
+      if (r.intern_number) {
+        const m = r.intern_number.match(/(\d+)$/);
+        if (m) {
+          const val = parseInt(m[1], 10);
+          if (val > maxNum) maxNum = val;
+        }
+      }
+    });
+    const nextVal = maxNum > 0 ? maxNum + 1 : 1;
+    return `DES/INT/2026/${String(nextVal).padStart(3, '0')}`;
+  };
+
   const generatePDF = async (student, type) => {
     let finalStudent = { ...student };
 
     // 1. Check for Intern Number
     if (!finalStudent.intern_number) {
-      const manualNum = window.prompt(`Please enter the manual Intern Number for ${student.full_name}:`, "DES/INT/2026/001");
+      const suggestedNum = getNextSuggestedInternNumber();
+      const manualNum = window.prompt(
+        `Please enter a unique Intern Number for ${student.full_name}:\n(Leave as suggested or customize)`,
+        suggestedNum
+      );
       if (!manualNum) {
         return; // User cancelled
       }
@@ -155,19 +175,23 @@ const AdminDashboard = () => {
       // Save to Supabase
       const { error } = await supabase
         .from('registrations')
-        .update({ intern_number: manualNum })
+        .update({ intern_number: manualNum.trim() })
         .eq('id', student.id);
         
       if (error) {
-        alert(`Failed to save Intern Number to database! Error: ${error.message}`);
+        if (error.message && error.message.includes('unique constraint')) {
+          alert(`Collision Error: Intern Number "${manualNum.trim()}" is already assigned to another student! Please enter a different unique number.`);
+        } else {
+          alert(`Failed to save Intern Number to database! Error: ${error.message}`);
+        }
         console.error("Supabase update error:", error);
         return;
       }
       
-      finalStudent.intern_number = manualNum;
+      finalStudent.intern_number = manualNum.trim();
       
       // Update local state so it shows in the table immediately
-      setRegistrations(prev => prev.map(r => r.id === student.id ? { ...r, intern_number: manualNum } : r));
+      setRegistrations(prev => prev.map(r => r.id === student.id ? { ...r, intern_number: manualNum.trim() } : r));
     }
 
     // Force sync update of selected student so the template is ready in the DOM
@@ -956,8 +980,10 @@ const AdminDashboard = () => {
     // 1. Intern Number
     let internNum = student.intern_number;
     if (!internNum) {
-      internNum = window.prompt(`Assign Intern ID for ${student.full_name}:`, "DES/INT/2026/001");
+      const suggestedNum = getNextSuggestedInternNumber();
+      internNum = window.prompt(`Assign unique Intern ID for ${student.full_name}:`, suggestedNum);
       if (!internNum) return;
+      internNum = internNum.trim();
     }
 
     // 2. Duration & start date from registration record
