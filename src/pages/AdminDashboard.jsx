@@ -679,7 +679,12 @@ const AdminDashboard = () => {
     const regId = logOrReg.registration_id || logOrReg.id;
     const logId = logOrReg.payload ? logOrReg.id : null;
 
-    if (!window.confirm(`Resend ${eventType === 'PAYMENT_APPROVED' ? 'Offer Letter Email' : 'Acknowledgement Email'} now to ${studentName} (${studentEmail})?`)) {
+    let eventLabel = 'Acknowledgement Email';
+    if (eventType === 'PAYMENT_APPROVED') eventLabel = 'Offer Letter Email';
+    else if (eventType === 'PROJECT_REMINDER') eventLabel = 'Project Submission Reminder';
+    else if (eventType === 'CERTIFICATE_DISPATCH') eventLabel = 'Certificate Delivery Email';
+
+    if (!window.confirm(`Dispatch / Resend ${eventLabel} now to ${studentName} (${studentEmail})?`)) {
       return;
     }
 
@@ -706,11 +711,71 @@ const AdminDashboard = () => {
         throw new Error(data.error || 'Failed to dispatch email');
       }
 
-      alert(`Email dispatched successfully to ${studentEmail}!`);
+      alert(`${eventLabel} dispatched successfully to ${studentEmail}!`);
       fetchRegistrations();
       fetchEmailLogs();
     } catch (err) {
-      alert(`Error resending email: ${err.message}`);
+      alert(`Error sending email: ${err.message}`);
+    } finally {
+      setResendingRegId(null);
+    }
+  };
+
+  const handleSendProjectReminder = async (reg) => {
+    if (!window.confirm(`Send 3-Day Project Submission Reminder email to ${reg.full_name} (${reg.email})?`)) {
+      return;
+    }
+    setResendingRegId(reg.id);
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const res = await fetch('/api/send-project-reminder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession?.access_token || ''}`
+        },
+        body: JSON.stringify({ registrationId: reg.id })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to send reminder');
+      alert(`Project submission reminder sent to ${reg.email}!`);
+      fetchRegistrations();
+      fetchEmailLogs();
+    } catch (err) {
+      alert(`Error sending project reminder: ${err.message}`);
+    } finally {
+      setResendingRegId(null);
+    }
+  };
+
+  const handleSendCertificateEmail = async (reg) => {
+    if (!window.confirm(`Dispatch Official Certificate completion email to ${reg.full_name} (${reg.email})?`)) {
+      return;
+    }
+    setResendingRegId(reg.id);
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const res = await fetch('/api/send-certificate-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          registrationId: reg.id,
+          fullName: reg.full_name,
+          email: reg.email,
+          domain: reg.domain,
+          internNumber: reg.intern_number
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to dispatch certificate email');
+      alert(`Certificate delivery email queued & sent to ${reg.email}!`);
+      fetchRegistrations();
+      fetchEmailLogs();
+    } catch (err) {
+      alert(`Error sending certificate email: ${err.message}`);
     } finally {
       setResendingRegId(null);
     }
@@ -1716,7 +1781,7 @@ const AdminDashboard = () => {
                           <th className="py-3 px-4">Internship Dates</th>
                           <th className="py-3 px-4">Contact</th>
                           <th className="py-3 px-4">UTR & Payment</th>
-                          <th className="py-3 px-4">Ack Mail</th>
+                          <th className="py-3 px-4 text-center">Lifecycle Emails</th>
                           <th className="py-3 px-4">Status</th>
                           <th className="py-3 px-4 text-right">Actions</th>
                         </tr>
@@ -1868,36 +1933,101 @@ const AdminDashboard = () => {
                                 )}
                               </td>
 
-                              {/* Ack Mail */}
-                              <td className="py-3.5 px-4 whitespace-nowrap">
-                                {reg.reg_email_status === 'sent' ? (
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 w-fit">
-                                      <CheckCircle className="w-3 h-3 text-emerald-600" /> Sent
-                                    </span>
-                                    {reg.reg_email_sent_at && (
-                                      <span className="text-[10px] text-slate-400">
-                                        {new Date(reg.reg_email_sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {/* Lifecycle Emails (Ack, Offer, Reminder, Cert) */}
+                              <td className="py-3 px-4 whitespace-nowrap">
+                                <div className="flex flex-col gap-1.5 min-w-[210px]">
+                                  {/* 1. Ack Mail */}
+                                  <div className="flex items-center justify-between text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-200/70">
+                                    <span className="font-bold text-slate-600">1. Ack:</span>
+                                    {reg.reg_email_status === 'sent' ? (
+                                      <span className="font-extrabold text-emerald-700 flex items-center gap-0.5">
+                                        <CheckCircle className="w-2.5 h-2.5" /> Sent
                                       </span>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-amber-700 font-semibold">Pending</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleInstantResendEmail(reg, 'REGISTRATION_ACK')}
+                                          disabled={resendingRegId === reg.id}
+                                          className="text-[9px] font-bold text-purple-700 hover:text-purple-900 bg-white px-1.5 py-0.2 rounded border border-purple-200 shadow-2xs"
+                                        >
+                                          Send
+                                        </button>
+                                      </div>
                                     )}
                                   </div>
-                                ) : (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60 w-fit">
-                                      <Clock className="w-3 h-3 text-amber-600" /> Pending
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleInstantResendEmail(reg)}
-                                      disabled={resendingRegId === reg.id}
-                                      className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded-md border border-purple-200/80 transition-all disabled:opacity-50"
-                                      title="Dispatch / Retry Thank-You Email Now"
-                                    >
-                                      {resendingRegId === reg.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Send className="w-2.5 h-2.5" />}
-                                      Send
-                                    </button>
+
+                                  {/* 2. Offer Mail */}
+                                  <div className="flex items-center justify-between text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-200/70">
+                                    <span className="font-bold text-slate-600">2. Offer:</span>
+                                    {reg.approval_email_status === 'sent' ? (
+                                      <span className="font-extrabold text-emerald-700 flex items-center gap-0.5">
+                                        <CheckCircle className="w-2.5 h-2.5" /> Sent
+                                      </span>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-slate-400 font-medium">{reg.status === 'Approved' ? 'Pending' : 'Unapproved'}</span>
+                                        {reg.status === 'Approved' && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleInstantResendEmail(reg, 'PAYMENT_APPROVED')}
+                                            disabled={resendingRegId === reg.id}
+                                            className="text-[9px] font-bold text-indigo-700 hover:text-indigo-900 bg-white px-1.5 py-0.2 rounded border border-indigo-200 shadow-2xs"
+                                          >
+                                            Send
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+
+                                  {/* 3. 3-Day Project Reminder */}
+                                  <div className="flex items-center justify-between text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-200/70">
+                                    <span className="font-bold text-slate-600">3. Reminder:</span>
+                                    {reg.reminder_email_status === 'sent' ? (
+                                      <span className="font-extrabold text-emerald-700 flex items-center gap-0.5">
+                                        <CheckCircle className="w-2.5 h-2.5" /> Sent
+                                      </span>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-amber-700 font-semibold">Pending</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSendProjectReminder(reg)}
+                                          disabled={resendingRegId === reg.id}
+                                          className="text-[9px] font-bold text-amber-700 hover:text-amber-900 bg-white px-1.5 py-0.2 rounded border border-amber-300 shadow-2xs"
+                                          title="Send 3-Day Project Submission Reminder Email"
+                                        >
+                                          Send
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* 4. Certificate Mail */}
+                                  <div className="flex items-center justify-between text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-200/70">
+                                    <span className="font-bold text-slate-600">4. Cert:</span>
+                                    {reg.cert_email_status === 'sent' ? (
+                                      <span className="font-extrabold text-emerald-700 flex items-center gap-0.5">
+                                        <CheckCircle className="w-2.5 h-2.5" /> Sent
+                                      </span>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-slate-400 font-medium">Pending</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSendCertificateEmail(reg)}
+                                          disabled={resendingRegId === reg.id}
+                                          className="text-[9px] font-bold text-purple-700 hover:text-purple-900 bg-white px-1.5 py-0.2 rounded border border-purple-200 shadow-2xs"
+                                          title="Dispatch Certificate Completion Email"
+                                        >
+                                          Send
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               </td>
 
                               {/* Approval Status */}
@@ -2093,6 +2223,112 @@ const AdminDashboard = () => {
                                 <span className="text-slate-500 font-mono text-[10px] select-all block truncate">
                                   {viewingDetailReg.id}
                                 </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Lifecycle Email Dispatch Status in Modal */}
+                          <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-purple-900 mb-3 flex items-center gap-1.5">
+                              <Mail className="w-4 h-4 text-purple-600" /> 4-Stage Lifecycle Email Status
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                              {/* Stage 1 */}
+                              <div className="bg-white p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                                <div>
+                                  <div className="font-extrabold text-slate-800">1. Registration Ack</div>
+                                  <div className="text-[11px] text-slate-500 mt-0.5">
+                                    {viewingDetailReg.reg_email_status === 'sent' ? (
+                                      <span className="text-emerald-700 font-bold flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3 text-emerald-600" /> Sent
+                                      </span>
+                                    ) : (
+                                      <span className="text-amber-600 font-semibold">Pending / Unsent</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleInstantResendEmail(viewingDetailReg, 'REGISTRATION_ACK')}
+                                  disabled={resendingRegId === viewingDetailReg.id}
+                                  className="text-[10px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-lg border border-purple-200"
+                                >
+                                  {viewingDetailReg.reg_email_status === 'sent' ? 'Resend' : 'Send Now'}
+                                </button>
+                              </div>
+
+                              {/* Stage 2 */}
+                              <div className="bg-white p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                                <div>
+                                  <div className="font-extrabold text-slate-800">2. Offer Letter & Login</div>
+                                  <div className="text-[11px] text-slate-500 mt-0.5">
+                                    {viewingDetailReg.approval_email_status === 'sent' ? (
+                                      <span className="text-emerald-700 font-bold flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3 text-emerald-600" /> Sent
+                                      </span>
+                                    ) : (
+                                      <span className="text-slate-400 font-semibold">{viewingDetailReg.status === 'Approved' ? 'Pending' : 'Requires Approval'}</span>
+                                    )}
+                                  </div>
+                                </div>
+                                {viewingDetailReg.status === 'Approved' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleInstantResendEmail(viewingDetailReg, 'PAYMENT_APPROVED')}
+                                    disabled={resendingRegId === viewingDetailReg.id}
+                                    className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg border border-indigo-200"
+                                  >
+                                    {viewingDetailReg.approval_email_status === 'sent' ? 'Resend' : 'Send Now'}
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Stage 3 */}
+                              <div className="bg-white p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                                <div>
+                                  <div className="font-extrabold text-slate-800">3. Project Submission Reminder</div>
+                                  <div className="text-[11px] text-slate-500 mt-0.5">
+                                    {viewingDetailReg.reminder_email_status === 'sent' ? (
+                                      <span className="text-emerald-700 font-bold flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3 text-emerald-600" /> Sent (3-day reminder)
+                                      </span>
+                                    ) : (
+                                      <span className="text-amber-600 font-semibold">Scheduled 3 days prior</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendProjectReminder(viewingDetailReg)}
+                                  disabled={resendingRegId === viewingDetailReg.id}
+                                  className="text-[10px] font-bold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-300"
+                                >
+                                  {viewingDetailReg.reminder_email_status === 'sent' ? 'Resend' : 'Send Reminder'}
+                                </button>
+                              </div>
+
+                              {/* Stage 4 */}
+                              <div className="bg-white p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                                <div>
+                                  <div className="font-extrabold text-slate-800">4. Completion Certificate</div>
+                                  <div className="text-[11px] text-slate-500 mt-0.5">
+                                    {viewingDetailReg.cert_email_status === 'sent' ? (
+                                      <span className="text-emerald-700 font-bold flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3 text-emerald-600" /> Sent
+                                      </span>
+                                    ) : (
+                                      <span className="text-slate-400 font-semibold">Pending completion</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendCertificateEmail(viewingDetailReg)}
+                                  disabled={resendingRegId === viewingDetailReg.id}
+                                  className="text-[10px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-lg border border-purple-200"
+                                >
+                                  {viewingDetailReg.cert_email_status === 'sent' ? 'Resend' : 'Send Cert Mail'}
+                                </button>
                               </div>
                             </div>
                           </div>
