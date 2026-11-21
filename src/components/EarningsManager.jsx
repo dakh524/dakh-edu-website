@@ -18,7 +18,9 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Building,
-  GraduationCap
+  GraduationCap,
+  Sliders,
+  Check
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -30,6 +32,7 @@ const CATEGORIES = [
   'Corporate Training',
   'Product / Merchandise Sale',
   'Sponsorship / Grant',
+  'Balance Adjustment / Total Override',
   'Other Income'
 ];
 
@@ -38,10 +41,11 @@ const PAYMENT_METHODS = [
   'Bank Transfer (NEFT / IMPS / RTGS)',
   'Cash',
   'Cheque / DD',
+  'Direct Adjustment',
   'Other'
 ];
 
-export default function EarningsManager({ registrations = [] }) {
+export default function EarningsManager({ registrations = [], onRefreshRegistrations }) {
   const [earnings, setEarnings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -50,7 +54,17 @@ export default function EarningsManager({ registrations = [] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  // Form State
+  // Edit Total / Adjustment State
+  const [showEditTotalModal, setShowEditTotalModal] = useState(false);
+  const [targetTotalAmount, setTargetTotalAmount] = useState('');
+  const [totalAdjustmentReason, setTotalAdjustmentReason] = useState('Manual balance adjustment');
+
+  // Edit Student Fee State
+  const [showStudentFeeModal, setShowStudentFeeModal] = useState(false);
+  const [editingStudentItem, setEditingStudentItem] = useState(null);
+  const [studentFeeAmount, setStudentFeeAmount] = useState('');
+
+  // Form State for Manual Income Entry
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
@@ -77,7 +91,6 @@ export default function EarningsManager({ registrations = [] }) {
         setEarnings(data);
         localStorage.setItem('dakh_admin_earnings', JSON.stringify(data));
       } else {
-        // Fallback to localStorage if table is not yet created in Supabase
         const cached = localStorage.getItem('dakh_admin_earnings');
         if (cached) {
           setEarnings(JSON.parse(cached));
@@ -114,7 +127,8 @@ export default function EarningsManager({ registrations = [] }) {
         notes: `Plan: ${r.plan_name || 'Standard'} • College: ${r.college || 'N/A'}`,
         isStudentFee: true,
         studentEmail: r.email,
-        studentDomain: r.domain
+        studentDomain: r.domain,
+        rawRegId: r.id
       };
     });
 
@@ -187,12 +201,12 @@ export default function EarningsManager({ registrations = [] }) {
     });
   }, [earnings, studentRevenueData.items, subTab, searchTerm, categoryFilter]);
 
-  // Handle Add or Update Amount
+  // Handle Add or Update Amount (Manual Entry)
   const handleSubmitAmount = async (e) => {
     e.preventDefault();
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      alert("Please enter a valid positive amount.");
+    if (isNaN(parsedAmount) || (category !== 'Balance Adjustment / Total Override' && parsedAmount <= 0)) {
+      alert("Please enter a valid amount.");
       return;
     }
 
@@ -235,12 +249,10 @@ export default function EarningsManager({ registrations = [] }) {
         localStorage.setItem('dakh_admin_earnings', JSON.stringify(updatedList));
       }
 
-      // Reset form
       handleCloseModal();
       alert(editingEntry ? "Amount updated successfully!" : "Income entry added successfully!");
     } catch (err) {
       console.warn("Error saving to Supabase, saved to local cache:", err.message);
-      // Fallback
       if (editingEntry) {
         const updatedList = earnings.map(item => item.id === editingEntry.id ? { ...item, ...newEntry } : item);
         setEarnings(updatedList);
@@ -261,6 +273,7 @@ export default function EarningsManager({ registrations = [] }) {
     }
   };
 
+  // Delete manual entry
   const handleDeleteEntry = async (id) => {
     if (!window.confirm("Are you sure you want to delete this revenue entry?")) return;
 
@@ -275,6 +288,7 @@ export default function EarningsManager({ registrations = [] }) {
     localStorage.setItem('dakh_admin_earnings', JSON.stringify(updated));
   };
 
+  // Open edit modal for a manual entry
   const handleOpenEdit = (entry) => {
     setEditingEntry(entry);
     setTitle(entry.title || '');
@@ -297,6 +311,102 @@ export default function EarningsManager({ registrations = [] }) {
     setReferenceId('');
     setReceivedDate(new Date().toISOString().split('T')[0]);
     setNotes('');
+  };
+
+  // -------------------------------------------------------------
+  // FEATURE 1: EDIT GRAND TOTAL DIRECTLY (TARGET BALANCE OVERRIDE)
+  // -------------------------------------------------------------
+  const handleOpenEditTotalModal = () => {
+    setTargetTotalAmount(String(grandTotal));
+    setTotalAdjustmentReason('Manual balance adjustment');
+    setShowEditTotalModal(true);
+  };
+
+  const handleSaveTotalAdjustment = async (e) => {
+    e.preventDefault();
+    const parsedTarget = parseFloat(targetTotalAmount);
+    if (isNaN(parsedTarget)) {
+      alert("Please enter a valid numeric target amount.");
+      return;
+    }
+
+    const delta = Math.round((parsedTarget - grandTotal) * 100) / 100;
+    if (delta === 0) {
+      alert("Target total is already equal to current Grand Total.");
+      setShowEditTotalModal(false);
+      return;
+    }
+
+    setIsSubmitting(true);
+    const adjustmentEntry = {
+      id: crypto.randomUUID ? crypto.randomUUID() : `adj_${Date.now()}`,
+      title: totalAdjustmentReason.trim() || `Total Adjustment to ₹${parsedTarget.toLocaleString('en-IN')}`,
+      amount: delta,
+      category: 'Balance Adjustment / Total Override',
+      payment_method: 'Direct Adjustment',
+      reference_id: `ADJ_${Date.now().toString().slice(-6)}`,
+      received_date: new Date().toISOString().split('T')[0],
+      notes: `Grand total adjusted from ₹${grandTotal.toLocaleString('en-IN')} to ₹${parsedTarget.toLocaleString('en-IN')} (Delta: ${delta >= 0 ? '+' : ''}₹${delta.toLocaleString('en-IN')})`,
+      created_at: new Date().toISOString()
+    };
+
+    try {
+      await supabase.from('earnings').insert([adjustmentEntry]);
+    } catch (err) {
+      console.warn("Could not insert adjustment into Supabase, saving locally:", err.message);
+    }
+
+    const updatedList = [adjustmentEntry, ...earnings];
+    setEarnings(updatedList);
+    localStorage.setItem('dakh_admin_earnings', JSON.stringify(updatedList));
+    setShowEditTotalModal(false);
+    setIsSubmitting(false);
+    alert(`Grand Total updated successfully to ₹${parsedTarget.toLocaleString('en-IN')}!`);
+  };
+
+  // -------------------------------------------------------------
+  // FEATURE 2: EDIT STUDENT REGISTRATION FEE
+  // -------------------------------------------------------------
+  const handleOpenEditStudentFee = (item) => {
+    setEditingStudentItem(item);
+    setStudentFeeAmount(String(item.amount || '0'));
+    setShowStudentFeeModal(true);
+  };
+
+  const handleSaveStudentFee = async (e) => {
+    e.preventDefault();
+    const parsedFee = parseFloat(studentFeeAmount);
+    if (isNaN(parsedFee) || parsedFee < 0) {
+      alert("Please enter a valid non-negative fee amount.");
+      return;
+    }
+
+    if (!editingStudentItem) return;
+    const rawRegId = editingStudentItem.rawRegId || editingStudentItem.id.replace('reg_', '');
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('registrations')
+        .update({ plan_price: String(parsedFee) })
+        .eq('id', rawRegId);
+
+      if (error) {
+        throw error;
+      }
+
+      alert(`Student fee successfully updated to ₹${parsedFee.toLocaleString('en-IN')}!`);
+      if (onRefreshRegistrations) {
+        await onRefreshRegistrations();
+      }
+      setShowStudentFeeModal(false);
+      setEditingStudentItem(null);
+    } catch (err) {
+      console.error("Error updating student fee:", err.message);
+      alert("Could not update student fee in Supabase: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Export to CSV
@@ -337,7 +447,7 @@ export default function EarningsManager({ registrations = [] }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleExportCSV}
@@ -350,7 +460,20 @@ export default function EarningsManager({ registrations = [] }) {
 
           <button
             type="button"
-            onClick={() => setShowAddModal(true)}
+            onClick={handleOpenEditTotalModal}
+            className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors border border-purple-200 cursor-pointer shadow-xs"
+            title="Directly edit or adjust Total Earnings"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+            Edit Total Balance
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              handleCloseModal();
+              setShowAddModal(true);
+            }}
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
@@ -362,14 +485,25 @@ export default function EarningsManager({ registrations = [] }) {
       {/* 4 Financial KPI Hero Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Grand Total */}
-        <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-5 rounded-3xl shadow-lg shadow-emerald-600/20 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-5 rounded-3xl shadow-lg shadow-emerald-600/20 relative overflow-hidden flex flex-col justify-between">
           <div className="absolute right-3 -bottom-4 text-emerald-500/20 pointer-events-none">
             <IndianRupee className="w-32 h-32" />
           </div>
           <div className="relative z-10">
-            <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full">
-              Grand Total Earned
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full">
+                Grand Total Earned
+              </span>
+              <button
+                type="button"
+                onClick={handleOpenEditTotalModal}
+                className="inline-flex items-center gap-1 text-[11px] font-bold bg-white/20 hover:bg-white/30 text-white px-2.5 py-0.5 rounded-full backdrop-blur-xs transition-colors cursor-pointer"
+                title="Edit Grand Total"
+              >
+                <Edit2 className="w-3 h-3" />
+                Edit Total
+              </button>
+            </div>
             <div className="text-3xl font-black mt-2 tracking-tight">
               ₹{grandTotal.toLocaleString('en-IN')}
             </div>
@@ -428,28 +562,29 @@ export default function EarningsManager({ registrations = [] }) {
         </div>
       </div>
 
-      {/* Filter and Sub-Tab Navigation */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs space-y-4">
+      {/* Financial Ledger Section */}
+      <div className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+        {/* Controls Bar: Sub-Tabs, Search, and Category Filters */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Sub-tab pills */}
-          <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
+          {/* Sub Tabs */}
+          <div className="flex bg-slate-100 p-1 rounded-2xl w-fit border border-slate-200/60">
             <button
               type="button"
               onClick={() => setSubTab('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`py-1.5 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 subTab === 'all'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              All Income ({earnings.length + studentRevenueData.items.length})
+              All Inflows ({earnings.length + studentRevenueData.items.length})
             </button>
             <button
               type="button"
               onClick={() => setSubTab('manual')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`py-1.5 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 subTab === 'manual'
-                  ? 'bg-white text-emerald-700 shadow-xs'
+                  ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -458,9 +593,9 @@ export default function EarningsManager({ registrations = [] }) {
             <button
               type="button"
               onClick={() => setSubTab('students')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`py-1.5 px-3.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 subTab === 'students'
-                  ? 'bg-white text-purple-700 shadow-xs'
+                  ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -469,55 +604,56 @@ export default function EarningsManager({ registrations = [] }) {
           </div>
 
           {/* Search & Category Filter */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative w-full sm:w-60">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search description, UTR, client..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                placeholder="Search description, UTR, student..."
+                className="pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 w-full sm:w-60"
               />
             </div>
 
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none cursor-pointer"
+              className="px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none text-slate-700 font-medium"
             >
               <option value="all">All Categories</option>
+              <option value="Student Internship Fee">Student Internship Fee</option>
               {CATEGORIES.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
-              <option value="Student Internship Fee">Student Internship Fee</option>
             </select>
           </div>
         </div>
 
-        {/* Ledger Table */}
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-extrabold uppercase text-[10px] tracking-wider">
-                <th className="py-2.5 px-3">Date</th>
-                <th className="py-2.5 px-3">Title / Source</th>
-                <th className="py-2.5 px-3">Category</th>
-                <th className="py-2.5 px-3">Payment Method</th>
-                <th className="py-2.5 px-3 text-right">Amount</th>
-                <th className="py-2.5 px-3 text-right">Actions</th>
+        {/* Transactions Table */}
+        <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 text-slate-400 uppercase font-black tracking-wider text-[10px] border-b border-slate-100">
+              <tr>
+                <th className="py-3 px-3">Date</th>
+                <th className="py-3 px-3">Source / Details</th>
+                <th className="py-3 px-3">Category</th>
+                <th className="py-3 px-3">Payment Method</th>
+                <th className="py-3 px-3 text-right">Amount</th>
+                <th className="py-3 px-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
+            <tbody className="divide-y divide-slate-100">
               {displayTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="py-10 text-center text-slate-400">
-                    No revenue records found matching your filters. Click "+ Add Amount" to add your first income entry!
+                  <td colSpan={6} className="text-center py-12 text-slate-400">
+                    <Receipt className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+                    No transactions match your search criteria.
                   </td>
                 </tr>
               ) : (
-                displayTransactions.map(item => (
-                  <tr key={item.id} className="hover:bg-slate-50/70">
+                displayTransactions.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-3 px-3 text-slate-600 font-mono whitespace-nowrap text-[11px]">
                       {item.received_date ? new Date(item.received_date + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                     </td>
@@ -533,6 +669,8 @@ export default function EarningsManager({ registrations = [] }) {
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                         item.isStudentFee 
                           ? 'bg-purple-50 text-purple-700 border-purple-200'
+                          : item.category === 'Balance Adjustment / Total Override'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
                           : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       }`}>
                         {item.category}
@@ -544,8 +682,10 @@ export default function EarningsManager({ registrations = [] }) {
                         <div className="text-[10px] font-mono text-slate-400">Ref: {item.reference_id}</div>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono font-black text-sm text-emerald-600 whitespace-nowrap">
-                      +₹{parseFloat(item.amount || 0).toLocaleString('en-IN')}
+                    <td className="py-3 px-3 text-right font-mono font-black text-sm whitespace-nowrap">
+                      <span className={item.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                        {item.amount >= 0 ? '+' : ''}₹{parseFloat(item.amount || 0).toLocaleString('en-IN')}
+                      </span>
                     </td>
                     <td className="py-3 px-3 text-right whitespace-nowrap">
                       {item.isManual ? (
@@ -553,24 +693,33 @@ export default function EarningsManager({ registrations = [] }) {
                           <button
                             type="button"
                             onClick={() => handleOpenEdit(item)}
-                            className="p-1 text-slate-400 hover:text-purple-600 rounded cursor-pointer transition-colors"
-                            title="Edit this entry"
+                            className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs rounded-lg inline-flex items-center gap-1 border border-purple-200 cursor-pointer transition-colors shadow-2xs"
+                            title="Edit this income entry"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-3 h-3 text-purple-600" />
+                            <span>Edit</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteEntry(item.id)}
-                            className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
                             title="Delete this entry"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ) : (
-                        <span className="text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-0.5 rounded">
-                          Auto Student Reg
-                        </span>
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditStudentFee(item)}
+                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs rounded-lg inline-flex items-center gap-1 border border-amber-200 cursor-pointer transition-colors shadow-2xs"
+                            title="Edit this student's fee amount"
+                          >
+                            <Edit2 className="w-3 h-3 text-amber-600" />
+                            <span>Edit Fee</span>
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -581,7 +730,9 @@ export default function EarningsManager({ registrations = [] }) {
         </div>
       </div>
 
-      {/* Modal: Add or Edit Amount */}
+      {/* ============================================================== */}
+      {/* MODAL 1: ADD / EDIT MANUAL INCOME ENTRY                        */}
+      {/* ============================================================== */}
       {showAddModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
@@ -589,13 +740,15 @@ export default function EarningsManager({ registrations = [] }) {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                  <PlusCircle className="w-5 h-5" />
+                  {editingEntry ? <Edit2 className="w-5 h-5" /> : <PlusCircle className="w-5 h-5" />}
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base text-slate-900">
                     {editingEntry ? 'Edit Income Entry' : 'Add New Money Earned'}
                   </h3>
-                  <p className="text-xs text-slate-500">Record payments, client projects, or offline student fees.</p>
+                  <p className="text-xs text-slate-500">
+                    {editingEntry ? 'Update existing revenue record details' : 'Record payments, client projects, or offline student fees.'}
+                  </p>
                 </div>
               </div>
               <button
@@ -619,7 +772,6 @@ export default function EarningsManager({ registrations = [] }) {
                   <input
                     type="number"
                     step="0.01"
-                    min="1"
                     required
                     placeholder="e.g. 5000"
                     value={amount}
@@ -725,6 +877,184 @@ export default function EarningsManager({ registrations = [] }) {
                   className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-1.5"
                 >
                   {isSubmitting ? 'Saving...' : (editingEntry ? 'Update Entry' : 'Save Income Entry')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL 2: EDIT GRAND TOTAL BALANCE DIRECTLY                     */}
+      {/* ============================================================== */}
+      {showEditTotalModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                  <Edit2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">Edit Total Earnings</h3>
+                  <p className="text-xs text-slate-500">Set a target total or balance adjustment</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditTotalModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTotalAdjustment} className="space-y-4">
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Current Grand Total</div>
+                  <div className="text-xl font-black text-slate-900 mt-0.5">₹{grandTotal.toLocaleString('en-IN')}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Adjustment Delta</div>
+                  <div className={`text-sm font-black mt-0.5 ${
+                    (parseFloat(targetTotalAmount) || 0) - grandTotal >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                  }`}>
+                    {((parseFloat(targetTotalAmount) || 0) - grandTotal) >= 0 ? '+' : ''}
+                    ₹{((parseFloat(targetTotalAmount) || 0) - grandTotal).toLocaleString('en-IN')}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Desired / Target Grand Total (₹) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={targetTotalAmount}
+                    onChange={(e) => setTargetTotalAmount(e.target.value)}
+                    placeholder="Enter desired total amount"
+                    className="w-full pl-8 pr-4 py-2 text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-black text-slate-900"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  System will automatically log an audit adjustment so the Grand Total matches this value exactly.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Reason / Adjustment Title
+                </label>
+                <input
+                  type="text"
+                  value={totalAdjustmentReason}
+                  onChange={(e) => setTotalAdjustmentReason(e.target.value)}
+                  placeholder="e.g. Offline cash adjustment, Opening balance"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-slate-900"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowEditTotalModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-purple-600/20 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  {isSubmitting ? 'Updating...' : 'Save & Update Total'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL 3: EDIT STUDENT INTERNSHIP FEE                           */}
+      {/* ============================================================== */}
+      {showStudentFeeModal && editingStudentItem && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+                  <GraduationCap className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">Edit Student Fee</h3>
+                  <p className="text-xs text-slate-500">{editingStudentItem.title}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowStudentFeeModal(false);
+                  setEditingStudentItem(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveStudentFee} className="space-y-4">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/70 text-xs space-y-1">
+                <div className="text-slate-500">Student: <span className="font-bold text-slate-800">{editingStudentItem.studentEmail || 'N/A'}</span></div>
+                <div className="text-slate-500">Domain: <span className="font-bold text-slate-800">{editingStudentItem.studentDomain || 'N/A'}</span></div>
+                <div className="text-slate-500">Current Fee: <span className="font-bold text-emerald-600">₹{editingStudentItem.amount}</span></div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Updated Fee Amount (₹) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    required
+                    value={studentFeeAmount}
+                    onChange={(e) => setStudentFeeAmount(e.target.value)}
+                    placeholder="Enter new fee amount"
+                    className="w-full pl-8 pr-4 py-2 text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-black text-slate-900"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  This will update the registration record in Supabase and recalculate student revenue automatically.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowStudentFeeModal(false);
+                    setEditingStudentItem(null);
+                  }}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-amber-600/20 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  {isSubmitting ? 'Updating...' : 'Update Student Fee'}
                 </button>
               </div>
             </form>

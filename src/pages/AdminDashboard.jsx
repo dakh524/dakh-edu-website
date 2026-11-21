@@ -3347,7 +3347,10 @@ const AdminDashboard = () => {
 
           {activeTab === 'earnings' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <EarningsManager registrations={registrations} />
+              <EarningsManager 
+                registrations={registrations} 
+                onRefreshRegistrations={fetchRegistrations} 
+              />
             </motion.div>
           )}
 
