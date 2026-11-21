@@ -32,6 +32,7 @@ const AdminDashboard = () => {
   const [regSearchTerm, setRegSearchTerm] = useState('');
   const [regFilterStatus, setRegFilterStatus] = useState('all'); // 'all', 'approved', 'pending'
   const [regFilterBatchDate, setRegFilterBatchDate] = useState('all'); // 'all' or specific start_date YYYY-MM-DD
+  const [regFilterRegDate, setRegFilterRegDate] = useState('all'); // 'all' or specific registered date YYYY-MM-DD
   const [regFilterDomain, setRegFilterDomain] = useState('all');
   
   // Mail Outbox Logs & Resend State
@@ -1650,6 +1651,30 @@ const AdminDashboard = () => {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                      {/* Registered Date Filter */}
+                      <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                        <Clock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                        <span className="text-[11px] font-bold text-slate-500 uppercase">Reg Date:</span>
+                        <select
+                          value={regFilterRegDate}
+                          onChange={(e) => setRegFilterRegDate(e.target.value)}
+                          className="text-xs font-bold bg-transparent text-slate-800 focus:outline-none cursor-pointer"
+                        >
+                          <option value="all">All Registered Dates ({registrations.length})</option>
+                          {Array.from(new Set(registrations.map(r => r.created_at ? new Date(r.created_at).toISOString().split('T')[0] : null).filter(Boolean)))
+                            .sort((a, b) => b.localeCompare(a))
+                            .map(dt => {
+                              const count = registrations.filter(r => r.created_at && new Date(r.created_at).toISOString().split('T')[0] === dt).length;
+                              const displayDate = new Date(dt + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                              return (
+                                <option key={dt} value={dt}>
+                                  {displayDate} ({count} registered)
+                                </option>
+                              );
+                            })}
+                        </select>
+                      </div>
+
                       {/* Batch Start Date Filter */}
                       <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
                         <Calendar className="w-3.5 h-3.5 text-purple-600 shrink-0" />
@@ -1659,7 +1684,7 @@ const AdminDashboard = () => {
                           onChange={(e) => setRegFilterBatchDate(e.target.value)}
                           className="text-xs font-bold bg-transparent text-slate-800 focus:outline-none cursor-pointer"
                         >
-                          <option value="all">All Dates ({registrations.length})</option>
+                          <option value="all">All Batch Dates ({registrations.length})</option>
                           <option value="unset">Schedule Pending ({registrations.filter(r => !r.start_date).length})</option>
                           {Array.from(new Set(registrations.map(r => r.start_date).filter(Boolean))).sort().map(d => (
                             <option key={d} value={d}>
@@ -1719,6 +1744,10 @@ const AdminDashboard = () => {
                             if (regFilterDomain !== 'all' && reg.domain !== regFilterDomain) return false;
                             if (regFilterBatchDate === 'unset' && reg.start_date) return false;
                             if (regFilterBatchDate !== 'all' && regFilterBatchDate !== 'unset' && reg.start_date !== regFilterBatchDate) return false;
+                            if (regFilterRegDate !== 'all') {
+                              const regDay = reg.created_at ? new Date(reg.created_at).toISOString().split('T')[0] : '';
+                              if (regDay !== regFilterRegDate) return false;
+                            }
                             if (regSearchTerm.trim()) {
                               const q = regSearchTerm.toLowerCase();
                               const nameMatch = (reg.full_name || '').toLowerCase().includes(q);
@@ -1744,6 +1773,10 @@ const AdminDashboard = () => {
                               if (regFilterDomain !== 'all' && reg.domain !== regFilterDomain) return false;
                               if (regFilterBatchDate === 'unset' && reg.start_date) return false;
                               if (regFilterBatchDate !== 'all' && regFilterBatchDate !== 'unset' && reg.start_date !== regFilterBatchDate) return false;
+                              if (regFilterRegDate !== 'all') {
+                                const regDay = reg.created_at ? new Date(reg.created_at).toISOString().split('T')[0] : '';
+                                if (regDay !== regFilterRegDate) return false;
+                              }
                               if (regSearchTerm.trim()) {
                                 const q = regSearchTerm.toLowerCase();
                                 const nameMatch = (reg.full_name || '').toLowerCase().includes(q);
