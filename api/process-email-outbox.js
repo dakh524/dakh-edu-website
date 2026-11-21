@@ -49,6 +49,7 @@ export default async function handler(req, res) {
 
       try {
         if (job.event_type === 'REGISTRATION_ACK') {
+          console.log(`[Email Dispatch] Processing Stage 1 REGISTRATION_ACK for job ${job.id}`);
           const html = getRegistrationAckEmailHtml({
             fullName: payload.fullName,
             domain: payload.domain,
@@ -58,10 +59,12 @@ export default async function handler(req, res) {
             registrationId: job.registration_id
           });
 
+          // Stage 1 EMAIL MUST NEVER ATTACH AN OFFER LETTER (Payment is still pending review)
           const emailResult = await sendEmailWithRetry({
             to: payload.email,
-            subject: `🎉 Registration Received: ${payload.domain} Internship – DAKH EDU SOLUTIONS`,
+            subject: `Thank You for Registering | DAKH EDU SOLUTIONS`,
             html,
+            attachments: [],
             idempotencyKey: `ack-${job.id}`
           });
 
@@ -80,6 +83,7 @@ export default async function handler(req, res) {
           results.succeeded++;
 
         } else if (job.event_type === 'PAYMENT_APPROVED') {
+          console.log(`[Email Dispatch] Processing Stage 2 PAYMENT_APPROVED with 1-page Official Offer Letter for job ${job.id}`);
           let activationUrl = '';
           try {
             const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({

@@ -1,10 +1,10 @@
-import fs from 'fs';
-import path from 'path';
 import { jsPDF } from 'jspdf';
+import { TEMPLATE_BASE64 } from './templateAsset.js';
 
 /**
  * Server-side Official A4 Offer Letter PDF Generator
- * Uses `public/templates/offer-letter-template.png` as the authentic full-page A4 background.
+ * Exclusively uses `public/templates/offer-letter-template.png` (bundled directly via TEMPLATE_BASE64)
+ * as the 1-PAGE official A4 background.
  * Overlays dynamic verified student data onto table rows with precision text fitting.
  */
 export function generateOfferLetterPdf({
@@ -23,6 +23,8 @@ export function generateOfferLetterPdf({
   email = '',
   issueDate = ''
 }) {
+  console.log(`[PDF Generator] Generating official 1-PAGE offer letter for intern: ${internNumber || 'NEW'}, candidate: ${fullName}`);
+
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -32,16 +34,12 @@ export function generateOfferLetterPdf({
   const pageWidth = 210;
   const pageHeight = 297;
 
-  // 1. Load Background Template
-  let templatePath = path.resolve(process.cwd(), 'public/templates/offer-letter-template.png');
-  if (!fs.existsSync(templatePath)) {
-    templatePath = path.resolve(process.cwd(), 'public/internship-offer.png');
-  }
-
-  if (fs.existsSync(templatePath)) {
-    const imgBuffer = fs.readFileSync(templatePath);
-    const imgBase64 = `data:image/png;base64,${imgBuffer.toString('base64')}`;
-    doc.addImage(imgBase64, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+  // 1. Embed Authentic Full-Page A4 Background (Page 1 Only)
+  if (TEMPLATE_BASE64) {
+    const imgData = `data:image/png;base64,${TEMPLATE_BASE64}`;
+    doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+  } else {
+    console.warn('[PDF Generator] Warning: TEMPLATE_BASE64 is empty!');
   }
 
   // Set font styling for overlay
@@ -49,18 +47,18 @@ export function generateOfferLetterPdf({
   doc.setTextColor(30, 41, 59); // Crisp dark slate
 
   // 2. Ref No (Header Line)
-  // Ref underline is at ~56mm X, 48.5mm Y
+  // Ref underline is at ~56mm X, 48.2mm Y
   doc.setFontSize(9);
-  const cleanRef = (internNumber || 'DAKH/INT/2026/001').replace(/^DAKH\/INTERN\//i, '').replace(/^DES\/INT\/2026\//i, '2026/');
+  const cleanRef = (internNumber || 'DAKH/INTERN/2026/001').replace(/^DAKH\/INTERN\//i, '').replace(/^DES\/INT\/2026\//i, '2026/');
   doc.text(cleanRef, 56, 48.2);
 
   // 3. Issue Date (Header Line)
-  // Date line is at ~167mm X, 48.5mm Y
-  const finalIssueDate = issueDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  // Date line is at ~167mm X, 48.2mm Y
+  const finalIssueDate = issueDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   doc.text(finalIssueDate, 167, 48.2);
 
   // 4. Salutation "Dear [Name],"
-  // Dear line begins at ~23mm X, 71.2mm Y
+  // Dear line begins at ~23mm X, 71.0mm Y
   doc.setFontSize(10);
   doc.text(`${fullName || 'Candidate'},`, 23, 71.0);
 
@@ -128,6 +126,12 @@ export function generateOfferLetterPdf({
 
   // Row 10: Email -> Y = 149.5mm
   printCell(email, 149.5, 8.5);
+
+  // Verify page count: STRICTLY 1 PAGE
+  const totalPages = doc.internal.getNumberOfPages();
+  if (totalPages !== 1) {
+    console.error(`[PDF Generator] Critical: Expected 1 page but document has ${totalPages} pages!`);
+  }
 
   // Output Node Buffer
   const arrayBuffer = doc.output('arraybuffer');

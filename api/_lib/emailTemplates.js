@@ -5,7 +5,7 @@
 const LOGO_URL = 'https://dakhedusolutions.in/companylogo.jpg';
 
 /**
- * Stage 1: Immediate Registration Confirmation (Payment Verification Pending)
+ * Stage 1: Immediate Registration Confirmation (Sent to paid & unpaid applicants)
  */
 export function getRegistrationAckEmailHtml({
   fullName,
@@ -21,7 +21,7 @@ export function getRegistrationAckEmailHtml({
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Internship Application Received</title>
+  <title>Thank You for Registering | DAKH EDU SOLUTIONS</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f8fafc;padding:30px 15px;">
@@ -44,71 +44,47 @@ export function getRegistrationAckEmailHtml({
           <!-- Main Content -->
           <tr>
             <td style="padding:35px 30px;">
-              <h2 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 16px 0;">
-                Application Received, ${fullName}! 🎉
-              </h2>
-
-              <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 20px 0;">
-                Thank you for registering for the <strong>${domain}</strong> internship program at <strong>DAKH EDU SOLUTIONS</strong>. We have successfully recorded your application details in our system.
+              <p style="font-size:16px;line-height:1.6;color:#1e293b;margin:0 0 16px 0;">
+                Dear ${fullName},
               </p>
 
-              <!-- Application Summary Box -->
+              <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 16px 0;">
+                Thank you for registering for the <strong>${domain} Internship Program</strong> at <strong>DAKH EDU SOLUTIONS</strong>. We’ve received your registration successfully.
+              </p>
+
+              <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 20px 0;">
+                Your registration reference is <strong>${registrationId}</strong>. Please keep it handy if you need to contact us about your registration.
+              </p>
+
+              <!-- What happens next box -->
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f1f5f9;border-radius:12px;padding:20px;margin-bottom:24px;">
                 <tr>
                   <td>
-                    <h3 style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px 0;">
-                      Registration Summary
+                    <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin:0 0 12px 0;">
+                      What happens next?
                     </h3>
-                    <table width="100%" cellspacing="0" cellpadding="4" style="font-size:14px;color:#1e293b;">
-                      <tr>
-                        <td style="color:#64748b;width:40%;">Candidate Name:</td>
-                        <td style="font-weight:600;">${fullName}</td>
-                      </tr>
-                      <tr>
-                        <td style="color:#64748b;">Domain:</td>
-                        <td style="font-weight:600;color:#7c3aed;">${domain}</td>
-                      </tr>
-                      <tr>
-                        <td style="color:#64748b;">Plan:</td>
-                        <td style="font-weight:600;">${planName || 'Internship Program'}</td>
-                      </tr>
-                      <tr>
-                        <td style="color:#64748b;">Submitted UTR:</td>
-                        <td style="font-family:monospace;font-weight:600;">${utrNumber || 'N/A'}</td>
-                      </tr>
-                      <tr>
-                        <td style="color:#64748b;">Application ID:</td>
-                        <td style="font-family:monospace;font-size:12px;">${registrationId}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Notice Box -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
-                <tr>
-                  <td>
-                    <p style="font-size:14px;line-height:1.5;color:#92400e;margin:0;font-weight:600;">
-                      ⏳ Payment Verification Pending
-                    </p>
-                    <p style="font-size:13px;line-height:1.5;color:#b45309;margin:6px 0 0 0;">
-                      Our admissions desk is currently verifying your transaction UTR number. Once payment is verified and approved, you will automatically receive your <strong>Official Internship Offer Letter</strong> and <strong>Student Portal Access</strong>.
+                    <p style="margin:0 0 10px 0;color:#334155;font-size:14px;line-height:1.6;">
+                      If you’ve already paid, our team will verify your payment details. If you haven’t paid yet, you can complete your payment and submit your transaction reference when you’re ready.
                     </p>
                   </td>
                 </tr>
               </table>
 
-              <p style="font-size:14px;line-height:1.6;color:#64748b;margin:0 0 24px 0;">
-                If you have any questions or submitted an incorrect UTR, please reach out directly to our team via WhatsApp at <strong>+91 8667399640</strong> or email <strong>dakhedusolution@gmail.com</strong>.
+              <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 20px 0;">
+                Once your payment is verified and your registration is approved, we’ll email your <strong>official offer letter, secure student portal access link, and onboarding instructions</strong>.
+              </p>
+
+              <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 24px 0;">
+                We look forward to welcoming you to the program.
               </p>
 
               <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
 
-              <p style="font-size:13px;color:#94a3b8;line-height:1.5;margin:0;">
-                Warm regards,<br>
-                <strong>Admissions & Mentorship Team</strong><br>
-                DAKH EDU SOLUTIONS
+              <p style="font-size:14px;color:#475569;line-height:1.6;margin:0;">
+                Best regards,<br>
+                Internship Coordination Team<br>
+                <strong>DAKH EDU SOLUTIONS</strong><br>
+                <a href="https://dakhedusolutions.in" style="color:#7c3aed;text-decoration:none;">https://dakhedusolutions.in</a>
               </p>
             </td>
           </tr>

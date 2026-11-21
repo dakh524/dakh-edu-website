@@ -168,22 +168,74 @@ const AdminDashboard = () => {
       let fileName = `${student.full_name}_${type === 'offer' ? 'Offer_Letter' : 'Certificate'}.pdf`;
 
       if (type === 'offer') {
-        const page1 = document.getElementById('offer-page-1');
-        const page2 = document.getElementById('offer-page-2');
-        
-        if (!page1 || !page2) throw new Error("Template not found");
-
-        const imgData1 = await toJpeg(page1, { quality: 0.95, pixelRatio: 2 });
-        const imgData2 = await toJpeg(page2, { quality: 0.95, pixelRatio: 2 });
-        
+        // Generate using the official 1-page A4 Offer Letter template
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        pdf.addPage();
-        pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        
+        const pageWidth = 210;
+        const pageHeight = 297;
+
+        // Load background template
+        const img = new Image();
+        img.src = '/templates/offer-letter-template.png';
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => {
+            // fallback if path differs
+            img.src = '/internship-offer.png';
+            img.onload = resolve;
+            img.onerror = reject;
+          };
+        });
+
+        pdf.addImage(img, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(30, 41, 59);
+
+        // Ref No
+        pdf.setFontSize(9);
+        const cleanRef = (finalStudent.intern_number || 'DAKH/INTERN/2026/001').replace(/^DAKH\/INTERN\//i, '').replace(/^DES\/INT\/2026\//i, '2026/');
+        pdf.text(cleanRef, 56, 48.2);
+
+        // Date
+        const issueDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        pdf.text(issueDate, 167, 48.2);
+
+        // Salutation
+        pdf.setFontSize(10);
+        pdf.text(`${finalStudent.full_name || 'Candidate'},`, 23, 71.0);
+
+        // Table Data
+        const col2X = 64;
+        const maxColWidth = 130;
+        const printCell = (text, yPos, defaultSize = 8.5) => {
+          if (!text) text = '—';
+          pdf.setFontSize(defaultSize);
+          let str = String(text).trim();
+          if (pdf.getTextWidth(str) > maxColWidth) {
+            pdf.setFontSize(defaultSize - 1.5);
+            if (pdf.getTextWidth(str) > maxColWidth) {
+              while (str.length > 10 && pdf.getTextWidth(str + '...') > maxColWidth) {
+                str = str.slice(0, -1);
+              }
+              str += '...';
+            }
+          }
+          pdf.text(str, col2X, yPos);
+        };
+
+        const durationStr = finalStudent.internship_duration || (finalStudent.start_date && finalStudent.end_date ? `${finalStudent.start_date} to ${finalStudent.end_date}` : '30 Days');
+        const appDate = finalStudent.created_at ? new Date(finalStudent.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : issueDate;
+
+        printCell(finalStudent.full_name, 98.2, 9);
+        printCell(finalStudent.college, 104.0, 8.5);
+        printCell(finalStudent.department, 109.5, 8.5);
+        printCell(finalStudent.year_of_study || finalStudent.year, 115.2, 8.5);
+        printCell(finalStudent.domain, 121.0, 9);
+        printCell(durationStr, 126.8, 8.5);
+        printCell(finalStudent.utr_number, 132.5, 8.5);
+        printCell(appDate, 138.2, 8.5);
+        printCell(finalStudent.phone, 144.0, 8.5);
+        printCell(finalStudent.email, 149.5, 8.5);
+
         pdf.save(fileName);
       } else {
         const element = document.getElementById('certificate-template');
@@ -664,23 +716,125 @@ const AdminDashboard = () => {
 
   const [approvingId, setApprovingId] = useState(null);
 
+  // ---------------------------------------------------------------------------
+  // Date helpers (strict UTC, support both ISO "YYYY-MM-DD" and "DD MMM YYYY")
+  // ---------------------------------------------------------------------------
+  const MONTH_NAMES_ADMIN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  /**
+   * Parse a date string in either ISO (YYYY-MM-DD) or legacy (DD MMM YYYY) format.
+   * Always returns a UTC midnight Date.  Throws a descriptive error on failure —
+   * never silently returns Invalid Date.
+   */
+  const strictParseDate = (str) => {
+    if (!str || typeof str !== 'string') {
+      throw new Error(`Invalid date value: ${JSON.stringify(str)}`);
+    }
+    const s = str.trim();
+    // ISO format
+    const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (iso) {
+      const [, y, m, d] = iso.map(Number);
+      return new Date(Date.UTC(y, m - 1, d));
+    }
+    // Legacy format: "27 Nov 2026"
+    const legacy = /^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/.exec(s);
+    if (legacy) {
+      const [, dayStr, monStr, yearStr] = legacy;
+      const monthIdx = MONTH_NAMES_ADMIN.findIndex(mn => mn.toLowerCase() === monStr.toLowerCase());
+      if (monthIdx === -1) throw new Error(`Unrecognised month "${monStr}" in date "${str}"`);
+      return new Date(Date.UTC(Number(yearStr), monthIdx, Number(dayStr)));
+    }
+    throw new Error(`Unrecognised date format "${str}" (expected YYYY-MM-DD or DD MMM YYYY)`);
+  };
+
+  /**
+   * Extract integer day count from duration strings like "30 Days" / "29 days".
+   * Throws on bad format.
+   */
+  const strictParseDuration = (dur) => {
+    const m = /^\s*(\d+)\s*days?\s*$/i.exec((dur || '').trim());
+    if (!m) throw new Error(`Unrecognised duration "${dur}" (expected e.g. "30 Days")`);
+    const n = Number(m[1]);
+    if (n <= 0) throw new Error(`Duration must be positive, got ${n}`);
+    return n;
+  };
+
+  /**
+   * Compute inclusive end date (YYYY-MM-DD).
+   * end = start + (durationDays - 1)
+   */
+  const computeInclusiveEndDate = (startStr, durationStr) => {
+    const startDate = strictParseDate(startStr);
+    const days      = strictParseDuration(durationStr);
+    const endDate   = new Date(startDate);
+    endDate.setUTCDate(endDate.getUTCDate() + days - 1);
+    const y = endDate.getUTCFullYear();
+    const m = String(endDate.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(endDate.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  /**
+   * Normalise any supported date string to YYYY-MM-DD.
+   */
+  const normaliseDateToISO = (str) => {
+    const d = strictParseDate(str);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+  };
+
   const handleApproveRegistration = async (student) => {
+    // 1. Intern Number
     let internNum = student.intern_number;
     if (!internNum) {
       internNum = window.prompt(`Assign Intern ID for ${student.full_name}:`, "DES/INT/2026/001");
-      if (!internNum) return; // User cancelled
+      if (!internNum) return;
     }
 
-    // Prompt to confirm or adjust confirmed dates for custom requests if needed
-    let confirmedDuration = student.internship_duration || '30 Days';
-    let confirmedStart = student.start_date || '';
-    let confirmedEnd = student.end_date || '';
+    // 2. Duration & start date from registration record
+    const confirmedDuration = student.internship_duration || '30 Days';
+    const rawStart = student.start_date || '';
 
+    // 3. Strictly parse start date and compute the correct inclusive end date
+    let confirmedStart, confirmedEnd;
+    try {
+      confirmedStart = normaliseDateToISO(rawStart);
+      confirmedEnd   = computeInclusiveEndDate(rawStart, confirmedDuration);
+    } catch (parseErr) {
+      alert(`Cannot calculate schedule: ${parseErr.message}\nPlease update the registration's start date before approving.`);
+      return;
+    }
+
+    // 4. If the stored end date differs from the calculated one, warn admin and get confirmation
+    const storedEndRaw = student.end_date || '';
+    let storedEndISO = '';
+    try { storedEndISO = storedEndRaw ? normaliseDateToISO(storedEndRaw) : ''; } catch (_) { /* ignore */ }
+
+    if (storedEndISO && storedEndISO !== confirmedEnd) {
+      const proceed = window.confirm(
+        `Schedule check for ${student.full_name}:\n\n` +
+        `  Duration : ${confirmedDuration}\n` +
+        `  Start    : ${confirmedStart}\n` +
+        `  Stored end (from application) : ${storedEndISO}\n` +
+        `  Calculated inclusive end      : ${confirmedEnd}\n\n` +
+        `The stored end date does not match the selected duration.\n` +
+        `Click OK to approve with the CALCULATED end date (${confirmedEnd}),\n` +
+        `or Cancel to abort.`
+      );
+      if (!proceed) return;
+    }
+
+    // 5. Custom schedule confirmation
     if (student.is_custom_schedule) {
-      const confirmSchedule = window.confirm(`Student requested custom schedule: ${confirmedDuration} (${confirmedStart} to ${confirmedEnd}).\n\nClick OK to approve this schedule for the official offer letter.`);
-      if (!confirmSchedule) return;
+      const ok = window.confirm(
+        `Student requested a custom schedule:\n` +
+        `  ${confirmedDuration}  |  ${confirmedStart} → ${confirmedEnd}\n\n` +
+        `Click OK to confirm this schedule for the official offer letter.`
+      );
+      if (!ok) return;
     }
 
+    // 6. Final general confirmation
     if (!window.confirm(`Approve registration for ${student.full_name} and queue official Offer Letter email?`)) {
       return;
     }
@@ -688,12 +842,14 @@ const AdminDashboard = () => {
     setApprovingId(student.id);
 
     try {
+      // 7. Get authenticated session (Bearer token for API)
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       if (!currentSession?.access_token) {
         alert("Authentication error: Please log in again.");
         return;
       }
 
+      // 8. POST to API with ISO dates and computed end date
       const res = await fetch('/api/approve-registration', {
         method: 'POST',
         headers: {
@@ -701,17 +857,30 @@ const AdminDashboard = () => {
           'Authorization': `Bearer ${currentSession.access_token}`
         },
         body: JSON.stringify({
-          registrationId: student.id,
+          registrationId:    student.id,
           manualInternNumber: internNum,
           confirmedDuration,
-          confirmedStartDate: confirmedStart,
-          confirmedEndDate: confirmedEnd
+          confirmedStartDate: confirmedStart,  // YYYY-MM-DD
+          confirmedEndDate:   confirmedEnd      // YYYY-MM-DD (inclusive, calculated)
         })
       });
 
-      const result = await res.json();
+      // 9. Safely parse JSON response (never trust raw text)
+      const rawText = await res.text();
+      let result = null;
+      try {
+        result = JSON.parse(rawText);
+      } catch (e) {
+        console.error("Non-JSON API response:", rawText);
+        throw new Error(
+          res.status === 500
+            ? "Server error (500): The database function 'approve_registration_and_enqueue_email' is missing or environment variables (SUPABASE_SECRET_KEY) are not set in Vercel."
+            : `Server returned non-JSON response (${res.status}): ${rawText.slice(0, 200)}`
+        );
+      }
+
       if (!res.ok) {
-        throw new Error(result.error || 'Failed to approve registration');
+        throw new Error(result?.error || 'Failed to approve registration');
       }
 
       alert("Registration approved! Offer letter email and portal credentials queued.");

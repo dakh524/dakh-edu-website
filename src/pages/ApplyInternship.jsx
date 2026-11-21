@@ -70,15 +70,23 @@ const ApplyInternship = () => {
   // FLEXIBLE SCHEDULING ENGINE (IST Calendar Day Calculations)
   // Inclusive Day Counting: e.g., 01 Dec to 15 Dec = 15 Days
   // ==========================================
+  // Helper: Format Date object to local YYYY-MM-DD (avoids UTC toISOString timezone shifting)
+  const formatLocalDate = (d) => {
+    if (!d || !(d instanceof Date) || isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const todayStr = useMemo(() => {
-    const d = new Date();
-    return d.toISOString().split('T')[0];
+    return formatLocalDate(new Date());
   }, []);
 
   const defaultStartStr = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 7); // Default 7 days from today
-    return d.toISOString().split('T')[0];
+    return formatLocalDate(d);
   }, []);
 
   const [scheduleMode, setScheduleMode] = useState('duration'); // 'duration' | 'dates'
@@ -88,7 +96,7 @@ const ApplyInternship = () => {
   const [endDateInput, setEndDateInput] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 7 + 29); // +29 days because inclusive: 1 + 29 = 30 days
-    return d.toISOString().split('T')[0];
+    return formatLocalDate(d);
   });
 
   // Helper: Format YYYY-MM-DD to DD Mon YYYY
@@ -101,13 +109,13 @@ const ApplyInternship = () => {
   };
 
   // Helper: Calculate end date from start date and inclusive days
-  // End Date = Start Date + (days - 1) days
+  // End Date = Start Date + (days - 1) days (Local calendar arithmetic, no UTC skew)
   const computeEndDateFromDays = (startStr, daysCount) => {
     if (!startStr || isNaN(daysCount) || daysCount <= 0) return '';
     const [y, m, d] = startStr.split('-').map(Number);
     const date = new Date(y, m - 1, d);
     date.setDate(date.getDate() + (daysCount - 1));
-    return date.toISOString().split('T')[0];
+    return formatLocalDate(date);
   };
 
   // Helper: Calculate inclusive days between two dates
@@ -198,6 +206,46 @@ const ApplyInternship = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [credentials, setCredentials] = useState(null);
+  const [ackEmailQueued, setAckEmailQueued] = useState(false);
+  const [laterUtrInput, setLaterUtrInput] = useState('');
+  const [isSubmittingLaterUtr, setIsSubmittingLaterUtr] = useState(false);
+  const [laterUtrSuccess, setLaterUtrSuccess] = useState(false);
+
+  const handleSubmitLaterUtr = async (e) => {
+    e.preventDefault();
+    if (!laterUtrInput.trim() || !credentials?.registration_id) return;
+    setIsSubmittingLaterUtr(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers = { 'Content-Type': 'application/json' };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      const res = await fetch('/api/submit-payment-utr', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          registrationId: credentials.registration_id,
+          utrNumber: laterUtrInput.trim()
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setLaterUtrSuccess(true);
+        setCredentials(prev => ({
+          ...prev,
+          payment_completed: true,
+          utr_number: laterUtrInput.trim()
+        }));
+      } else {
+        alert(data.error || 'Failed to submit UTR. Please try again or message us on WhatsApp.');
+      }
+    } catch (err) {
+      alert('Error submitting UTR: ' + err.message);
+    } finally {
+      setIsSubmittingLaterUtr(false);
+    }
+  };
 
   // Referral discount logic: "extrabonus" applies flat ₹100 discount (₹399 -> ₹299)
   const isExtraBonusApplied = useMemo(() => {
@@ -210,10 +258,6 @@ const ApplyInternship = () => {
     e.preventDefault();
     if (computedSchedule.error) {
       alert(`Invalid schedule: ${computedSchedule.error}`);
-      return;
-    }
-    if (!formData.paymentCompleted) {
-      alert("Please confirm that you have completed the payment.");
       return;
     }
 
@@ -243,8 +287,8 @@ const ApplyInternship = () => {
         plan_name: finalPlanName,
         plan_price: finalPrice.toString(),
         referral_code: formData.referral,
-        utr_number: formData.utr,
-        payment_completed: formData.paymentCompleted
+        utr_number: formData.utr || null,
+        payment_completed: !!formData.paymentCompleted
       };
 
       // Include scheduling columns if present
@@ -276,9 +320,43 @@ const ApplyInternship = () => {
         
         setCredentials({
           email: formData.email,
-          intern_number: internNumber
+          intern_number: internNumber,
+          registration_id: regData[0].id,
+          payment_completed: !!formData.paymentCompleted,
+          utr_number: formData.utr || null
         });
       }
+
+      // 4. Enqueue registration acknowledgement email via secure backend API.
+      //    Passes registrationId with student's authenticated session bearer token.
+      //    The backend validates authorization and reads recipient email directly from the DB record.
+      let ackQueued = false;
+      if (!regError && regData?.[0]?.id) {
+        try {
+          const headers = { 'Content-Type': 'application/json' };
+          if (authData?.session?.access_token) {
+            headers['Authorization'] = `Bearer ${authData.session.access_token}`;
+          }
+          const ackRes = await fetch('/api/registration-ack', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              registrationId: regData[0].id
+            })
+          });
+          const ackJson = await ackRes.json().catch(() => ({}));
+          if (ackRes.ok && ackJson.queued) {
+            ackQueued = true;
+          } else {
+            console.warn('[registration-ack] Not queued:', ackJson.reason || ackJson.error);
+          }
+        } catch (ackErr) {
+          // Non-critical — registration is already saved; email will be retried
+          console.warn('[registration-ack] Could not queue ack email:', ackErr.message);
+        }
+      }
+      // Store email status in component state for the success screen
+      setAckEmailQueued(ackQueued);
 
       // NEW: Open WhatsApp link
       const whatsappMessage = `Hi, I have applied for the Internship.\n\nName: ${formData.fullName}\nCollege: ${formData.college}\nDepartment: ${formData.department}\nYear: ${formData.year}\nDomain: ${formData.domain}\nPlan: ${finalPlanName}\nMode: ${mode}\nDuration: ${computedSchedule.durationLabel}\nSchedule: ${computedSchedule.startDateFormatted} to ${computedSchedule.endDateFormatted}\nAmount Paid: ₹${finalPrice}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nTransaction ID: ${formData.utr}`;
@@ -336,9 +414,58 @@ const ApplyInternship = () => {
                       <span className="text-xs font-bold text-gray-500 uppercase block mb-1">Assigned Intern Reference ID</span>
                       <div className="font-mono text-gray-900 font-bold bg-white p-2 rounded border text-sm">{credentials.intern_number}</div>
                     </div>
+                    <div>
+                      <span className="text-xs font-bold text-gray-500 uppercase block mb-1">Payment Status</span>
+                      <div className="font-mono text-xs font-bold bg-white p-2 rounded border flex items-center justify-between">
+                        <span className={credentials.payment_completed ? "text-emerald-700 font-bold" : "text-amber-700 font-bold"}>
+                          {credentials.payment_completed ? "Payment Verification Pending" : "Payment Pending (Pay Later)"}
+                        </span>
+                        {credentials.utr_number && (
+                          <span className="text-[11px] text-gray-500">UTR: {credentials.utr_number}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
+
+                  {/* If unpaid or no UTR yet, provide in-place submission option */}
+                  {!credentials.payment_completed && (
+                    <div className="mt-4 pt-4 border-t border-yellow-200">
+                      {laterUtrSuccess ? (
+                        <div className="p-3 bg-emerald-100 border border-emerald-300 rounded-lg text-xs text-emerald-800 font-bold flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Transaction reference submitted! Your record is now Payment Verification Pending.</span>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleSubmitLaterUtr} className="space-y-2">
+                          <label className="text-xs font-bold text-gray-800 block">
+                            Paid via UPI / QR now? Submit your UTR below:
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Enter UTR / Transaction ID"
+                              value={laterUtrInput}
+                              onChange={(e) => setLaterUtrInput(e.target.value)}
+                              className="flex-1 p-2 text-xs border border-gray-300 rounded-lg font-mono focus:border-purple-500 focus:outline-none"
+                              required
+                            />
+                            <button
+                              type="submit"
+                              disabled={isSubmittingLaterUtr}
+                              className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {isSubmittingLaterUtr ? "Saving..." : "Submit UTR"}
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+                  )}
+
                   <p className="text-xs text-amber-700 mt-4 leading-normal">
-                    📌 An acknowledgement email has been sent. Once your payment UTR is verified by an admin, your official Offer Letter and secure portal activation link will be delivered to your email.
+                    {ackEmailQueued
+                      ? "📌 Your registration acknowledgement email has been queued to your registered email. Once your payment is verified and approved by an admin, your official Offer Letter and portal credentials will be shared."
+                      : "📌 Registration details submitted. Once your payment is verified and approved by an admin, your official Offer Letter and portal credentials will be issued."}
                   </p>
                 </div>
               )}
@@ -673,7 +800,10 @@ const ApplyInternship = () => {
                   </div>
 
                   <div className="bg-[#ffce00] p-6 rounded-2xl flex flex-col items-center justify-center text-center mt-4 shadow-sm">
-                    <div className="font-black text-lg tracking-wider mb-2">PAY INTERNSHIP FEE</div>
+                    <div className="font-black text-lg tracking-wider mb-2">PAY INTERNSHIP FEE (OPTIONAL NOW)</div>
+                    <p className="text-xs text-gray-800 font-semibold mb-3 max-w-md">
+                      You can pay now via UPI or QR code, or submit your registration first and complete payment details later.
+                    </p>
                     <div className="mb-3 px-3.5 py-1 bg-white/80 text-gray-900 font-bold text-xs rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1.5">
                       <span>{isOffline ? '🏢' : '🌐'}</span>
                       <span>{mode} Mode • {isExtraBonusApplied ? 'EXTRABONUS Applied ₹299' : 'Special Offer ₹399'}</span>
@@ -703,7 +833,7 @@ const ApplyInternship = () => {
                     )}
                   </div>
 
-                  <input required type="text" name="utr" placeholder="Transaction ID / UTR No." value={formData.utr} onChange={handleChange} className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none mt-2" />
+                  <input type="text" name="utr" placeholder="Transaction ID / UTR No. (Optional – can submit later)" value={formData.utr} onChange={handleChange} className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none mt-2" />
                   
                   <div className="p-4 border-2 border-gray-300 rounded-xl bg-gray-50 flex items-center gap-3">
                     <input 
@@ -715,12 +845,12 @@ const ApplyInternship = () => {
                       className="w-5 h-5 accent-purple-600"
                     />
                     <label htmlFor="paymentCompleted" className="font-bold text-gray-800 cursor-pointer text-sm">
-                      I confirm that I have completed the payment of ₹{finalPrice} via the QR code or UPI ID.
+                      I have completed the payment of ₹{finalPrice} via QR code / UPI (Leave unchecked if paying later).
                     </label>
                   </div>
 
                   <button type="submit" className="w-full py-4 bg-[#ffce00] hover:bg-[#e6b800] text-gray-900 font-black rounded-xl border-b-4 border-yellow-600 hover:translate-y-[2px] hover:border-b-2 transition-all mt-2 uppercase tracking-wider text-lg shadow-lg">
-                    SUBMIT & MESSAGE ON WHATSAPP →
+                    SUBMIT REGISTRATION →
                   </button>
 
                 </form>
