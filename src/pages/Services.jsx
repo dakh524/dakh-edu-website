@@ -66,12 +66,48 @@ const SERVICES_DATA = [
 
 const PORTFOLIO_PROJECTS = [
   { 
+    name: 'FrameFolio', 
+    category: 'Wedding Photography Concept', 
+    tech: 'React / Tailwind / WhatsApp API', 
+    status: 'Live Concept',
+    desc: 'A luxury portfolio website concept for wedding photographers featuring a full-width wedding gallery, transparent package cards, and direct instant WhatsApp enquiry for client bookings.',
+    highlights: ['Full-width wedding gallery', 'Package cards', 'WhatsApp enquiry'],
+    image: '/products/framefolio.png'
+  },
+  { 
+    name: 'SalonSlot', 
+    category: 'Salon & Studio Booking', 
+    tech: 'React / Node.js / PostgreSQL', 
+    status: 'Live Concept',
+    desc: 'An appointment booking concept for salons and beauty studios with visual service selection, available time slots, and a seamless booking summary.',
+    highlights: ['Service selection', 'Available time slots', 'Booking summary'],
+    image: '/products/salonslot.png'
+  },
+  { 
+    name: 'FixDesk', 
+    category: 'Repair SaaS Dashboard', 
+    tech: 'React / Supabase / SMS Gateway', 
+    status: 'Live Concept',
+    desc: 'A repair tracking dashboard concept for mobile service shops featuring digital job cards with device specifications, estimated costs, and real-time repair status updates.',
+    highlights: ['Job cards with device', 'Estimated cost', 'Repair status tracking'],
+    image: '/products/fixdesk.png'
+  },
+  { 
+    name: 'Sairam Hub', 
+    category: 'Campus Mobile App', 
+    tech: 'React Native / Node.js / GPS Fleet', 
+    status: 'Live Application',
+    desc: 'A smart campus student companion mobile application built for Sairam College students connecting 10,000+ students with real-time academic records, digital OD approvals, bus fleet GPS tracking, and collaborative clubs.',
+    highlights: ['10,000+ Active Students', 'Digital OD & Attendance', 'Bus GPS Fleet Tracking'],
+    image: '/products/sairamhub.png'
+  },
+  { 
     name: 'AI CV Shell', 
     category: 'AI & Automation', 
     tech: 'Python / OpenAI', 
     status: 'Live',
     desc: 'An intelligent AI-powered CV generator and analyzer that helps candidates build ATS-friendly resumes instantly.',
-    image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=800&auto=format&fit=crop'
+    image: '/products/cvshell.png'
   },
   { 
     name: 'DAKH Intern Bot', 
@@ -87,24 +123,16 @@ const PORTFOLIO_PROJECTS = [
     tech: 'Next.js / Tailwind', 
     status: 'Live',
     link: 'https://www.teddikidz.in/',
-    desc: 'A vibrant, high-performance e-commerce platform designed for premium kids clothing and accessories.',
-    image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?q=80&w=800&auto=format&fit=crop'
-  },
-  { 
-    name: 'Sairam Hub', 
-    category: 'Mobile Community', 
-    tech: 'React Native', 
-    status: 'Live',
-    desc: 'An exclusive community application built for Sairam College students to connect, collaborate, and share resources.',
-    image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=800&auto=format&fit=crop'
+    desc: 'A vibrant, high-performance e-commerce platform designed for premium kids clothing and preschool education portal.',
+    image: '/products/teddikidz.png'
   },
   { 
     name: 'Zovio', 
-    category: 'Mobile App', 
+    category: 'Fintech Mobile App', 
     tech: 'Flutter / Firebase', 
-    status: 'Live',
-    desc: 'A sleek, modern mobile application designed to deliver seamless user experiences and powerful integrations.',
-    image: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop'
+    status: 'Live App',
+    desc: 'A sleek, modern shared expense tracking mobile application designed to eliminate money awkwardness between friends.',
+    image: '/products/zovio.png'
   },
   { 
     name: 'Therapy Joy', 
@@ -180,10 +208,10 @@ const PortfolioShowcase = () => {
   const targetRef = useRef(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const { scrollYProgress } = useScroll({ target: targetRef });
-  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-70%"]);
+  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-78%"]);
 
   return (
-    <section ref={targetRef} className="h-[400vh] bg-black relative">
+    <section ref={targetRef} className="h-[450vh] bg-black relative">
       <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden border-t border-white/5">
          <div className="px-6 lg:px-16 mb-16 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
            <div>
@@ -191,10 +219,10 @@ const PortfolioShowcase = () => {
              <h2 className="text-6xl md:text-8xl font-black text-white tracking-tighter">Our Work</h2>
            </div>
            <p className="text-xl text-purple-100/90 max-w-md leading-relaxed">
-             A showcase of our premium digital products engineered for scale and growth.
+             A showcase of our premium digital products and concepts engineered for scale and growth.
            </p>
          </div>
-         <motion.div style={{ x }} className="flex gap-8 px-6 lg:px-16 w-[280vw]">
+         <motion.div style={{ x }} className="flex gap-8 px-6 lg:px-16 w-[420vw]">
            {PORTFOLIO_PROJECTS.map((project, i) => (
              <div key={i} onClick={() => setSelectedProject(project)} className="w-[85vw] md:w-[40vw] h-[65vh] shrink-0 bg-white rounded-[2rem] p-8 flex flex-col justify-between group hover:scale-[1.02] transition-transform duration-500 relative overflow-hidden cursor-pointer shadow-[0_0_40px_rgba(255,255,255,0.1)]">
                 
@@ -221,13 +249,23 @@ const PortfolioShowcase = () => {
                 </div>
 
                 {/* Bottom Section */}
-                <div className="relative z-10 mt-auto pt-8">
-                  <h3 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 drop-shadow-sm">{project.name}</h3>
-                  <p className="text-lg text-gray-800 font-medium mb-6 line-clamp-2">{project.desc}</p>
+                <div className="relative z-10 mt-auto pt-6">
+                  <h3 className="text-3xl md:text-5xl font-black text-gray-900 mb-3 drop-shadow-sm">{project.name}</h3>
+                  <p className="text-base md:text-lg text-gray-800 font-medium mb-3 line-clamp-2">{project.desc}</p>
                   
-                  <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-gray-200">
-                    <div className="px-6 py-2 bg-white rounded-full text-gray-800 font-bold text-sm shadow-sm border border-gray-100">{project.tech}</div>
-                    <div className="flex items-center gap-2 text-green-700 font-bold text-sm px-4 py-2 bg-green-50 rounded-full border border-green-100">
+                  {project.highlights && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {project.highlights.map((h, hi) => (
+                        <span key={hi} className="px-2.5 py-1 bg-purple-50 text-purple-700 font-bold text-xs rounded-lg border border-purple-100">
+                          {h}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-200">
+                    <div className="px-5 py-1.5 bg-white rounded-full text-gray-800 font-bold text-xs md:text-sm shadow-sm border border-gray-100">{project.tech}</div>
+                    <div className="flex items-center gap-2 text-green-700 font-bold text-xs md:text-sm px-4 py-1.5 bg-green-50 rounded-full border border-green-100">
                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
                        {project.status}
                     </div>
@@ -273,10 +311,20 @@ const PortfolioShowcase = () => {
 
               {/* Right Side: Content */}
               <div className="w-full md:w-3/5 p-8 md:p-12 flex flex-col justify-center bg-gray-50">
-                <h3 className="text-3xl md:text-5xl font-black text-gray-900 mb-6">{selectedProject.name}</h3>
-                <p className="text-lg text-gray-700 mb-8 leading-relaxed font-medium">{selectedProject.desc}</p>
+                <h3 className="text-3xl md:text-5xl font-black text-gray-900 mb-4">{selectedProject.name}</h3>
+                <p className="text-lg text-gray-700 mb-4 leading-relaxed font-medium">{selectedProject.desc}</p>
                 
-                <div className="flex flex-wrap gap-3 mb-10 pb-8 border-b border-gray-200">
+                {selectedProject.highlights && (
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {selectedProject.highlights.map((h, hi) => (
+                      <span key={hi} className="px-3 py-1.5 bg-purple-100 text-purple-800 rounded-lg text-xs font-bold border border-purple-200">
+                        {h}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="flex flex-wrap gap-3 mb-8 pb-6 border-b border-gray-200">
                   {selectedProject.tech.split(' / ').map((t, idx) => (
                     <span key={idx} className="px-4 py-2 bg-white text-gray-800 rounded-full text-sm font-bold border border-gray-200 shadow-sm">
                       {t}

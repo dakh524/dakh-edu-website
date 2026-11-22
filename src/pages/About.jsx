@@ -188,15 +188,85 @@ const ScrollTimeline = () => {
 
 const getProductFallbackImage = (title = '') => {
   const t = title.toUpperCase();
+  if (t.includes('FRAME') || t.includes('FOLIO') || t.includes('WEDDING') || t.includes('PHOTO')) return '/products/framefolio.png';
+  if (t.includes('SALON') || t.includes('SLOT') || t.includes('BEAUTY') || t.includes('APPOINTMENT')) return '/products/salonslot.png';
+  if (t.includes('FIX') || t.includes('DESK') || t.includes('REPAIR') || t.includes('SERVICE')) return '/products/fixdesk.png';
+  if (t.includes('SAIRAM') || t.includes('HUB') || t.includes('CAMPUS')) return '/products/sairamhub.png';
   if (t.includes('TEDDI') || t.includes('KIDZ') || t.includes('SCHOOL')) return '/products/teddikidz.png';
   if (t.includes('CV') || t.includes('SHELL') || t.includes('RESUME')) return '/products/cvshell.png';
   if (t.includes('ZOVIO') || t.includes('MONEY') || t.includes('EXPENSE')) return '/products/zovio.png';
   return '/products/cvshell.png';
 };
 
+const FEATURED_PRODUCTS = [
+  {
+    id: 'prod-framefolio',
+    title: 'FrameFolio',
+    tagline: 'Wedding Photography Portfolio Concept',
+    description: 'A portfolio website concept for wedding photographers featuring a full-width wedding gallery, transparent package cards, and direct instant WhatsApp enquiry integration for client bookings.',
+    highlights: ['Full-width wedding gallery', 'Package cards', 'WhatsApp enquiry'],
+    category: 'Web Portfolio & Booking',
+    image_url: '/products/framefolio.png',
+  },
+  {
+    id: 'prod-salonslot',
+    title: 'SalonSlot',
+    tagline: 'Salon & Beauty Studio Booking Platform',
+    description: 'An appointment booking concept for salons and beauty studios featuring visual service selection, available real-time time slots, and a streamlined booking summary.',
+    highlights: ['Service selection', 'Available time slots', 'Booking summary'],
+    category: 'Studio Booking Platform',
+    image_url: '/products/salonslot.png',
+  },
+  {
+    id: 'prod-fixdesk',
+    title: 'FixDesk',
+    tagline: 'Mobile Service & Repair Tracking Dashboard',
+    description: 'A repair tracking dashboard concept for mobile service shops featuring digital job cards with device specifications, estimated costs, and real-time repair status tracking.',
+    highlights: ['Job cards with device', 'Estimated cost', 'Repair status tracking'],
+    category: 'SaaS Operations Dashboard',
+    image_url: '/products/fixdesk.png',
+  },
+  {
+    id: 'prod-sairamhub',
+    title: 'Sairam Hub',
+    tagline: 'Smart Campus Student Companion Mobile App',
+    description: 'An exclusive campus mobile application built for Sairam institutions connecting 10,000+ students with real-time academic records, digital OD approvals, bus fleet GPS tracking, and collaborative student clubs.',
+    highlights: ['10,000+ Active Students', 'Digital OD & Attendance', 'Bus GPS Fleet Tracking'],
+    category: 'Mobile Application',
+    image_url: '/products/sairamhub.png',
+  },
+  {
+    id: 'prod-teddikidz',
+    title: 'Teddi Kidz Play School Website',
+    tagline: 'Modern Preschool Education Portal',
+    description: 'The official digital platform designed and developed for Teddi Kidz Play School, offering parents seamless exploration of curriculum, admission enrollments, and vibrant school activities.',
+    highlights: ['Modern Responsive Design', 'Interactive Admissions', 'School Activity Showcase'],
+    category: 'Educational Web Platform',
+    image_url: '/products/teddikidz.png',
+  },
+  {
+    id: 'prod-cvshell',
+    title: 'CV Shell AI',
+    tagline: 'AI-Powered ATS Resume Analyzer',
+    description: 'An AI-powered resume analyzer and builder engineered to maximize ATS compliance, highlight essential tech keywords, and generate targeted interview preparation questions.',
+    highlights: ['94% ATS Compliance Scoring', 'AI Keyword Matching', 'Instant Resume Optimizer'],
+    category: 'AI & Automation',
+    image_url: '/products/cvshell.png',
+  },
+  {
+    id: 'prod-zovio',
+    title: 'Zovio',
+    tagline: 'Smart Shared Money Manager Mobile App',
+    description: 'A smarter, modern way to manage money with friends, track lending records, remember shared payments, and stay financially organized with intuitive mobile expense splitting.',
+    highlights: ['Split Group Expenses', 'Lending Records & Balances', 'Smart Payment Reminders'],
+    category: 'Fintech Mobile App',
+    image_url: '/products/zovio.png',
+  }
+];
+
 const About = () => {
   const [showBlogModal, setShowBlogModal] = useState(false);
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(FEATURED_PRODUCTS);
   const [blogs, setBlogs] = useState([]);
   const [blogForm, setBlogForm] = useState({ author_name: '', title: '', content: '' });
   const [isSubmittingBlog, setIsSubmittingBlog] = useState(false);
@@ -208,8 +278,20 @@ const About = () => {
       if (data) setBlogs(data);
     };
     const fetchProducts = async () => {
-      const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      if (data) setProducts(data);
+      try {
+        const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+        if (data && data.length > 0) {
+          // Normalise titles and merge with curated featured concepts
+          const cleanKey = (str = '') => str.toUpperCase().replace(/[^A-Z0-9]/g, '');
+          const dbKeys = new Set(data.map(p => cleanKey(p.title)));
+          const additional = FEATURED_PRODUCTS.filter(p => !dbKeys.has(cleanKey(p.title)));
+          setProducts([...data, ...additional]);
+        } else {
+          setProducts(FEATURED_PRODUCTS);
+        }
+      } catch (err) {
+        setProducts(FEATURED_PRODUCTS);
+      }
     };
     fetchBlogs();
     fetchProducts();
@@ -431,7 +513,7 @@ const About = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {products.map((product, i) => (
-                <ScrollReveal key={product.id} delay={i * 0.1}>
+                <ScrollReveal key={product.id || i} delay={i * 0.08}>
                   <div className="bg-white rounded-[2rem] overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col group border border-gray-100 h-full">
                     <div className="relative aspect-video w-full bg-slate-900 overflow-hidden">
                       <img 
@@ -443,11 +525,28 @@ const About = () => {
                         }}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                       />
+                      {product.category && (
+                        <div className="absolute top-4 left-4 z-10 px-3.5 py-1.5 bg-black/60 backdrop-blur-md rounded-full text-white text-[11px] font-bold uppercase tracking-wider border border-white/20">
+                          {product.category}
+                        </div>
+                      )}
                     </div>
-                    <div className="p-8 bg-white flex flex-col flex-grow text-center">
-                      <h3 className="text-2xl font-black text-gray-900 mb-3">{product.title}</h3>
+                    <div className="p-7 bg-white flex flex-col flex-grow text-left">
+                      <h3 className="text-2xl font-black text-gray-900 mb-2">{product.title}</h3>
+                      {product.tagline && (
+                        <p className="text-purple-600 font-bold text-xs uppercase tracking-wider mb-3">{product.tagline}</p>
+                      )}
                       {product.description && (
-                        <p className="text-gray-500 font-medium leading-relaxed text-sm md:text-base line-clamp-3 group-hover:line-clamp-none transition-all duration-300">{product.description}</p>
+                        <p className="text-gray-600 font-medium leading-relaxed text-sm line-clamp-3 group-hover:line-clamp-none transition-all duration-300 mb-4">{product.description}</p>
+                      )}
+                      {product.highlights && product.highlights.length > 0 && (
+                        <div className="mt-auto pt-4 border-t border-gray-100 flex flex-wrap gap-2">
+                          {product.highlights.map((h, hi) => (
+                            <span key={hi} className="px-2.5 py-1 bg-purple-50 text-purple-700 font-semibold text-xs rounded-lg border border-purple-100/80">
+                              {h}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>

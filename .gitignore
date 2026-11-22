@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*
+
+.env.vercel
+
+test-*.js
+test_out.pdf
+sample_offer_letter_filled.pdf

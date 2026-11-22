@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DAKH EDU SOLUTIONS – Marketing Email Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0F172A;
+      color: #F8FAFC;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #1E293B;
+      border-bottom: 1px solid #334155;
+      padding: 14px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand img {
+      width: 40px;
+      height: 60px;
+      object-fit: contain;
+      border-radius: 4px;
+      background: #FFFFFF;
+      padding: 2px;
+      border: 1px solid #6D28D9;
+    }
+    .brand h1 {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+    .brand span {
+      display: block;
+      font-size: 11px;
+      color: #94A3B8;
+      font-weight: 500;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .btn-toggle {
+      background: #334155;
+      color: #E2E8F0;
+      border: 1px solid #475569;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-toggle.active, .btn-toggle:hover {
+      background: #6D28D9;
+      border-color: #8B5CF6;
+      color: #FFFFFF;
+    }
+    .btn-action {
+      background: #059669;
+      border-color: #10B981;
+      color: #FFFFFF;
+    }
+    .btn-action:hover {
+      background: #047857;
+    }
+    .preview-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 28px 16px;
+      overflow-y: auto;
+    }
+    .device-frame {
+      background: #FFFFFF;
+      border-radius: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      transition: width 0.3s ease;
+      overflow: hidden;
+      border: 4px solid #334155;
+      width: 100%;
+      max-width: 660px;
+    }
+    .device-frame.mobile {
+      max-width: 395px;
+      border-radius: 36px;
+      border: 8px solid #334155;
+    }
+    iframe {
+      width: 100%;
+      height: 1200px;
+      border: none;
+      display: block;
+      background: #F1F5F9;
+    }
+    .copy-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #059669;
+      color: #FFFFFF;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      display: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div style="width: 38px; height: 38px; border-radius: 8px; background: linear-gradient(135deg, #6D28D9, #DB2777); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; color: #FFFFFF;">
+        D
+      </div>
+      <div>
+        <h1>DAKH EDU SOLUTIONS &bull; Marketing Email Inspector</h1>
+        <span>Subject: 30-Day Online Internship Opportunity | Special Offer – Register Now!</span>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn-toggle active" id="btnDesktop" onclick="setMode('desktop')">
+        &#128187; Desktop View (600px)
+      </button>
+      <button class="btn-toggle" id="btnMobile" onclick="setMode('mobile')">
+        &#128241; Mobile View (375px)
+      </button>
+      <button class="btn-toggle btn-action" id="btnCopy" onclick="copyEmailForGmail()">
+        &#128203; Copy for Gmail
+      </button>
+      <a href="internship-marketing-email.html" target="_blank" class="btn-toggle" style="text-decoration: none;">
+        &#8599; Open Raw HTML
+      </a>
+    </div>
+  </header>
+
+  <div class="preview-container">
+    <div class="device-frame" id="frameContainer">
+      <iframe id="emailFrame" src="internship-marketing-email.html"></iframe>
+    </div>
+  </div>
+
+  <div class="copy-toast" id="copyToast">
+    &#10003; Rendered HTML copied! Paste directly into Gmail composer.
+  </div>
+
+  <script>
+    function setMode(mode) {
+      const container = document.getElementById('frameContainer');
+      const btnDesktop = document.getElementById('btnDesktop');
+      const btnMobile = document.getElementById('btnMobile');
+
+      if (mode === 'mobile') {
+        container.classList.add('mobile');
+        btnMobile.classList.add('active');
+        btnDesktop.classList.remove('active');
+      } else {
+        container.classList.remove('mobile');
+        btnDesktop.classList.add('active');
+        btnMobile.classList.remove('active');
+      }
+    }
+
+    async function copyEmailForGmail() {
+      try {
+        const frame = document.getElementById('emailFrame');
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        const html = doc.documentElement.outerHTML;
+
+        // Clipboard write with rich text html
+        if (navigator.clipboard && window.ClipboardItem) {
+          const blob = new Blob([html], { type: 'text/html' });
+          const textBlob = new Blob([doc.body.innerText], { type: 'text/plain' });
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'text/html': blob, 'text/plain': textBlob })
+          ]);
+        } else {
+          // Fallback selection
+          const range = doc.createRange();
+          range.selectNode(doc.body);
+          frame.contentWindow.getSelection().removeAllRanges();
+          frame.contentWindow.getSelection().addRange(range);
+          doc.execCommand('copy');
+          frame.contentWindow.getSelection().removeAllRanges();
+        }
+
+        const toast = document.getElementById('copyToast');
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 3000);
+      } catch (err) {
+        alert('Please open internship-marketing-email.html directly in Chrome, press Ctrl+A, then Ctrl+C to copy into Gmail.');
+      }
+    }
+  </script>
+
+</body>
+</html>
