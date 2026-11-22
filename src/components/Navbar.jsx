@@ -46,7 +46,13 @@ const Navbar = () => {
             
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 group relative z-[60]">
-              <img src="/companylogo.jpg" alt="DAKH Logo" className="h-10 w-auto object-contain rounded" />
+              <img 
+                src="/dakh-navbar-logo.png" 
+                alt="" 
+                width="40" 
+                height="40" 
+                className="w-10 h-10 object-contain block shrink-0" 
+              />
               <span className={`font-bold text-2xl tracking-tight transition-colors duration-200 ${
                 isDarkBg 
                   ? 'text-white hover:text-[var(--color-brand-secondary)]' 
