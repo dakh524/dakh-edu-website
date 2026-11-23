@@ -30,6 +30,7 @@ const CHENNAI_COLLEGES = [
 
 const ACTIVE_INTERNSHIPS = [
   "AWS Cloud Foundations",
+  "PCB Design",
   "Web Development",
   "Full Stack Development",
   "Generative AI",

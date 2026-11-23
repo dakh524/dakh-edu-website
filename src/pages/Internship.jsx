@@ -11,6 +11,7 @@ import InternBot from '../components/InternBot';
 
 const DOMAINS = [
   'AWS Cloud Foundations',
+  'PCB Design',
   'Web Development',
   'Full Stack Development',
   'Generative AI',

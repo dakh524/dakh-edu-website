@@ -35,7 +35,7 @@ const AdminLMSManager = () => {
     if (!error && data) {
       setModules(data);
       const uniqueDomains = [...new Set(data.map(m => m.domain))];
-      const defaultDomains = ['AWS Cloud Foundations', 'Web Development', 'Full Stack Development', 'Generative AI', 'Vibe Coding'];
+      const defaultDomains = ['AWS Cloud Foundations', 'PCB Design', 'Web Development', 'Full Stack Development', 'Generative AI', 'Vibe Coding'];
       const mergedDomains = [...new Set([...defaultDomains, ...uniqueDomains])];
       setDomains(mergedDomains);
     }

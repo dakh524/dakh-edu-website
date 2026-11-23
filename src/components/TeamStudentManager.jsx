@@ -33,6 +33,7 @@ const TeamStudentManager = () => {
   
   const domains = [
     'AWS Cloud Foundations',
+    'PCB Design',
     'Web Development',
     'Full Stack Development',
     'Generative AI',

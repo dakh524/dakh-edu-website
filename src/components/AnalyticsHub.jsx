@@ -36,6 +36,7 @@ import {
 import { GEN_AI_MODULES } from '../data/genAiModules';
 import { FULL_STACK_MODULES } from '../data/fullStackModules';
 import { AWS_CLOUD_MODULES, AWS_CLOUD_PROJECTS, AWS_STARTER_FILES, AWS_OFFICIAL_RESOURCES } from '../data/awsCloudModules';
+import { PCB_DESIGN_MODULES, PCB_DESIGN_PROJECTS, PCB_OFFICIAL_RESOURCES, PCB_SUBMISSION_FORMAT } from '../data/pcbDesignModules';
 
 // Fallback modules for Vibe Coding
 const VIBE_CODING_MODULES = [
@@ -85,6 +86,8 @@ const DOMAIN_PROJECTS = {
     { title: 'Event Landing Page with Global CDN', desc: 'Host a mobile-friendly club/event showcase site with dark mode toggle and sub-second latency on CloudFront.' },
     { title: 'Production Cloud Static Architecture', desc: 'Implement production-grade AWS architecture with GitHub version control, private storage, and zero-downtime updates.' }
   ],
+  'PCB Design': PCB_DESIGN_PROJECTS.map(p => ({ title: p.title, desc: p.description })),
+  'PCB Design & Fabrication': PCB_DESIGN_PROJECTS.map(p => ({ title: p.title, desc: p.description })),
   'Full Stack Development': [
     { title: 'Photography Portfolio & Booking Platform', desc: 'Build a high-performance booking system where clients view portfolios and schedule photography sessions.' },
     { title: 'E-Commerce Marketplace', desc: 'Develop a full-stack shopping platform with cart, payment gateway integration, and order tracking.' },
@@ -373,6 +376,8 @@ export default function AnalyticsHub({
     let modules = [];
     if (domainKey.includes('Cloud') || domainKey.includes('AWS')) {
       modules = AWS_CLOUD_MODULES;
+    } else if (domainKey.includes('PCB') || domainKey.includes('Circuit')) {
+      modules = PCB_DESIGN_MODULES;
     } else if (domainKey.includes('Gen') || domainKey.includes('AI')) {
       modules = GEN_AI_MODULES;
     } else if (domainKey.includes('Full') || domainKey.includes('Web') || domainKey.includes('Python')) {
@@ -1483,6 +1488,7 @@ export default function AnalyticsHub({
           <div className="flex flex-wrap gap-2">
             {[
               'AWS Cloud Foundations',
+              'PCB Design',
               'Web Development',
               'Full Stack Development',
               'Generative AI',
@@ -1657,6 +1663,115 @@ export default function AnalyticsHub({
                   <pre className="text-xs font-mono text-slate-300 overflow-x-auto p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 max-h-56">
                     <code>{AWS_STARTER_FILES[starterCodeTab]}</code>
                   </pre>
+                </div>
+              </div>
+            )}
+
+            {selectedDomain === 'PCB Design' && (
+              <div className="space-y-4 pt-1">
+                {/* PCB Mini Projects with GitHub Links */}
+                <div className="space-y-2.5">
+                  <h5 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <Code2 className="w-4 h-4 text-emerald-600" />
+                    4 Selectable PCB Mini Projects with GitHub Repositories
+                  </h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {PCB_DESIGN_PROJECTS.map((proj, idx) => (
+                      <div key={proj.id} className="bg-white p-4 rounded-xl border border-emerald-200/90 shadow-2xs space-y-2 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-100">
+                              Project {idx + 1} · {proj.difficulty}
+                            </span>
+                            <span className="text-[10px] font-mono font-bold text-slate-400">
+                              {proj.tech}
+                            </span>
+                          </div>
+                          <div className="font-extrabold text-sm text-slate-900 mt-1">
+                            {proj.title}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {proj.description}
+                          </p>
+                          <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-100 text-[11px] text-slate-600 font-medium">
+                            <strong className="text-slate-800">Submission Requirements:</strong> {proj.requirements}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                          {proj.github && (
+                            <a
+                              href={proj.github}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              GitHub Repo
+                            </a>
+                          )}
+                          {proj.tutorial && (
+                            <a
+                              href={proj.tutorial}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <PlayCircle className="w-3.5 h-3.5" />
+                              Tutorial
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Official KiCad Documentation & Video Tutorials */}
+                <div className="space-y-2.5">
+                  <h5 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-indigo-600" />
+                    Official KiCad Documentation & Guides
+                  </h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {PCB_OFFICIAL_RESOURCES.slice(0, 3).map((res) => (
+                      <a
+                        key={res.title}
+                        href={res.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-white p-4 rounded-xl border border-slate-200/90 hover:border-indigo-300 hover:shadow-xs transition-all group block space-y-1.5 cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded">
+                            {res.category}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                        </div>
+                        <div className="font-extrabold text-xs text-slate-900 group-hover:text-indigo-700 transition-colors">
+                          {res.title}
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2">
+                          {res.desc}
+                        </p>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Submission Checklist */}
+                <div className="bg-emerald-50/60 border border-emerald-200/90 rounded-2xl p-4 md:p-5">
+                  <h5 className="text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5 mb-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    Mandatory PCB Final Submission Checklist (6 Items)
+                  </h5>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                    {PCB_SUBMISSION_FORMAT.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-emerald-200/60 font-medium text-slate-800 shadow-2xs">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="truncate">{item}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
