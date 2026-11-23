@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import TeamStudentManager from '../components/TeamStudentManager';
 import AdminLMSManager from '../components/AdminLMSManager';
+import { deduplicateRegistrations } from '../utils/registrationUtils';
 
 const TeamDashboard = () => {
   const [session, setSession] = useState(null);
@@ -192,7 +193,7 @@ const TeamDashboard = () => {
       .order('created_at', { ascending: false });
     
     if (!error && data) {
-      setRegistrations(data);
+      setRegistrations(deduplicateRegistrations(data));
     }
   };
 

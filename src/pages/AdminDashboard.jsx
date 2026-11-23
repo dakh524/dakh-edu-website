@@ -8,6 +8,7 @@ import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import AnalyticsHub from '../components/AnalyticsHub';
 import EarningsManager from '../components/EarningsManager';
+import { deduplicateRegistrations } from '../utils/registrationUtils';
 
 const AdminDashboard = () => {
   const [session, setSession] = useState(null);
@@ -794,7 +795,7 @@ const AdminDashboard = () => {
       .order('created_at', { ascending: false });
     
     if (!error && data) {
-      setRegistrations(data);
+      setRegistrations(deduplicateRegistrations(data));
     }
   };
 

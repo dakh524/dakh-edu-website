@@ -202,6 +202,8 @@ const ApplyInternship = () => {
   const [laterUtrSuccess, setLaterUtrSuccess] = useState(false);
   const [isOtherDept, setIsOtherDept] = useState(false);
   const [customDepartment, setCustomDepartment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedWhatsappUrl, setSubmittedWhatsappUrl] = useState('');
 
   const handleSubmitLaterUtr = async (e) => {
     e.preventDefault();
@@ -248,6 +250,8 @@ const ApplyInternship = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (computedSchedule.error) {
       alert(`Invalid schedule: ${computedSchedule.error}`);
       return;
@@ -270,6 +274,7 @@ const ApplyInternship = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       // Generate a temporary password (e.g. random 6 chars)
       const randomPassword = Math.random().toString(36).slice(-6) + 'Dakh@';
@@ -370,16 +375,19 @@ const ApplyInternship = () => {
       // Store email status in component state for the success screen
       setAckEmailQueued(ackQueued);
 
-      // NEW: Open WhatsApp link to official verification team (8778317180)
+      // Prepare WhatsApp link for manual acknowledgement when touched on thank-you screen
       const whatsappMessage = `Hi DAKH Team, I have registered for the Internship.\n\nName: ${formData.fullName}\nCollege: ${formData.college}\nDepartment: ${finalDepartment}\nYear: ${formData.year}\nDomain: ${formData.domain}\nPlan: ${finalPlanName}\nMode: ${mode}\nDuration: ${computedSchedule.durationLabel}\nSchedule: ${computedSchedule.startDateFormatted} to ${computedSchedule.endDateFormatted}\nAmount Paid: ₹${finalPrice}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nTransaction ID: ${formData.utr}`;
       const whatsappUrl = `https://wa.me/918778317180?text=${encodeURIComponent(whatsappMessage)}`;
-      window.open(whatsappUrl, '_blank');
+      setSubmittedWhatsappUrl(whatsappUrl);
 
+      // Show Thank You for Registration screen first (DO NOT auto open WhatsApp)
+      setIsSubmitted(true);
     } catch (err) {
       console.error(err);
+      alert('Error submitting registration: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitted(true);
   };
 
   const handleChange = (e) => {
@@ -439,13 +447,13 @@ const ApplyInternship = () => {
                     +91 8778317180
                   </div>
                   <a
-                    href={`https://wa.me/918778317180?text=${encodeURIComponent(`Hi DAKH Team, I have registered for the Internship.\n\nName: ${formData.fullName}\nDomain: ${formData.domain}\nReference: ${credentials?.intern_number || 'New Registration'}\nUTR: ${formData.utr}`)}`}
+                    href={submittedWhatsappUrl || `https://wa.me/918778317180?text=${encodeURIComponent(`Hi DAKH Team, I have registered for the Internship.\n\nName: ${formData.fullName}\nDomain: ${formData.domain}\nReference: ${credentials?.intern_number || 'New Registration'}\nUTR: ${formData.utr}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                    className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:scale-102 cursor-pointer"
                   >
-                    <span>Send Acknowledgement on WhatsApp</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span>Acknowledge with Team on WhatsApp (+91 8778317180)</span>
+                    <ArrowRight className="w-4 h-4" />
                   </a>
                 </div>
               </div>
@@ -944,8 +952,16 @@ const ApplyInternship = () => {
                     </label>
                   </div>
 
-                  <button type="submit" className="w-full py-4 bg-[#ffce00] hover:bg-[#e6b800] text-gray-900 font-black rounded-xl border-b-4 border-yellow-600 hover:translate-y-[2px] hover:border-b-2 transition-all mt-2 uppercase tracking-wider text-lg shadow-lg">
-                    SUBMIT REGISTRATION →
+                  <button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className={`w-full py-4 text-gray-900 font-black rounded-xl border-b-4 transition-all mt-2 uppercase tracking-wider text-lg shadow-lg flex items-center justify-center gap-2 ${
+                      isSubmitting 
+                        ? 'bg-yellow-300 border-yellow-400 opacity-70 cursor-not-allowed pointer-events-none' 
+                        : 'bg-[#ffce00] hover:bg-[#e6b800] border-yellow-600 hover:translate-y-[2px] hover:border-b-2 cursor-pointer'
+                    }`}
+                  >
+                    {isSubmitting ? 'PROCESSING REGISTRATION...' : 'SUBMIT REGISTRATION →'}
                   </button>
 
                 </form>

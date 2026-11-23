@@ -7,7 +7,7 @@
     "dev": "vite",
     "vercel:dev": "vercel dev --listen 3000",
     "build": "vite build",
-    "test": "node test/date-utils.test.js && node test/api-schedule.test.js && node test/registration-ack.test.js",
+    "test": "node test/date-utils.test.js && node test/api-schedule.test.js && node test/registration-ack.test.js && node test/dedup.test.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
