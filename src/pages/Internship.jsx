@@ -482,6 +482,14 @@ const Internship = () => {
           </p>
           <div className="flex flex-row items-center justify-center gap-3 sm:gap-4 flex-wrap">
             <button 
+              onClick={() => handleApplyClick('Internship Program', '399')}
+              className="px-6 sm:px-8 py-3.5 bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-full text-base sm:text-lg shadow-[0_10px_25px_rgba(147,51,234,0.4)] hover:scale-105 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+            >
+              <Zap className="w-5 h-5 text-yellow-300" />
+              <span>Apply for Internship</span>
+              <ArrowUpRight className="w-4 h-4 ml-0.5" />
+            </button>
+            <button 
               onClick={() => {
                 const el = document.getElementById('explore-domains-section');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
