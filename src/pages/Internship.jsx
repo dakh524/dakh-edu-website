@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { Check, Laptop, Users, Building, Globe, Home as HomeIcon, Zap, Target, Award, Star, ArrowRight, CalendarDays, BookOpen, UserCheck, Lightbulb, Code2, Send, CheckCircle2, AlertTriangle, Briefcase, ChevronRight, ChevronDown, Key, Download, Loader2, Share2, X } from 'lucide-react';
+import { Check, Laptop, Users, Building, Globe, Home as HomeIcon, Zap, Target, Award, Star, ArrowRight, CalendarDays, BookOpen, UserCheck, Lightbulb, Code2, Send, CheckCircle2, AlertTriangle, Briefcase, ChevronRight, ChevronDown, Key, Download, Loader2, Share2, X, Compass, User, ArrowUpRight, Play, Pause, ChevronLeft } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
 import TiltCard from '../components/TiltCard';
@@ -263,7 +263,8 @@ const InternProjectCard = ({ project }) => {
 const Internship = () => {
   const [selectedDomain, setSelectedDomain] = useState(DOMAINS[0]);
   const [selectedMode, setSelectedMode] = useState('Online');
-  const [isTrainMoving, setIsTrainMoving] = useState(false);
+  const [isTrainMoving, setIsTrainMoving] = useState(true);
+  const trainScrollRef = useRef(null);
   const navigate = useNavigate();
   const [roadmapSteps, setRoadmapSteps] = useState(DEFAULT_ROADMAP);
 
@@ -479,12 +480,25 @@ const Internship = () => {
           <p className="text-lg md:text-xl text-[var(--color-brand-text-secondary)] mb-10 max-w-2xl mx-auto">
             Hands-on internships in 10+ domains. Real projects, certificates, and performance stipends.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button onClick={() => handleApplyClick('Internship Program', '399')} className="px-10 py-4 bg-[var(--color-brand-primary)] text-white font-black rounded-full text-lg shadow-[0_0_30px_rgba(147,51,234,0.4)] hover:scale-105 transition-transform w-full sm:w-auto">
-              Apply Now
+          <div className="flex flex-row items-center justify-center gap-3 sm:gap-4 flex-wrap">
+            <button 
+              onClick={() => {
+                const el = document.getElementById('explore-domains-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                else handleApplyClick('Internship Program', '399');
+              }}
+              className="px-6 sm:px-8 py-3.5 bg-[#9333ea] hover:bg-[#7e22ce] text-white font-bold rounded-full text-base sm:text-lg shadow-[0_10px_25px_rgba(147,51,234,0.35)] hover:scale-105 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+            >
+              <Compass className="w-5 h-5" />
+              <span>Explore Internships</span>
+              <ArrowUpRight className="w-4 h-4 ml-0.5" />
             </button>
-            <button onClick={() => window.location.href='/student/login'} className="px-10 py-4 bg-white text-purple-600 font-black rounded-full text-lg shadow-md border-2 border-purple-100 hover:border-purple-600 hover:scale-105 transition-all w-full sm:w-auto flex items-center justify-center gap-2">
-              <UserCheck className="w-5 h-5" /> Intern Login
+            <button 
+              onClick={() => navigate('/student/login')}
+              className="px-6 sm:px-8 py-3.5 bg-white/90 hover:bg-white text-[#9333ea] font-bold rounded-full text-base sm:text-lg border-2 border-purple-200 hover:border-purple-500 hover:shadow-md hover:scale-105 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+            >
+              <User className="w-5 h-5 text-[#9333ea]" />
+              <span>Intern Login</span>
             </button>
           </div>
 
@@ -497,37 +511,87 @@ const Internship = () => {
       </section>
 
       {/* 2. Glassmorphism Infinite Train Carousel */}
-      <section className="py-24 bg-gradient-to-b from-purple-50/50 to-transparent relative overflow-hidden border-y border-[rgba(0,0,0,0.05)]">
+      <section id="explore-domains-section" className="py-24 bg-gradient-to-b from-purple-50/50 to-transparent relative overflow-hidden border-y border-[rgba(0,0,0,0.05)]">
         {/* Background floating blobs for glassmorphism refraction */}
         <motion.div animate={{ y: [0, 30, 0], scale: [1, 1.1, 1] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} className="absolute top-20 left-10 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-[120px] opacity-30 pointer-events-none"></motion.div>
         <motion.div animate={{ y: [0, -30, 0], scale: [1, 1.2, 1] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} className="absolute top-40 right-10 w-96 h-96 bg-yellow-300 rounded-full mix-blend-multiply filter blur-[120px] opacity-30 pointer-events-none"></motion.div>
         <motion.div animate={{ x: [0, 40, 0], scale: [1, 1.1, 1] }} transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }} className="absolute -bottom-20 left-1/3 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-[120px] opacity-30 pointer-events-none"></motion.div>
 
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 relative z-10">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 relative z-10 text-center">
           <ScrollReveal>
-            <h2 className="font-extrabold text-4xl md:text-5xl text-center mb-16 text-gray-900">Explore Our Domains</h2>
+            <h2 className="font-extrabold text-4xl md:text-5xl text-center mb-4 text-gray-900">Explore Our Domains</h2>
+            <p className="text-sm md:text-base text-slate-500 max-w-xl mx-auto mb-6">
+              Watch our interactive train journey through cutting-edge technology tracks. Pause anytime to scroll and explore each domain.
+            </p>
           </ScrollReveal>
+
+          {/* Interactive Train Control Bar */}
+          <div className="flex items-center justify-center gap-3 mb-8 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsTrainMoving(!isTrainMoving)}
+              className="px-5 py-2.5 rounded-full font-bold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition-all cursor-pointer border bg-white border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-400 hover:shadow-md"
+            >
+              {isTrainMoving ? (
+                <>
+                  <Pause className="w-4 h-4 text-purple-600" />
+                  <span>Pause Train to Scroll</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 text-emerald-600" />
+                  <span>Resume Train</span>
+                </>
+              )}
+            </button>
+
+            <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-full px-3 py-1.5 shadow-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTrainMoving(false);
+                  if (trainScrollRef.current) {
+                    trainScrollRef.current.scrollBy({ left: -340, behavior: 'smooth' });
+                  }
+                }}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                title="Scroll Left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-xs font-bold text-slate-500 px-1 select-none">
+                Scroll Domains
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTrainMoving(false);
+                  if (trainScrollRef.current) {
+                    trainScrollRef.current.scrollBy({ left: 340, behavior: 'smooth' });
+                  }
+                }}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                title="Scroll Right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Infinite Marquee Container */}
-        <div className="relative w-full flex overflow-hidden py-16 group relative z-10 [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)] min-h-[500px]">
-
-          {/* Start Train Overlay Button */}
-          {!isTrainMoving && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/10 backdrop-blur-[2px]">
-              <button
-                onClick={() => setIsTrainMoving(true)}
-                className="px-10 py-5 bg-[var(--color-brand-primary)] text-white font-black rounded-full text-2xl shadow-[0_0_50px_rgba(147,51,234,0.6)] animate-pulse hover:scale-110 hover:animate-none transition-all border-4 border-white/20 flex items-center gap-4"
-              >
-                Start Train <Zap size={24} className="text-yellow-300" />
-              </button>
-            </div>
-          )}
+        <div 
+          ref={trainScrollRef}
+          className="relative w-full flex overflow-x-auto py-16 group relative z-10 [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)] min-h-[500px] scrollbar-thin scrollbar-thumb-purple-200 scroll-smooth"
+        >
 
           {/* Train track background line */}
           <div className="absolute bottom-[2.5rem] left-0 w-full h-2 bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300 opacity-50 z-0 border-b border-gray-500"></div>
 
-          <div className="animate-marquee flex items-end" style={{ animationDuration: '80s', animationPlayState: isTrainMoving ? 'running' : 'paused' }}>
+          <div 
+            className={`flex items-end ${isTrainMoving ? 'animate-marquee' : 'w-max'}`} 
+            style={{ animationDuration: '80s', animationPlayState: isTrainMoving ? 'running' : 'paused' }}
+          >
             {['ENGINE', ...DOMAINS, 'ENGINE', ...DOMAINS].map((domain, i) => {
               const isLastCompartment = i === DOMAINS.length || i === (DOMAINS.length * 2 + 1);
 

@@ -49,12 +49,43 @@ export function getRegistrationAckEmailHtml({
               </p>
 
               <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 16px 0;">
-                Thank you for registering for the <strong>${domain} Internship Program</strong> at <strong>DAKH EDU SOLUTIONS</strong>. We’ve received your registration successfully.
+                <strong>Thank you for registering!</strong> Your registration is being verified by our team soon. We are thrilled to welcome you to the <strong>${domain} Internship Program</strong> at <strong>DAKH EDU SOLUTIONS</strong>.
               </p>
+
+              <!-- Motivational Quote -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);border-left:4px solid #9333ea;border-radius:10px;padding:16px 20px;margin:20px 0;">
+                <tr>
+                  <td>
+                    <p style="font-size:14px;font-style:italic;line-height:1.6;color:#581c87;margin:0 0 8px 0;">
+                      “The future belongs to those who learn more skills and combine them in creative ways. Every line of code, circuit, and cloud design builds tomorrow.”
+                    </p>
+                    <p style="font-size:13px;font-weight:700;color:#7e22ce;margin:0;text-align:right;">
+                      — CEO Dhivakar
+                    </p>
+                  </td>
+                </tr>
+              </table>
 
               <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 20px 0;">
                 Your registration reference is <strong>${registrationId}</strong>. Please keep it handy if you need to contact us about your registration.
               </p>
+
+              <!-- Please Also Acknowledge to Team -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+                <tr>
+                  <td>
+                    <h3 style="font-size:15px;font-weight:800;color:#065f46;margin:0 0 8px 0;">
+                      📲 Please Also Acknowledge Your Registration to Our Team
+                    </h3>
+                    <p style="font-size:13px;line-height:1.5;color:#047857;margin:0 0 14px 0;">
+                      To speed up your verification, please send a quick WhatsApp message to our team at <strong>+91 8778317180</strong> with your registration details.
+                    </p>
+                    <a href="https://wa.me/918778317180?text=${encodeURIComponent(`Hi DAKH Team, I have registered for the ${domain} Internship.\n\nName: ${fullName}\nRegistration ID: ${registrationId}`)}" style="display:inline-block;background:#059669;color:#ffffff;font-size:13px;font-weight:700;text-decoration:none;padding:10px 22px;border-radius:50px;box-shadow:0 4px 12px rgba(5,150,105,0.25);">
+                      Send Acknowledgement on WhatsApp (+91 8778317180) →
+                    </a>
+                  </td>
+                </tr>
+              </table>
 
               <!-- What happens next box -->
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f1f5f9;border-radius:12px;padding:20px;margin-bottom:24px;">

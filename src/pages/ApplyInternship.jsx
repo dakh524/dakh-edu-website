@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Globe, Building, Calendar, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Globe, Building, Calendar, Clock, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -361,9 +361,9 @@ const ApplyInternship = () => {
       // Store email status in component state for the success screen
       setAckEmailQueued(ackQueued);
 
-      // NEW: Open WhatsApp link
-      const whatsappMessage = `Hi, I have applied for the Internship.\n\nName: ${formData.fullName}\nCollege: ${formData.college}\nDepartment: ${formData.department}\nYear: ${formData.year}\nDomain: ${formData.domain}\nPlan: ${finalPlanName}\nMode: ${mode}\nDuration: ${computedSchedule.durationLabel}\nSchedule: ${computedSchedule.startDateFormatted} to ${computedSchedule.endDateFormatted}\nAmount Paid: ₹${finalPrice}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nTransaction ID: ${formData.utr}`;
-      const whatsappUrl = `https://wa.me/918667399640?text=${encodeURIComponent(whatsappMessage)}`;
+      // NEW: Open WhatsApp link to official verification team (8778317180)
+      const whatsappMessage = `Hi DAKH Team, I have registered for the Internship.\n\nName: ${formData.fullName}\nCollege: ${formData.college}\nDepartment: ${formData.department}\nYear: ${formData.year}\nDomain: ${formData.domain}\nPlan: ${finalPlanName}\nMode: ${mode}\nDuration: ${computedSchedule.durationLabel}\nSchedule: ${computedSchedule.startDateFormatted} to ${computedSchedule.endDateFormatted}\nAmount Paid: ₹${finalPrice}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nTransaction ID: ${formData.utr}`;
+      const whatsappUrl = `https://wa.me/918778317180?text=${encodeURIComponent(whatsappMessage)}`;
       window.open(whatsappUrl, '_blank');
 
     } catch (err) {
@@ -395,15 +395,51 @@ const ApplyInternship = () => {
           className="bg-white rounded-2xl w-full overflow-hidden shadow-2xl border border-gray-200"
         >
           {isSubmitted ? (
-            <div className="w-full p-12 text-center flex flex-col items-center justify-center min-h-[500px]">
-              <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+            <div className="w-full p-8 sm:p-12 text-center flex flex-col items-center justify-center min-h-[500px]">
+              <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-5">
+                <CheckCircle2 className="w-10 h-10" />
               </div>
-              <h3 className="text-3xl font-black text-gray-900 mb-4">Registration Sent!</h3>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6 leading-relaxed">
-                Your internship registration details have been received successfully. 
-                <strong>Payment verification is currently pending review.</strong>
+              <h3 className="text-3xl font-black text-gray-900 mb-2">Thank You for Registering!</h3>
+              <p className="text-lg text-emerald-700 font-extrabold max-w-2xl mx-auto mb-5 leading-relaxed">
+                Your registration is being verified by our team soon.
               </p>
+
+              {/* Motivational Quote by CEO Dhivakar */}
+              <div className="bg-gradient-to-r from-purple-50 via-purple-100/50 to-indigo-50 border-l-4 border-purple-600 rounded-xl p-5 mb-6 max-w-xl w-full mx-auto text-left shadow-xs">
+                <p className="text-sm italic font-medium text-purple-950 leading-relaxed mb-2">
+                  "The future belongs to those who learn more skills and combine them in creative ways. Every line of code, circuit, and cloud architecture you build shapes tomorrow."
+                </p>
+                <p className="text-xs font-black text-purple-700 tracking-wider text-right uppercase">
+                  — CEO Dhivakar
+                </p>
+              </div>
+
+              {/* Please Also Acknowledge to Team Card */}
+              <div className="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-5 sm:p-6 mb-8 max-w-xl w-full mx-auto text-left shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">📲</span>
+                  <h4 className="text-sm font-extrabold text-emerald-950 uppercase tracking-wide">
+                    Please Also Acknowledge to Our Team
+                  </h4>
+                </div>
+                <p className="text-xs font-semibold text-emerald-900 mb-4 leading-relaxed">
+                  Please inform our verification team about your registration so your application and payment can be verified immediately! Send your registration confirmation via WhatsApp to our team number:
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-emerald-200">
+                  <div className="font-mono text-sm font-black text-emerald-800">
+                    +91 8778317180
+                  </div>
+                  <a
+                    href={`https://wa.me/918778317180?text=${encodeURIComponent(`Hi DAKH Team, I have registered for the Internship.\n\nName: ${formData.fullName}\nDomain: ${formData.domain}\nReference: ${credentials?.intern_number || 'New Registration'}\nUTR: ${formData.utr}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <span>Send Acknowledgement on WhatsApp</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
               
               {credentials && (
                 <div className="bg-yellow-50 p-6 rounded-xl border border-yellow-200 mb-8 max-w-md w-full mx-auto text-left">
