@@ -200,6 +200,8 @@ const ApplyInternship = () => {
   const [laterUtrInput, setLaterUtrInput] = useState('');
   const [isSubmittingLaterUtr, setIsSubmittingLaterUtr] = useState(false);
   const [laterUtrSuccess, setLaterUtrSuccess] = useState(false);
+  const [isOtherDept, setIsOtherDept] = useState(false);
+  const [customDepartment, setCustomDepartment] = useState('');
 
   const handleSubmitLaterUtr = async (e) => {
     e.preventDefault();
@@ -251,6 +253,13 @@ const ApplyInternship = () => {
       return;
     }
 
+    if (isOtherDept && (!customDepartment || !customDepartment.trim())) {
+      alert("Please type your department name.");
+      return;
+    }
+
+    const finalDepartment = (isOtherDept ? customDepartment.trim() : formData.department) || 'Other';
+
     if (!formData.utr || !formData.utr.trim()) {
       alert("Transaction ID / UTR number is mandatory. Please enter your UPI / Bank reference ID to proceed.");
       return;
@@ -285,7 +294,7 @@ const ApplyInternship = () => {
         email: formData.email,
         phone: formData.phone,
         college: formData.college,
-        department: formData.department,
+        department: finalDepartment,
         year_of_study: formData.year,
         domain: formData.domain,
         plan_name: finalPlanName,
@@ -362,7 +371,7 @@ const ApplyInternship = () => {
       setAckEmailQueued(ackQueued);
 
       // NEW: Open WhatsApp link to official verification team (8778317180)
-      const whatsappMessage = `Hi DAKH Team, I have registered for the Internship.\n\nName: ${formData.fullName}\nCollege: ${formData.college}\nDepartment: ${formData.department}\nYear: ${formData.year}\nDomain: ${formData.domain}\nPlan: ${finalPlanName}\nMode: ${mode}\nDuration: ${computedSchedule.durationLabel}\nSchedule: ${computedSchedule.startDateFormatted} to ${computedSchedule.endDateFormatted}\nAmount Paid: ₹${finalPrice}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nTransaction ID: ${formData.utr}`;
+      const whatsappMessage = `Hi DAKH Team, I have registered for the Internship.\n\nName: ${formData.fullName}\nCollege: ${formData.college}\nDepartment: ${finalDepartment}\nYear: ${formData.year}\nDomain: ${formData.domain}\nPlan: ${finalPlanName}\nMode: ${mode}\nDuration: ${computedSchedule.durationLabel}\nSchedule: ${computedSchedule.startDateFormatted} to ${computedSchedule.endDateFormatted}\nAmount Paid: ₹${finalPrice}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nTransaction ID: ${formData.utr}`;
       const whatsappUrl = `https://wa.me/918778317180?text=${encodeURIComponent(whatsappMessage)}`;
       window.open(whatsappUrl, '_blank');
 
@@ -630,26 +639,62 @@ const ApplyInternship = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <select required name="department" value={formData.department} onChange={handleChange} className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none bg-white">
-                      <option value="" disabled>Select Department</option>
-                      <option value="CSE">CSE</option>
-                      <option value="IT">IT</option>
-                      <option value="ECE">ECE</option>
-                      <option value="EEE">EEE</option>
-                      <option value="MECH">MECH</option>
-                      <option value="CIVIL">CIVIL</option>
-                      <option value="AI/DS">AI/DS</option>
-                      <option value="Other">Other</option>
-                    </select>
+                    <div className="space-y-2">
+                      <select 
+                        required 
+                        name="department" 
+                        value={formData.department} 
+                        onChange={(e) => {
+                          handleChange(e);
+                          if (e.target.value === 'Other') {
+                            setIsOtherDept(true);
+                          } else {
+                            setIsOtherDept(false);
+                            setCustomDepartment('');
+                          }
+                        }} 
+                        className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none bg-white"
+                      >
+                        <option value="" disabled>Select Department</option>
+                        <option value="CSE">CSE</option>
+                        <option value="IT">IT</option>
+                        <option value="ECE">ECE</option>
+                        <option value="EEE">EEE</option>
+                        <option value="MECH">MECH</option>
+                        <option value="CIVIL">CIVIL</option>
+                        <option value="AI/DS">AI/DS</option>
+                        <option value="Other">Other</option>
+                      </select>
+
+                      {isOtherDept && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <input
+                            type="text"
+                            required
+                            placeholder="Type Your Department (e.g. Biomedical, Robotics, MCA) *"
+                            value={customDepartment}
+                            onChange={(e) => setCustomDepartment(e.target.value)}
+                            className="w-full border-2 border-purple-400 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-600 focus:outline-none bg-purple-50/40 text-sm shadow-xs"
+                            autoFocus
+                          />
+                        </motion.div>
+                      )}
+                    </div>
                     
-                    <select required name="year" value={formData.year} onChange={handleChange} className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none bg-white">
-                      <option value="" disabled>Select Year of Study</option>
-                      <option value="1st Year">1st Year</option>
-                      <option value="2nd Year">2nd Year</option>
-                      <option value="3rd Year">3rd Year</option>
-                      <option value="4th Year">4th Year</option>
-                      <option value="Completed">Completed</option>
-                    </select>
+                    <div>
+                      <select required name="year" value={formData.year} onChange={handleChange} className="w-full border-2 border-gray-300 rounded-xl p-3 text-gray-900 font-medium focus:border-purple-500 focus:outline-none bg-white">
+                        <option value="" disabled>Select Year of Study</option>
+                        <option value="1st Year">1st Year</option>
+                        <option value="2nd Year">2nd Year</option>
+                        <option value="3rd Year">3rd Year</option>
+                        <option value="4th Year">4th Year</option>
+                        <option value="Completed">Completed</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
