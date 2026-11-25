@@ -146,6 +146,8 @@ export async function processOutboxJobsInternal(limit = 10) {
           domain: payload.domain,
           mode: payload.mode || 'Online',
           internshipDuration: payload.internshipDuration || (payload.startDate && payload.endDate ? `${payload.startDate} to ${payload.endDate}` : '30 Days'),
+          startDate: payload.startDate || null,
+          endDate: payload.endDate || null,
           dateOfApplication: payload.dateOfApplication || job.created_at || new Date(),
           issueDate: new Date()
         });

@@ -44,6 +44,8 @@ export default async function handler(req, res) {
       domain: reg.domain,
       mode: reg.mode || 'Online',
       internshipDuration: duration,
+      startDate: reg.start_date || null,
+      endDate: reg.end_date || null,
       dateOfApplication: reg.created_at || new Date(),
       issueDate: new Date()
     });

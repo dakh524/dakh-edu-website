@@ -2,35 +2,73 @@ import { PDFDocument, StandardFonts, PDFName, PDFString } from 'pdf-lib';
 import { OFFER_LETTER_TEMPLATE_BASE64 } from './offerLetterTemplateBase64.js';
 
 /**
- * Format a Date object or ISO string to e.g. "21 November 2026" in Asia/Kolkata timezone
+ * Safely parse any date input (Date object, ISO string YYYY-MM-DD, or text date)
+ */
+function parseAnyDate(input) {
+  if (!input) return null;
+  if (input instanceof Date && !isNaN(input.getTime())) return new Date(input.getTime());
+  const str = String(input).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d, 6, 0, 0)); // Morning UTC to avoid timezone shift in IST
+  }
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) return d;
+  return null;
+}
+
+/**
+ * Format a Date object or ISO string to e.g. "01 December 2026" in Asia/Kolkata timezone
  */
 export function formatKolkataDate(dateInput) {
   if (!dateInput) return '';
-  const d = new Date(dateInput);
-  if (isNaN(d.getTime())) return '';
+  const d = parseAnyDate(dateInput);
+  if (!d) return String(dateInput).trim();
   
   return d.toLocaleDateString('en-GB', {
     timeZone: 'Asia/Kolkata',
-    day: 'numeric',
+    day: '2-digit',
     month: 'long',
     year: 'numeric'
   });
 }
 
 /**
+ * Resolve start and end dates with inclusive duration calculation
+ */
+function resolveInternshipDates(startDate, endDate, durationStr, fallbackDate) {
+  const sDate = parseAnyDate(startDate) || parseAnyDate(fallbackDate) || new Date();
+  
+  let eDate = parseAnyDate(endDate);
+  if (!eDate) {
+    const daysMatch = String(durationStr || '').match(/(\d+)/);
+    const days = daysMatch ? parseInt(daysMatch[1], 10) : 30;
+    eDate = new Date(sDate.getTime());
+    eDate.setUTCDate(eDate.getUTCDate() + Math.max(0, days - 1));
+  }
+
+  return {
+    formattedStartDate: formatKolkataDate(sDate),
+    formattedEndDate: formatKolkataDate(eDate)
+  };
+}
+
+/**
  * Server-side Official 2-Page DAKH EDU SOLUTIONS Internship Offer Letter Generator
- * Fills AcroForm fields in `DAKH_Internship_Offer_Letter_Format_10.pdf` directly.
+ * Fills AcroForm fields in `DAKH_Offer_Letter_updated_Template.pdf` directly.
  * 
- * Required exact 9 AcroForm fields:
+ * Supports all 11 AcroForm fields:
  * 1. issue_date
- * 2. reference_number
+ * 2. reference_no (also maps reference_number for backwards compatibility)
  * 3. student_name
  * 4. college
  * 5. department
  * 6. internship_domain
  * 7. internship_mode
  * 8. internship_duration
- * 9. application_date
+ * 9. start_date
+ * 10. end_date
+ * 11. application_date
  */
 export async function generateOfferLetterPdf({
   fullName,
@@ -40,13 +78,17 @@ export async function generateOfferLetterPdf({
   domain,
   mode,
   internshipDuration,
+  startDate,
+  endDate,
+  start_date,
+  end_date,
   dateOfApplication,
   issueDate
 }) {
   // 1. Validation of required fields
   const missing = [];
   if (!fullName?.trim()) missing.push('student_name');
-  if (!internNumber?.trim()) missing.push('reference_number');
+  if (!internNumber?.trim()) missing.push('reference_no');
   if (!college?.trim()) missing.push('college');
   if (!department?.trim()) missing.push('department');
   if (!domain?.trim()) missing.push('internship_domain');
@@ -68,15 +110,28 @@ export async function generateOfferLetterPdf({
   // Normalized mode
   const cleanMode = (mode || 'Online').trim().toLowerCase().includes('offline') ? 'Offline' : 'Online';
 
+  // Resolve start and end dates
+  const effectiveStartDate = startDate || start_date;
+  const effectiveEndDate = endDate || end_date;
+  const { formattedStartDate, formattedEndDate } = resolveInternshipDates(
+    effectiveStartDate,
+    effectiveEndDate,
+    cleanDuration,
+    dateOfApplication || issueDate
+  );
+
   const fieldValues = {
     issue_date: formattedIssueDate,
-    reference_number: internNumber.trim(),
+    reference_no: internNumber.trim(),
+    reference_number: internNumber.trim(), // fallback alias for legacy templates
     student_name: fullName.trim(),
     college: college.trim(),
     department: department.trim(),
     internship_domain: domain.trim(),
     internship_mode: cleanMode,
     internship_duration: cleanDuration,
+    start_date: formattedStartDate,
+    end_date: formattedEndDate,
     application_date: formattedAppDate
   };
 
@@ -90,8 +145,16 @@ export async function generateOfferLetterPdf({
 
   // 5. Fill each AcroForm field explicitly with 11 pt font size, scaling down only if text would clip
   for (const [fieldName, val] of Object.entries(fieldValues)) {
+    if (val === undefined || val === null) continue;
+    let field;
     try {
-      const field = form.getTextField(fieldName);
+      field = form.getTextField(fieldName);
+    } catch {
+      // Field not present in this template variant, skip quietly
+      continue;
+    }
+
+    try {
       // Ensure DA contains unescaped standard operator so setFontSize works cleanly
       field.acroField.dict.set(PDFName.of('DA'), PDFString.of('/Helv 11 Tf 0.094118 0.129412 0.211765 rg'));
 
@@ -101,13 +164,13 @@ export async function generateOfferLetterPdf({
       if (widgets && widgets.length > 0) {
         const rect = widgets[0].getRectangle();
         const availableWidth = rect.width - 6; // Leave safety margin
-        while (helveticaFont.widthOfTextAtSize(val, targetFontSize) > availableWidth && targetFontSize > 6.5) {
+        while (helveticaFont.widthOfTextAtSize(String(val), targetFontSize) > availableWidth && targetFontSize > 6.5) {
           targetFontSize -= 0.5;
         }
       }
 
       field.setFontSize(targetFontSize);
-      field.setText(val);
+      field.setText(String(val));
       field.updateAppearances(helveticaFont);
     } catch (err) {
       console.warn(`[PDF Generator] Warning setting field "${fieldName}":`, err.message);

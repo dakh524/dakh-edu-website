@@ -225,13 +225,17 @@ try {
 
 // 11. PDF generation and attachment
 try {
-  const pdfBuffer = generateOfferLetterPdf({
+  const pdfBuffer = await generateOfferLetterPdf({
     fullName: 'Dhivakar B',
     internNumber: 'DES/INT/2026/8888',
     domain: 'Artificial Intelligence',
     college: 'Anna University',
     department: 'CSE',
-    dateFormatted: '20 NOVEMBER 2026'
+    internshipDuration: '30 Days',
+    startDate: '2026-12-01',
+    endDate: '2026-12-30',
+    dateOfApplication: '2026-11-20',
+    issueDate: '2026-11-25'
   });
 
   const passed = Buffer.isBuffer(pdfBuffer) && pdfBuffer.length > 5000;

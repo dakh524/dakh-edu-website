@@ -5,13 +5,17 @@ console.log('--- STARTING LOCAL SUITE TESTS (NO EMAILS DISPATCHED) ---');
 
 // 1. Test PDF Generation
 try {
-  const pdfBuffer = generateOfferLetterPdf({
+  const pdfBuffer = await generateOfferLetterPdf({
     fullName: 'Test Candidate',
     internNumber: 'DES/INT/2026/9999',
     domain: 'Full Stack Development',
     college: 'Chennai Institute of Technology',
     department: 'Computer Science and Engineering',
-    dateFormatted: '20 NOVEMBER 2026'
+    internshipDuration: '30 Days',
+    startDate: '2026-12-01',
+    endDate: '2026-12-30',
+    dateOfApplication: '2026-11-20',
+    issueDate: '2026-11-25'
   });
   if (pdfBuffer && pdfBuffer.length > 5000) {
     console.log('✅ TEST 1 PASSED: PDF Offer letter generated successfully. Size:', pdfBuffer.length, 'bytes');
