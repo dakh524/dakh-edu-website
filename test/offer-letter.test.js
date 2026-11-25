@@ -76,8 +76,18 @@ async function run() {
   }
   console.log('  ✅ Rejects missing required parameters with clear error');
 
+  // Test 5: Verify Issue Date right-alignment (/Q = 2) in template
+  const { OFFER_LETTER_TEMPLATE_BASE64 } = await import('../api/_lib/offerLetterTemplateBase64.js');
+  const templateDoc = await PDFDocument.load(Buffer.from(OFFER_LETTER_TEMPLATE_BASE64, 'base64'));
+  const issueField = templateDoc.getForm().getTextField('issue_date');
+  const qVal = issueField.acroField.dict.get((await import('pdf-lib')).PDFName.of('Q'));
+  if (!qVal || qVal.numberValue !== 2) {
+    throw new Error(`Expected issue_date field to have /Q = 2 (right alignment), found: ${qVal}`);
+  }
+  console.log('  ✅ Template AcroForm issue_date field configured with /Q = 2 (right alignment)');
+
   console.log('\n────────────────────────────────────────');
-  console.log('Results: All 4 Offer Letter tests passed!\n');
+  console.log('Results: All 5 Offer Letter tests passed!\n');
 }
 
 run().catch(err => {

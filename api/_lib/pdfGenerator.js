@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, PDFName, PDFString } from 'pdf-lib';
+import { PDFDocument, StandardFonts, PDFName, PDFString, PDFNumber, TextAlignment } from 'pdf-lib';
 import { OFFER_LETTER_TEMPLATE_BASE64 } from './offerLetterTemplateBase64.js';
 
 /**
@@ -155,6 +155,12 @@ export async function generateOfferLetterPdf({
     }
 
     try {
+      // Set right-alignment (/Q = 2) specifically for issue_date heading alignment
+      if (fieldName === 'issue_date') {
+        field.setAlignment(TextAlignment.Right);
+        field.acroField.dict.set(PDFName.of('Q'), PDFNumber.of(2));
+      }
+
       // Ensure DA contains unescaped standard operator so setFontSize works cleanly
       field.acroField.dict.set(PDFName.of('DA'), PDFString.of('/Helv 11 Tf 0.094118 0.129412 0.211765 rg'));
 
