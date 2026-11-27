@@ -5,11 +5,13 @@ import {
   LogOut, Users, Map as MapIcon, Loader2, Award, Briefcase, Trash2, 
   FileBadge, FileText, Mail, Phone, Calendar, ClipboardList, ListTodo, 
   Plus, CheckSquare, Search, X, ExternalLink, AlertCircle, CheckCircle2, 
-  XCircle, Clock, Filter, Copy, Check, TrendingUp, PieChart, BarChart2, UserCircle, BookOpen, ImageIcon, Handshake 
+  XCircle, Clock, Filter, Copy, Check, TrendingUp, PieChart, BarChart2, UserCircle, BookOpen, ImageIcon, Handshake,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TeamStudentManager from '../components/TeamStudentManager';
 import AdminLMSManager from '../components/AdminLMSManager';
+import AIRecruitmentEngine from '../components/AIRecruitmentEngine';
 import { deduplicateRegistrations } from '../utils/registrationUtils';
 
 const TeamDashboard = () => {
@@ -976,6 +978,17 @@ const TeamDashboard = () => {
               <Handshake className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'partners' ? 'text-white' : 'text-gray-500'}`} />
               Partners
             </button>
+            <button 
+              onClick={() => setActiveTab('ai-recruitment')}
+              className={`w-full flex items-center gap-3.5 px-4.5 py-3 rounded-2xl font-black text-xs transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+                activeTab === 'ai-recruitment' 
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 border border-purple-400' 
+                  : 'text-purple-300 bg-purple-950/20 hover:bg-purple-900/40 border border-purple-800/30 hover:text-white'
+              }`}
+            >
+              <Sparkles className={`w-4 h-4 transition-transform group-hover:scale-110 duration-200 ${activeTab === 'ai-recruitment' ? 'text-white' : 'text-purple-400'}`} />
+              AI Recruitment
+            </button>
           </div>
         </div>
 
@@ -1912,6 +1925,10 @@ const TeamDashboard = () => {
                 </div>
               </div>
             </motion.div>
+          )}
+
+          {activeTab === 'ai-recruitment' && (
+            <AIRecruitmentEngine />
           )}
 
         </main>

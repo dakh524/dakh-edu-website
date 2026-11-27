@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink, GraduationCap, Search, Check, Send, Eye, IndianRupee, Wallet } from 'lucide-react';
+import { LogOut, Users, Map as MapIcon, Loader2, Download, FileText, FileBadge, Mail, Phone, Globe, User, BookOpen, Clock, Calendar, Monitor, Building, ClipboardList, AlertCircle, Award, PhoneCall, Briefcase, Trash2, Edit, ShoppingBag, Image as ImageIcon, Handshake, TrendingUp, CheckCircle, CheckCircle2, CheckSquare, ListTodo, BarChart2, X, ExternalLink, GraduationCap, Search, Check, Send, Eye, IndianRupee, Wallet, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import AnalyticsHub from '../components/AnalyticsHub';
 import EarningsManager from '../components/EarningsManager';
+import AIRecruitmentEngine from '../components/AIRecruitmentEngine';
 import { deduplicateRegistrations } from '../utils/registrationUtils';
 
 const AdminDashboard = () => {
@@ -1307,6 +1308,17 @@ const AdminDashboard = () => {
           >
             <IndianRupee className="w-4 h-4" />
             <span>Total Earnings</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('ai-recruitment')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+              activeTab === 'ai-recruitment' 
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/30 border-transparent' 
+                : 'text-purple-700 bg-purple-50/50 hover:bg-purple-100/60 hover:text-purple-900 border border-purple-200/50'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-purple-500" />
+            <span>AI Recruitment</span>
           </button>
         </aside>
 
@@ -3352,6 +3364,12 @@ const AdminDashboard = () => {
                 registrations={registrations} 
                 onRefreshRegistrations={fetchRegistrations} 
               />
+            </motion.div>
+          )}
+
+          {activeTab === 'ai-recruitment' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <AIRecruitmentEngine />
             </motion.div>
           )}
 
